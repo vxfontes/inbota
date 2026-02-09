@@ -13,7 +13,7 @@ type AuthHandler struct {
 	Usecase *usecase.AuthUsecase
 }
 
-type authRequest struct {
+type AuthRequest struct {
 	Email       string `json:"email"`
 	Password    string `json:"password"`
 	DisplayName string `json:"displayName"`
@@ -21,7 +21,12 @@ type authRequest struct {
 	Timezone    string `json:"timezone"`
 }
 
-type authResponse struct {
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthResponse struct {
 	Token string `json:"token"`
 	User  struct {
 		ID          string `json:"id"`
@@ -36,8 +41,17 @@ func NewAuthHandler(uc *usecase.AuthUsecase) *AuthHandler {
 	return &AuthHandler{Usecase: uc}
 }
 
+// Signup creates a new account.
+// @Summary Criar conta
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body AuthRequest true "Auth request"
+// @Success 201 {object} AuthResponse
+// @Failure 400 {object} map[string]string
+// @Router /v1/auth/signup [post]
 func (h *AuthHandler) Signup(c *gin.Context) {
-	var req authRequest
+	var req AuthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
 		return
@@ -53,8 +67,17 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 	c.JSON(http.StatusCreated, resp)
 }
 
+// Login with email and password.
+// @Summary Login
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body LoginRequest true "Login request"
+// @Success 200 {object} AuthResponse
+// @Failure 401 {object} map[string]string
+// @Router /v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req authRequest
+	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
 		return
@@ -70,8 +93,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func toAuthResponse(user repository.User, token string) authResponse {
-	var resp authResponse
+func toAuthResponse(user repository.User, token string) AuthResponse {
+	var resp AuthResponse
 	resp.Token = token
 	resp.User.ID = user.ID
 	resp.User.Email = user.Email

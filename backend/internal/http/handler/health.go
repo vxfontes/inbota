@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type healthResponse struct {
+type HealthResponse struct {
 	Status string `json:"status"`
 	Time   string `json:"time"`
 }
@@ -18,12 +18,21 @@ type Checker interface {
 }
 
 // HealthHandler returns a handler for liveness probes.
+// @Summary Healthcheck (liveness)
+// @Produce json
+// @Success 200 {object} HealthResponse
+// @Router /healthz [get]
 func HealthHandler(c *gin.Context) {
-	resp := healthResponse{Status: "ok", Time: time.Now().UTC().Format(time.RFC3339)}
+	resp := HealthResponse{Status: "ok", Time: time.Now().UTC().Format(time.RFC3339)}
 	c.JSON(http.StatusOK, resp)
 }
 
 // ReadinessHandler checks external deps when provided.
+// @Summary Readiness
+// @Produce json
+// @Success 200 {object} HealthResponse
+// @Failure 503 {object} HealthResponse
+// @Router /readyz [get]
 func ReadinessHandler(checkers ...Checker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -32,12 +41,12 @@ func ReadinessHandler(checkers ...Checker) gin.HandlerFunc {
 				continue
 			}
 			if err := checker.Check(ctx); err != nil {
-				resp := healthResponse{Status: "unready", Time: time.Now().UTC().Format(time.RFC3339)}
+				resp := HealthResponse{Status: "unready", Time: time.Now().UTC().Format(time.RFC3339)}
 				c.JSON(http.StatusServiceUnavailable, resp)
 				return
 			}
 		}
-		resp := healthResponse{Status: "ok", Time: time.Now().UTC().Format(time.RFC3339)}
+		resp := HealthResponse{Status: "ok", Time: time.Now().UTC().Format(time.RFC3339)}
 		c.JSON(http.StatusOK, resp)
 	}
 }

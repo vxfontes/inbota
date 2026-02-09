@@ -9,9 +9,8 @@ API do MVP usando Go e Gin para as rotas.
 Copie os exemplos de env e preencha as credenciais:
 - Arquivo base: `backend/.env.example`
 - Variaveis chave:
-  - `FIREBASE_PROJECT_ID`
-  - `GOOGLE_APPLICATION_CREDENTIALS` (path para o JSON do service account)
-  - `FIRESTORE_EMULATOR_HOST` (opcional)
+  - `DATABASE_URL`
+  - `JWT_SECRET`
 
 ## Rodar local
 ```bash
@@ -28,6 +27,13 @@ docker compose up --build
 ## Endpoints basicos
 - `GET /healthz`
 - `GET /readyz`
+- `GET /swagger-ui/index.html`
+
+## Swagger (gerar docs)
+```bash
+cd backend
+swag init -g cmd/api/main.go -o ./docs
+```
 
 ## Observacoes
 - O roteamento usa Gin (`github.com/gin-gonic/gin`).

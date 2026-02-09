@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "inbota/backend/cmd/api/docs"
 	"inbota/backend/internal/app/service"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/config"

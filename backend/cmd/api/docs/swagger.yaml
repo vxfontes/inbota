@@ -1,0 +1,128 @@
+definitions:
+  handler.AuthRequest:
+    properties:
+      displayName:
+        type: string
+      email:
+        type: string
+      locale:
+        type: string
+      password:
+        type: string
+      timezone:
+        type: string
+    type: object
+  handler.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        properties:
+          displayName:
+            type: string
+          email:
+            type: string
+          id:
+            type: string
+          locale:
+            type: string
+          timezone:
+            type: string
+        type: object
+    type: object
+  handler.HealthResponse:
+    properties:
+      status:
+        type: string
+      time:
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /healthz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Healthcheck (liveness)
+  /readyz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Readiness
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login
+      tags:
+      - Auth
+  /v1/auth/signup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Auth request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Criar conta
+      tags:
+      - Auth
+swagger: "2.0"

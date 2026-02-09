@@ -4,6 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/tylfin/gin-swagger-files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"inbota/backend/internal/config"
 	"inbota/backend/internal/http/handler"
@@ -19,6 +21,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 
 	engine.GET("/healthz", handler.HealthHandler)
 	engine.GET("/readyz", handler.ReadinessHandler(readinessCheckers...))
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := engine.Group("/v1")
 	if authHandler != nil {

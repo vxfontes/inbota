@@ -11,14 +11,13 @@ import (
 
 // Config holds application configuration loaded from environment variables.
 type Config struct {
-	Env                   string
-	Port                  int
-	RequestIDHeader       string
-	LogLevel              string
-	FirebaseProjectID     string
-	FirestoreEmulatorHost string
-	AIProvider            string
-	AIAPIKey              string
+	Env             string
+	Port            int
+	RequestIDHeader string
+	LogLevel        string
+	DatabaseURL     string
+	AIProvider      string
+	AIAPIKey        string
 
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -28,17 +27,16 @@ type Config struct {
 // Load reads environment variables and applies defaults.
 func Load() (Config, error) {
 	cfg := Config{
-		Env:                   getEnv("APP_ENV", "dev"),
-		Port:                  getEnvInt("PORT", 8080),
-		RequestIDHeader:       getEnv("REQUEST_ID_HEADER", "X-Request-Id"),
-		LogLevel:              strings.ToLower(getEnv("LOG_LEVEL", "info")),
-		FirebaseProjectID:     getEnv("FIREBASE_PROJECT_ID", ""),
-		FirestoreEmulatorHost: getEnv("FIRESTORE_EMULATOR_HOST", ""),
-		AIProvider:            getEnv("AI_PROVIDER", ""),
-		AIAPIKey:              getEnv("AI_API_KEY", ""),
-		ReadTimeout:           getEnvDuration("READ_TIMEOUT", 5*time.Second),
-		WriteTimeout:          getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
-		IdleTimeout:           getEnvDuration("IDLE_TIMEOUT", 60*time.Second),
+		Env:             getEnv("APP_ENV", "dev"),
+		Port:            getEnvInt("PORT", 8080),
+		RequestIDHeader: getEnv("REQUEST_ID_HEADER", "X-Request-Id"),
+		LogLevel:        strings.ToLower(getEnv("LOG_LEVEL", "info")),
+		DatabaseURL:     getEnv("DATABASE_URL", ""),
+		AIProvider:      getEnv("AI_PROVIDER", ""),
+		AIAPIKey:        getEnv("AI_API_KEY", ""),
+		ReadTimeout:     getEnvDuration("READ_TIMEOUT", 5*time.Second),
+		WriteTimeout:    getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
+		IdleTimeout:     getEnvDuration("IDLE_TIMEOUT", 60*time.Second),
 	}
 
 	if cfg.Port <= 0 {

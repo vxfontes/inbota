@@ -13,6 +13,7 @@ import (
 
 	"inbota/backend/internal/config"
 	inbotahttp "inbota/backend/internal/http"
+	"inbota/backend/internal/infra/postgres"
 	"inbota/backend/internal/observability"
 )
 
@@ -29,7 +30,19 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	handler := inbotahttp.NewRouter(cfg, log)
+	ctx := context.Background()
+	var db *postgres.DB
+	if cfg.DatabaseURL != "" {
+		var err error
+		db, err = postgres.NewDB(ctx, cfg.DatabaseURL)
+		if err != nil {
+			log.Error("db_connect_error", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		log.Info("db_connected")
+	}
+
+	handler := inbotahttp.NewRouter(cfg, log, db)
 
 	srv := &http.Server{
 		Addr:         cfg.Addr(),
@@ -56,5 +69,8 @@ func main() {
 	log.Info("server_shutdown")
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Error("server_shutdown_error", slog.String("error", err.Error()))
+	}
+	if db != nil {
+		_ = db.Close()
 	}
 }

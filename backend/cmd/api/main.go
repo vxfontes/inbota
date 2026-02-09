@@ -11,8 +11,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/service"
+	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/config"
 	inbotahttp "inbota/backend/internal/http"
+	"inbota/backend/internal/http/handler"
 	"inbota/backend/internal/infra/postgres"
 	"inbota/backend/internal/observability"
 )
@@ -42,11 +45,23 @@ func main() {
 		log.Info("db_connected")
 	}
 
-	handler := inbotahttp.NewRouter(cfg, log, db)
+	var authHandler *handler.AuthHandler
+	if db != nil {
+		if cfg.JWTSecret == "" {
+			log.Error("jwt_secret_missing")
+			os.Exit(1)
+		}
+		userRepo := postgres.NewUserRepository(db)
+		authSvc := service.NewAuthService(cfg.JWTSecret, usecase.DefaultTokenTTL)
+		authUC := &usecase.AuthUsecase{Users: userRepo, Auth: authSvc}
+		authHandler = handler.NewAuthHandler(authUC)
+	}
+
+	router := inbotahttp.NewRouter(cfg, log, authHandler, db)
 
 	srv := &http.Server{
 		Addr:         cfg.Addr(),
-		Handler:      handler,
+		Handler:      router,
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 		IdleTimeout:  cfg.IdleTimeout,

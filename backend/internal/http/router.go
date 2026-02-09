@@ -11,7 +11,7 @@ import (
 )
 
 // NewRouter wires handlers and middleware.
-func NewRouter(cfg config.Config, log *slog.Logger, readinessCheckers ...handler.Checker) *gin.Engine {
+func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHandler, readinessCheckers ...handler.Checker) *gin.Engine {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 	engine.Use(middleware.RequestID(cfg.RequestIDHeader))
@@ -20,7 +20,13 @@ func NewRouter(cfg config.Config, log *slog.Logger, readinessCheckers ...handler
 	engine.GET("/healthz", handler.HealthHandler)
 	engine.GET("/readyz", handler.ReadinessHandler(readinessCheckers...))
 
-	_ = engine.Group("/v1", middleware.Auth(cfg.JWTSecret))
+	v1 := engine.Group("/v1")
+	if authHandler != nil {
+		v1.POST("/auth/signup", authHandler.Signup)
+		v1.POST("/auth/login", authHandler.Login)
+	}
+
+	_ = v1.Group("", middleware.Auth(cfg.JWTSecret))
 
 	return engine
 }

@@ -14,16 +14,16 @@ type AuthHandler struct {
 }
 
 type AuthRequest struct {
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	DisplayName string `json:"displayName"`
-	Locale      string `json:"locale"`
-	Timezone    string `json:"timezone"`
+	Email       string `json:"email" binding:"required"`
+	Password    string `json:"password" binding:"required"`
+	DisplayName string `json:"displayName" binding:"required"`
+	Locale      string `json:"locale" binding:"required"`
+	Timezone    string `json:"timezone" binding:"required"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type AuthResponse struct {

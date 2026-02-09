@@ -141,6 +141,13 @@ const docTemplate = `{
     "definitions": {
         "handler.AuthRequest": {
             "type": "object",
+            "required": [
+                "displayName",
+                "email",
+                "locale",
+                "password",
+                "timezone"
+            ],
             "properties": {
                 "displayName": {
                     "type": "string"
@@ -200,6 +207,10 @@ const docTemplate = `{
         },
         "handler.LoginRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
                     "type": "string"

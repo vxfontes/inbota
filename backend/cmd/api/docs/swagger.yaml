@@ -11,6 +11,12 @@ definitions:
         type: string
       timezone:
         type: string
+    required:
+    - displayName
+    - email
+    - locale
+    - password
+    - timezone
     type: object
   handler.AuthResponse:
     properties:
@@ -43,6 +49,9 @@ definitions:
         type: string
       password:
         type: string
+    required:
+    - email
+    - password
     type: object
 info:
   contact: {}

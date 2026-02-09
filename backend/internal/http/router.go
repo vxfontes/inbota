@@ -20,5 +20,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, readinessCheckers ...handler
 	engine.GET("/healthz", handler.HealthHandler)
 	engine.GET("/readyz", handler.ReadinessHandler(readinessCheckers...))
 
+	_ = engine.Group("/v1", middleware.Auth(cfg.JWTSecret))
+
 	return engine
 }

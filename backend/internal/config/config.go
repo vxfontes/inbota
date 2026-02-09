@@ -16,6 +16,7 @@ type Config struct {
 	RequestIDHeader string
 	LogLevel        string
 	DatabaseURL     string
+	JWTSecret       string
 	AIProvider      string
 	AIAPIKey        string
 
@@ -32,6 +33,7 @@ func Load() (Config, error) {
 		RequestIDHeader: getEnv("REQUEST_ID_HEADER", "X-Request-Id"),
 		LogLevel:        strings.ToLower(getEnv("LOG_LEVEL", "info")),
 		DatabaseURL:     getEnv("DATABASE_URL", ""),
+		JWTSecret:       getEnv("JWT_SECRET", ""),
 		AIProvider:      getEnv("AI_PROVIDER", ""),
 		AIAPIKey:        getEnv("AI_API_KEY", ""),
 		ReadTimeout:     getEnvDuration("READ_TIMEOUT", 5*time.Second),

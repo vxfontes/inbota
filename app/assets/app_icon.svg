@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Inbota icon">
+  <defs>
+    <linearGradient id="gPrimary" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+
+    <linearGradient id="gAI" x1="140" y1="140" x2="372" y2="372" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C7D2FE"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+
+    <radialGradient id="gGlow" cx="50%" cy="35%" r="60%">
+      <stop offset="0" stop-color="#99F6E4" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#99F6E4" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#111827" flood-opacity="0.18"/>
+    </filter>
+
+    <filter id="innerShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feOffset dx="0" dy="6"/>
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="blur" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="inner"/>
+      <feColorMatrix in="inner" type="matrix"
+        values="0 0 0 0 0.07  0 0 0 0 0.09  0 0 0 0 0.13  0 0 0 0.28 0"/>
+      <feComposite in2="SourceGraphic" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Scale+translate ALL artwork to fill the canvas better -->
+  <!-- Tweak scale if you want even bigger (1.18 → 1.22). -->
+  <g transform="translate(-45 17) scale(1.16)">
+
+    <!-- Glow -->
+    <circle cx="256" cy="190" r="175" fill="url(#gGlow)"/>
+
+    <!-- Main tray (inbox) -->
+    <g filter="url(#shadow)">
+      <path
+        d="M112 214
+           C112 192 130 174 152 174
+           H360
+           C382 174 400 192 400 214
+           V350
+           C400 379 377 402 348 402
+           H164
+           C135 402 112 379 112 350
+           Z"
+        fill="url(#gPrimary)"
+      />
+
+      <path
+        d="M112 252
+           H206
+           C218 252 228 259 232 270
+           L242 298
+           C246 308 255 314 266 314
+           H276
+           C287 314 296 308 300 298
+           L310 270
+           C314 259 324 252 336 252
+           H400
+           V334
+           C400 367 373 394 340 394
+           H172
+           C139 394 112 367 112 334
+           Z"
+        fill="#0B1220"
+        opacity="0.14"
+        filter="url(#innerShadow)"
+      />
+
+      <path
+        d="M150 234
+           C150 222 160 212 172 212
+           H340
+           C352 212 362 222 362 234
+           C362 246 352 256 340 256
+           H172
+           C160 256 150 246 150 234
+           Z"
+        fill="#FFFFFF"
+        opacity="0.22"
+      />
+    </g>
+
+    <!-- Bot head -->
+    <g filter="url(#shadow)">
+      <path
+        d="M176 132
+           C176 106 197 85 223 85
+           H289
+           C315 85 336 106 336 132
+           V216
+           C336 252 307 281 271 281
+           H241
+           C205 281 176 252 176 216
+           Z"
+        fill="#FFFFFF"
+      />
+
+      <path d="M256 54 V85" stroke="#4F46E5" stroke-width="16" stroke-linecap="round"/>
+      <circle cx="256" cy="42" r="18" fill="url(#gAI)"/>
+
+      <path
+        d="M204 150
+           C204 138 214 128 226 128
+           H286
+           C298 128 308 138 308 150
+           V204
+           C308 216 298 226 286 226
+           H226
+           C214 226 204 216 204 204
+           Z"
+        fill="#F3F4F6"
+      />
+
+      <circle cx="236" cy="176" r="11" fill="#111827" opacity="0.92"/>
+      <circle cx="276" cy="176" r="11" fill="#111827" opacity="0.92"/>
+
+      <path
+        d="M236 204
+           C246 218 266 218 276 204"
+        fill="none"
+        stroke="#0F766E"
+        stroke-width="12"
+        stroke-linecap="round"
+      />
+
+      <path d="M348 114 l12 22 24 7 -24 7 -12 22 -12 -22 -24 -7 24 -7z"
+            fill="url(#gAI)" opacity="0.95"/>
+    </g>
+
+    <!-- Corner highlight -->
+    <path d="M134 214 C140 197 157 186 175 186 H214"
+          fill="none" stroke="#99F6E4" stroke-width="12" stroke-linecap="round" opacity="0.55"/>
+  </g>
+</svg>

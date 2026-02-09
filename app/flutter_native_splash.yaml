@@ -1,0 +1,7 @@
+flutter_native_splash:
+  color: "#FAFAFA"
+  image: assets/app_icon.png
+  android: true
+  ios: true
+  web: true
+  fullscreen: true

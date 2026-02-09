@@ -1,0 +1,8 @@
+/bin
+*.exe
+*.out
+*.test
+*.log
+.git
+.gitignore
+.DS_Store

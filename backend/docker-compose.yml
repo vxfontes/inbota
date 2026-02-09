@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: inbota_db
+    environment:
+      POSTGRES_DB: inbota
+      POSTGRES_USER: inbota
+      POSTGRES_PASSWORD: inbota
+    ports:
+      - "5432:5432"
+    volumes:
+      - inbota_pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inbota_api
+    env_file:
+      - ./.env.example
+    environment:
+      APP_ENV: dev
+      PORT: 8080
+      DATABASE_URL: postgres://inbota:inbota@db:5432/inbota?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  inbota_pgdata:

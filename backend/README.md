@@ -24,6 +24,9 @@ Dentro de `backend/`:
 docker compose up --build
 ```
 
+## Hot reload (Docker)
+Com o `docker compose up`, a API usa `air` e recarrega ao salvar arquivos Go.
+
 ## Endpoints basicos
 - `GET /healthz`
 - `GET /readyz`

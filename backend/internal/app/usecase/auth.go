@@ -21,8 +21,8 @@ type AuthUsecase struct {
 
 func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName, locale, timezone string) (repository.User, string, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
-	if email == "" || password == "" {
-		return repository.User{}, "", errors.New("email_password_required")
+	if email == "" || password == "" || displayName == "" || locale == "" || timezone == "" {
+		return repository.User{}, "", errors.New("missing_required_fields")
 	}
 
 	hash, err := uc.Auth.HashPassword(password)

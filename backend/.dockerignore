@@ -3,6 +3,7 @@
 *.out
 *.test
 *.log
+tmp
 .git
 .gitignore
 .DS_Store

@@ -56,6 +56,10 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
 		return
 	}
+	if req.Email == "" || req.Password == "" || req.DisplayName == "" || req.Locale == "" || req.Timezone == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing_required_fields"})
+		return
+	}
 
 	user, token, err := h.Usecase.Signup(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Locale, req.Timezone)
 	if err != nil {
@@ -80,6 +84,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
+		return
+	}
+	if req.Email == "" || req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing_required_fields"})
 		return
 	}
 

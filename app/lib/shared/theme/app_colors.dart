@@ -20,4 +20,6 @@ class AppColors {
   static const warning500 = Color(0xFFF59E0B);
   static const danger600 = Color(0xFFDC2626);
   static const success600 = Color(0xFF16A34A);
+
+  static const transparent = Colors.transparent;
 }

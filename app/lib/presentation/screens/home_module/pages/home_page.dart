@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class HomePage extends StatelessWidget {
@@ -6,64 +7,84 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inbota'),
+    return IBScaffold(
+      appBar: const IBAppBar(title: 'Inbota'),
+      body: ListView(
+        children: [
+          IBText('Componentes IB (demo)', context: context).titulo.build(),
+          const SizedBox(height: 12),
+          IBText(
+            'Exemplo rapido com todos os componentes compartilhados.',
+            context: context,
+          ).body.build(),
+          const SizedBox(height: 20),
+          const IBTextField(
+            label: 'Texto rapido',
+            hint: 'Escreva aqui...',
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: const [
+              IBButton(label: 'Primario', onPressed: null),
+              IBButton(
+                label: 'Secundario',
+                variant: IBButtonVariant.secondary,
+                onPressed: null,
+              ),
+              IBButton(
+                label: 'Ghost',
+                variant: IBButtonVariant.ghost,
+                onPressed: null,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: const [
+              IBChip(label: 'PROCESSING', color: AppColors.ai600),
+              IBChip(label: 'NEEDS_REVIEW', color: AppColors.warning500),
+              IBChip(label: 'CONFIRMED', color: AppColors.success600),
+              IBChip(label: 'ERROR', color: AppColors.danger600),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const IBCard(
+            child: Text('IBCard com padding padrao.'),
+          ),
+          const SizedBox(height: 24),
+          const IBEmptyState(
+            title: 'Nada por aqui',
+            subtitle: 'Quando tiver itens, eles vao aparecer aqui.',
+          ),
+          const SizedBox(height: 24),
+          const Center(child: IBLoader(label: 'Carregando...')),
+          const SizedBox(height: 24),
+          IBText('Variacoes de IBText', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          IBText('Titulo', context: context).titulo.build(),
+          const SizedBox(height: 6),
+          IBText('Subtitulo', context: context).subtitulo.build(),
+          const SizedBox(height: 6),
+          IBText('Body padrão', context: context).body.build(),
+          const SizedBox(height: 6),
+          IBText('Muted', context: context).muted.build(),
+          const SizedBox(height: 6),
+          IBText('Caption', context: context).caption.build(),
+          const SizedBox(height: 6),
+          IBText('Label', context: context).label.build(),
+          const SizedBox(height: 12),
+          IBText('Centralizado', context: context)
+              .body
+              .align(TextAlign.center)
+              .build(),
+          const SizedBox(height: 24),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Inbox de vida, claro e simples.',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Sua base esta pronta. Agora e so ligar as telas e os fluxos.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            const Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _StatusChip(label: 'PROCESSING', color: AppColors.ai600),
-                _StatusChip(label: 'NEEDS_REVIEW', color: AppColors.warning500),
-                _StatusChip(label: 'CONFIRMED', color: AppColors.success600),
-                _StatusChip(label: 'ERROR', color: AppColors.danger600),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      floatingActionButton: null,
     );
   }
 }

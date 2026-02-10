@@ -1,14 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
+import 'package:inbota/presentation/screens/auth_module/controller/login_controller.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text_field.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  late final LoginController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Modular.get<LoginController>();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final success = await _controller.submit();
+    if (!success || !mounted) return;
+    AppNavigation.clearAndPush(AppRoutes.root);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,18 +49,25 @@ class LoginPage extends StatelessWidget {
       title: 'Entrar',
       subtitle: 'Acesse sua conta para continuar.',
       fields: [
-        const IBTextField(
+        IBTextField(
           label: 'Email',
           hint: 'voce@exemplo.com',
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: const Icon(Icons.mail_outline, color: AppColors.textMuted),
+          controller: _controller.emailController,
+          prefixIcon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedMail01,
+            color: AppColors.textMuted,
+            size: 20,
+            strokeWidth: 1.8,
+          ),
         ),
         const SizedBox(height: 16),
-        const IBTextField(
+        IBTextField(
           label: 'Senha',
           hint: 'Digite sua senha',
           obscureText: true,
           prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+          controller: _controller.passwordController,
         ),
         const SizedBox(height: 12),
         Align(
@@ -45,15 +80,38 @@ class LoginPage extends StatelessWidget {
                 .build(),
           ),
         ),
+        ValueListenableBuilder<String?>(
+          valueListenable: _controller.error,
+          builder: (context, error, _) {
+            if (error == null || error.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: IBText(error, context: context)
+                  .caption
+                  .color(AppColors.danger600)
+                  .build(),
+            );
+          },
+        ),
       ],
-      primaryAction: IBButton(
-        label: 'Entrar',
-        onPressed: () => AppNavigation.clearAndPush(AppRoutes.root),
+      primaryAction: ValueListenableBuilder<bool>(
+        valueListenable: _controller.loading,
+        builder: (context, loading, _) {
+          return IBButton(
+            label: 'Entrar',
+            loading: loading,
+            onPressed: _submit,
+          );
+        },
       ),
-      secondaryAction: IBButton(
-        label: 'Criar uma conta',
-        onPressed: () => AppNavigation.push(AppRoutes.login),
-        variant: IBButtonVariant.ghost,
+      secondaryAction: TextButton(
+        onPressed: () => AppNavigation.push(AppRoutes.signup),
+        child: IBText('Criar uma conta', context: context)
+            .label
+            .color(AppColors.primary700)
+            .build(),
       ),
     );
   }

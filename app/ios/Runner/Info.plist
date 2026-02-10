@@ -49,5 +49,14 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>Permite conectar ao servidor local para desenvolvimento.</string>
 	</dict>
 </plist>

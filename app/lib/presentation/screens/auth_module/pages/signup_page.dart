@@ -1,15 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
+import 'package:inbota/presentation/screens/auth_module/controller/signup_controller.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text_field.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
-class SignupPage extends StatelessWidget {
+class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
+
+  @override
+  State<SignupPage> createState() => _SignupPageState();
+}
+
+class _SignupPageState extends State<SignupPage> {
+  late final SignupController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Modular.get<SignupController>();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final locale = WidgetsBinding.instance.platformDispatcher.locale.toLanguageTag();
+    final timezone = DateTime.now().timeZoneName;
+    final success = await _controller.submit(locale: locale, timezone: timezone);
+    if (!success || !mounted) return;
+    AppNavigation.clearAndPush(AppRoutes.root);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,35 +50,61 @@ class SignupPage extends StatelessWidget {
       ),
       title: 'Criar conta',
       subtitle: 'Monte sua rotina inteligente em poucos passos.',
-      fields: const [
+      fields: [
         IBTextField(
           label: 'Nome completo',
           hint: 'Como podemos te chamar?',
           prefixIcon: Icon(Icons.person_outline, color: AppColors.textMuted),
+          controller: _controller.nameController,
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         IBTextField(
           label: 'Email',
           hint: 'voce@exemplo.com',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icon(Icons.mail_outline, color: AppColors.textMuted),
+          controller: _controller.emailController,
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         IBTextField(
           label: 'Senha',
           hint: 'Crie uma senha segura',
           obscureText: true,
           prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted),
+          controller: _controller.passwordController,
+        ),
+        ValueListenableBuilder<String?>(
+          valueListenable: _controller.error,
+          builder: (context, error, _) {
+            if (error == null || error.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: IBText(error, context: context)
+                  .caption
+                  .color(AppColors.danger600)
+                  .build(),
+            );
+          },
         ),
       ],
-      primaryAction: IBButton(
-        label: 'Criar conta',
-        onPressed: () => AppNavigation.clearAndPush(AppRoutes.root),
+      primaryAction: ValueListenableBuilder<bool>(
+        valueListenable: _controller.loading,
+        builder: (context, loading, _) {
+          return IBButton(
+            label: 'Criar conta',
+            loading: loading,
+            onPressed: _submit,
+          );
+        },
       ),
-      secondaryAction: IBButton(
-        label: 'Já tenho conta',
+      secondaryAction: TextButton(
         onPressed: () => AppNavigation.push(AppRoutes.login),
-        variant: IBButtonVariant.ghost,
+        child: IBText('Ja tenho conta', context: context)
+            .label
+            .color(AppColors.primary700)
+            .build(),
       ),
     );
   }

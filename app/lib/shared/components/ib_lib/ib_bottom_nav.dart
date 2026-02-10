@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:hugeicons/hugeicons.dart';
+import 'package:inbota/shared/components/ib_lib/ib_huge_icons.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBBottomNav extends StatelessWidget {
@@ -47,26 +48,26 @@ class IBBottomNav extends StatelessWidget {
                   children: [
                     _NavIcon(
                       index: 0,
-                      icon: HugeIcons.strokeRoundedInbox,
+                      icon: IBHugeIcon.inbox,
                       isActive: currentIndex == 0,
                       onTap: onTap,
                     ),
                     _NavIcon(
                       index: 1,
-                      icon: HugeIcons.strokeRoundedReminder,
+                      icon: IBHugeIcon.reminder,
                       isActive: currentIndex == 1,
                       onTap: onTap,
                     ),
                     const SizedBox(width: 56),
                     _NavIcon(
                       index: 3,
-                      icon: HugeIcons.strokeRoundedShoppingBag01,
+                      icon: IBHugeIcon.shoppingBag,
                       isActive: currentIndex == 3,
                       onTap: onTap,
                     ),
                     _NavIcon(
                       index: 4,
-                      icon: HugeIcons.strokeRoundedCalendar01,
+                      icon: IBHugeIcon.calendar,
                       isActive: currentIndex == 4,
                       onTap: onTap,
                     ),
@@ -94,7 +95,7 @@ class _NavIcon extends StatelessWidget {
   });
 
   final int index;
-  final List<List<dynamic>> icon;
+  final IBHugeIcon icon;
   final bool isActive;
   final ValueChanged<int>? onTap;
 
@@ -109,7 +110,7 @@ class _NavIcon extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(icon: icon, color: color, size: 22, strokeWidth: 1.8),
+            HugeIcon(icon: icon.data, color: color, size: 22, strokeWidth: 1.8),
           ],
         ),
       ),

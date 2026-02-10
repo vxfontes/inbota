@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBChip extends StatelessWidget {
@@ -20,13 +21,7 @@ class IBChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: IBText(label, context: context).label.color(color).build(),
     );
   }
 }

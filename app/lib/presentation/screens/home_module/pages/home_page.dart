@@ -21,19 +21,26 @@ class HomePage extends StatelessWidget {
           hint: 'Escreva aqui...',
         ),
         const SizedBox(height: 16),
-        const Wrap(
+        IBText('Buttons', context: context).subtitulo.build(),
+        const SizedBox(height: 12),
+        Wrap(
           spacing: 12,
           runSpacing: 12,
           children: [
-            IBButton(label: 'Primario', onPressed: null),
+            IBButton(label: 'Primario', onPressed: () {}),
             IBButton(
               label: 'Secundario',
               variant: IBButtonVariant.secondary,
-              onPressed: null,
+              onPressed: () {},
             ),
             IBButton(
               label: 'Ghost',
               variant: IBButtonVariant.ghost,
+              onPressed: () {},
+            ),
+            const IBButton(
+              label: 'Loading',
+              loading: true,
               onPressed: null,
             ),
           ],
@@ -50,8 +57,8 @@ class HomePage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        const IBCard(
-          child: Text('IBCard com padding padrao.'),
+        IBCard(
+          child: IBText('IBCard com padding padrao.', context: context).body.build(),
         ),
         const SizedBox(height: 24),
         const IBEmptyState(
@@ -79,6 +86,23 @@ class HomePage extends StatelessWidget {
             .body
             .align(TextAlign.center)
             .build(),
+        const SizedBox(height: 24),
+        IBText('App Bar', context: context).subtitulo.build(),
+        const SizedBox(height: 12),
+        const SizedBox(
+          height: kToolbarHeight + 16,
+          child: IBAppBar(
+            title: 'Inbota',
+            padding: EdgeInsets.only(left: 12),
+          ),
+        ),
+        const SizedBox(height: 24),
+        IBText('Bottom Bar', context: context).subtitulo.build(),
+        const SizedBox(height: 12),
+        IBBottomNav(
+          currentIndex: 0,
+          onTap: (_) {},
+        ),
         const SizedBox(height: 24),
       ],
     );

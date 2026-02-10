@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 
 class IBLoader extends StatelessWidget {
   const IBLoader({super.key, this.label});
@@ -13,7 +14,7 @@ class IBLoader extends StatelessWidget {
         const CircularProgressIndicator(),
         if (label != null) ...[
           const SizedBox(height: 12),
-          Text(label!, style: Theme.of(context).textTheme.bodyMedium),
+          IBText(label!, context: context).body.build(),
         ],
       ],
     );

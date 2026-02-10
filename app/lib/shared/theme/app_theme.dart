@@ -7,7 +7,7 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData light() {
-    final colorScheme = ColorScheme(
+    const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary700,
       onPrimary: Colors.white,
@@ -16,9 +16,8 @@ class AppTheme {
       error: AppColors.danger600,
       onError: Colors.white,
       surface: AppColors.surface,
-      onSurface: AppColors.text,
-      background: AppColors.background,
-      onBackground: AppColors.text,
+      onSurface: AppColors.background,
+      surfaceContainerHighest: AppColors.text,
     );
 
     final baseText = GoogleFonts.manropeTextTheme().apply(
@@ -41,7 +40,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,

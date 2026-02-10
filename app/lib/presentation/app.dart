@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 import '../shared/theme/app_theme.dart';
-import 'screens/splash_screen.dart';
 
-class InbotaApp extends StatelessWidget {
-  const InbotaApp({super.key});
+class AppWidget extends StatelessWidget {
+  const AppWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Inbota',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const SplashScreen(),
+      routerConfig: Modular.routerConfig,
     );
   }
 }

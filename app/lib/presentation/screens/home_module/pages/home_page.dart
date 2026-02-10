@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/shared/theme/app_colors.dart';
 
-import '../../shared/theme/app_colors.dart';
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +25,10 @@ class HomeScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
-            Wrap(
+            const Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: const [
+              children: [
                 _StatusChip(label: 'PROCESSING', color: AppColors.ai600),
                 _StatusChip(label: 'NEEDS_REVIEW', color: AppColors.warning500),
                 _StatusChip(label: 'CONFIRMED', color: AppColors.success600),
@@ -54,9 +53,9 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,

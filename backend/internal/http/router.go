@@ -33,6 +33,9 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 
 	authGroup := v1.Group("", middleware.Auth(cfg.JWTSecret))
 	if apiHandlers != nil {
+		if apiHandlers.Me != nil {
+			authGroup.GET("/me", apiHandlers.Me.Me)
+		}
 		if apiHandlers.Flags != nil {
 			authGroup.GET("/flags", apiHandlers.Flags.List)
 			authGroup.POST("/flags", apiHandlers.Flags.Create)

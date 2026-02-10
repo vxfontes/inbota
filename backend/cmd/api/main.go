@@ -104,6 +104,7 @@ func main() {
 		}
 
 		apiHandlers = &handler.APIHandlers{
+			Me:            handler.NewMeHandler(authUC),
 			Flags:         handler.NewFlagsHandler(flagUC),
 			Subflags:      handler.NewSubflagsHandler(subflagUC, flagUC),
 			ContextRules:  handler.NewContextRulesHandler(ruleUC, flagUC, subflagUC),

@@ -21,6 +21,24 @@ definitions:
       type:
         type: string
     type: object
+  dto.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        properties:
+          displayName:
+            type: string
+          email:
+            type: string
+          id:
+            type: string
+          locale:
+            type: string
+          timezone:
+            type: string
+        type: object
+    type: object
   dto.ConfirmInboxItemRequest:
     properties:
       flagId:
@@ -1264,6 +1282,24 @@ paths:
       summary: Reprocessar inbox item
       tags:
       - Inbox
+  /v1/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter perfil do usuario logado
+      tags:
+      - Me
   /v1/reminders:
     get:
       parameters:

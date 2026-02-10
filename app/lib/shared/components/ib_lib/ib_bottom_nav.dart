@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBBottomNav extends StatelessWidget {
@@ -24,52 +25,62 @@ class IBBottomNav extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                border: Border(
-                  top: BorderSide(color: AppColors.border),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.text.withAlpha((0.08 * 255).round()),
+                      blurRadius: 26,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: AppColors.surface.withAlpha((0.9 * 255).round()),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                   _NavIcon(
                     index: 0,
-                    icon: Icons.inbox_rounded,
-                    label: 'Inbox',
+                    icon: HugeIcons.strokeRoundedInbox,
                     isActive: currentIndex == 0,
                     onTap: onTap,
                   ),
                   _NavIcon(
                     index: 1,
-                    icon: Icons.alarm_rounded,
-                    label: 'Lembretes',
+                    icon: HugeIcons.strokeRoundedReminder,
                     isActive: currentIndex == 1,
                     onTap: onTap,
                   ),
-                  const SizedBox(width: 56),
+                    const SizedBox(width: 56),
                   _NavIcon(
                     index: 3,
-                    icon: Icons.shopping_bag_rounded,
-                    label: 'Compras',
+                    icon: HugeIcons.strokeRoundedShoppingBag01,
                     isActive: currentIndex == 3,
                     onTap: onTap,
                   ),
                   _NavIcon(
                     index: 4,
-                    icon: Icons.event_rounded,
-                    label: 'Eventos',
+                    icon: HugeIcons.strokeRoundedCalendar01,
                     isActive: currentIndex == 4,
                     onTap: onTap,
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
           Positioned(
-            bottom: 28,
+            bottom: 35,
             child: _CenterAction(
               isActive: currentIndex == 2,
               onTap: onTap,
@@ -85,14 +96,12 @@ class _NavIcon extends StatelessWidget {
   const _NavIcon({
     required this.index,
     required this.icon,
-    required this.label,
     required this.isActive,
     required this.onTap,
   });
 
   final int index;
-  final IconData icon;
-  final String label;
+  final List<List<dynamic>> icon;
   final bool isActive;
   final ValueChanged<int>? onTap;
 
@@ -107,11 +116,11 @@ class _NavIcon extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
+            HugeIcon(
+              icon: icon,
+              color: color,
+              size: 22,
+              strokeWidth: 1.8,
             ),
           ],
         ),
@@ -132,24 +141,30 @@ class _CenterAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(40),
       onTap: () => onTap?.call(2),
       child: Container(
-        height: 64,
-        width: 64,
+        height: 54,
+        width: 54,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.primary700,
-          border: Border.all(color: Colors.white, width: 4),
+          color: AppColors.primary600,
+          border: Border.all(color: AppColors.surface, width: 4),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary700.withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
+              color: AppColors.primary700.withAlpha((0.35 * 255).round()),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+            BoxShadow(
+              color: AppColors.text.withAlpha((0.12 * 255).round()),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: const Icon(
-          Icons.auto_awesome_rounded,
-          color: Colors.white,
+        child: const HugeIcon(
+          icon: HugeIcons.strokeRoundedAdd01,
+          color: AppColors.surface,
           size: 28,
+          strokeWidth: 2.2,
         ),
       ),
     );

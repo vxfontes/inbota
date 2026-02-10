@@ -8,7 +8,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IBScaffold(
-      appBar: const IBAppBar(title: 'Inbota'),
+      appBar: const IBAppBar(title: 'Inbota', padding: EdgeInsets.only(left: 12)),
       body: ListView(
         children: [
           IBText('Componentes IB (demo)', context: context).titulo.build(),
@@ -23,10 +23,10 @@ class HomePage extends StatelessWidget {
             hint: 'Escreva aqui...',
           ),
           const SizedBox(height: 16),
-          Wrap(
+          const Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: const [
+            children: [
               IBButton(label: 'Primario', onPressed: null),
               IBButton(
                 label: 'Secundario',
@@ -41,10 +41,10 @@ class HomePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          Wrap(
+          const Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: const [
+            children: [
               IBChip(label: 'PROCESSING', color: AppColors.ai600),
               IBChip(label: 'NEEDS_REVIEW', color: AppColors.warning500),
               IBChip(label: 'CONFIRMED', color: AppColors.success600),

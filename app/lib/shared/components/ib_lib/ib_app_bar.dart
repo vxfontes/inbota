@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final List<Widget>? actions;
+  final bool centerTitle;
+  final EdgeInsetsGeometry? padding;
+
   const IBAppBar({
     super.key,
     required this.title,
     this.actions,
     this.centerTitle = false,
+    this.padding,
   });
-
-  final String title;
-  final List<Widget>? actions;
-  final bool centerTitle;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 24);
@@ -19,7 +22,10 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title),
+      title: Padding(
+        padding: padding ?? const EdgeInsets.all(0),
+        child: IBText(title, context: context).titulo.color(AppColors.surface2).build(),
+      ),
       centerTitle: centerTitle,
       actions: actions,
       elevation: 0,

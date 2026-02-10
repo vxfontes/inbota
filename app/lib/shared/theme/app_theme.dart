@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import 'app_colors.dart';
 
 class AppTheme {
@@ -10,23 +8,24 @@ class AppTheme {
     const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary700,
-      onPrimary: Colors.white,
+      onPrimary: AppColors.surface,
       secondary: AppColors.ai600,
-      onSecondary: Colors.white,
+      onSecondary: AppColors.surface,
       error: AppColors.danger600,
-      onError: Colors.white,
+      onError: AppColors.surface,
       surface: AppColors.surface,
       onSurface: AppColors.background,
       surfaceContainerHighest: AppColors.text,
     );
 
-    final baseText = GoogleFonts.manropeTextTheme().apply(
+    final baseText = ThemeData(useMaterial3: true).textTheme.apply(
       bodyColor: AppColors.text,
       displayColor: AppColors.text,
     );
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Manrope',
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       textTheme: baseText.copyWith(
@@ -42,7 +41,7 @@ class AppTheme {
       ),
       cardTheme: const CardThemeData(
         color: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -76,18 +75,18 @@ class AppTheme {
         backgroundColor: AppColors.primary200,
         selectedColor: AppColors.primary600,
         labelStyle: const TextStyle(color: AppColors.text),
-        secondaryLabelStyle: const TextStyle(color: Colors.white),
+        secondaryLabelStyle: const TextStyle(color: AppColors.surface),
         side: const BorderSide(color: AppColors.border),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary700,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.surface,
       ),
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: AppColors.text,
-        contentTextStyle: TextStyle(color: Colors.white),
+        contentTextStyle: TextStyle(color: AppColors.surface),
       ),
     );
   }

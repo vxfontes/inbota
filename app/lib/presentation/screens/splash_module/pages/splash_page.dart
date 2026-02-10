@@ -15,7 +15,7 @@ class _SplashPageState extends State<SplashPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      AppNavigation.replace(AppRoutes.root);
+      AppNavigation.replace(AppRoutes.auth);
     });
   }
 

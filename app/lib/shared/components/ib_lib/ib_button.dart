@@ -37,20 +37,40 @@ class IBButton extends StatelessWidget {
           onPressed: isDisabled ? null : onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary700,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.primary700.withAlpha((0.4 * 255).round()),
-            disabledForegroundColor: Colors.white.withAlpha((0.85 * 255).round()),
+            foregroundColor: AppColors.surface,
+            disabledBackgroundColor: AppColors.primary700.withAlpha(
+              (0.4 * 255).round(),
+            ),
+            disabledForegroundColor: AppColors.surface.withAlpha(
+              (0.85 * 255).round(),
+            ),
           ),
-          child: content,
+          child: loading
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.surface,
+                  ),
+                )
+              : IBText(
+                  label,
+                  context: context,
+                ).label.color(AppColors.surface).build(),
         );
       case IBButtonVariant.secondary:
         return OutlinedButton(
           onPressed: isDisabled ? null : onPressed,
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary600,
-            backgroundColor: AppColors.primary600.withAlpha((0.08 * 255).round()),
-            side: BorderSide(color: AppColors.primary600),
-            disabledForegroundColor: AppColors.primary600.withAlpha((0.6 * 255).round()),
+            backgroundColor: AppColors.primary600.withAlpha(
+              (0.08 * 255).round(),
+            ),
+            side: const BorderSide(color: AppColors.primary600),
+            disabledForegroundColor: AppColors.primary600.withAlpha(
+              (0.6 * 255).round(),
+            ),
           ),
           child: content,
         );
@@ -59,9 +79,23 @@ class IBButton extends StatelessWidget {
           onPressed: isDisabled ? null : onPressed,
           style: TextButton.styleFrom(
             foregroundColor: AppColors.primary700,
-            disabledForegroundColor: AppColors.primary700.withAlpha((0.6 * 255).round()),
+            disabledForegroundColor: AppColors.primary700.withAlpha(
+              (0.6 * 255).round(),
+            ),
           ),
-          child: content,
+          child: loading
+              ? const SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary700,
+            ),
+          )
+              : IBText(
+            label,
+            context: context,
+          ).label.color(AppColors.primary700).build(),
         );
     }
   }

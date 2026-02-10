@@ -25,6 +25,7 @@ import (
 	"inbota/backend/internal/config"
 	inbotahttp "inbota/backend/internal/http"
 	"inbota/backend/internal/http/handler"
+	"inbota/backend/internal/infra/ai"
 	"inbota/backend/internal/infra/postgres"
 	"inbota/backend/internal/observability"
 )
@@ -86,6 +87,21 @@ func main() {
 		shoppingListUC := &usecase.ShoppingListUsecase{Lists: shoppingListRepo}
 		shoppingItemUC := &usecase.ShoppingItemUsecase{Items: shoppingItemRepo}
 
+		var aiClient service.AIClient
+		if cfg.AIAPIKey != "" || cfg.AIBaseURL != "" || cfg.AIModel != "" || cfg.AIProvider != "" {
+			client, err := ai.NewClient(cfg)
+			if err != nil {
+				log.Error("ai_client_error", slog.String("error", err.Error()))
+			} else {
+				aiClient = client
+				provider := cfg.AIProvider
+				if provider == "" {
+					provider = ai.ProviderGroq
+				}
+				log.Info("ai_client_ready", slog.String("provider", provider), slog.String("model", cfg.AIModel))
+			}
+		}
+
 		inboxUC := &usecase.InboxUsecase{
 			Users:           userRepo,
 			Inbox:           inboxRepo,
@@ -99,6 +115,7 @@ func main() {
 			ShoppingLists:   shoppingListRepo,
 			ShoppingItems:   shoppingItemRepo,
 			PromptBuilder:   service.NewPromptBuilder(),
+			AIClient:        aiClient,
 			SchemaValidator: service.NewAiSchemaValidator(),
 			RuleMatcher:     service.NewContextRuleMatcher(),
 		}

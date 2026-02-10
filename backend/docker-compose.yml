@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     container_name: inbota_api
     env_file:
-      - ./.env.example
+      - ./.env
     environment:
       APP_ENV: dev
       PORT: 8080

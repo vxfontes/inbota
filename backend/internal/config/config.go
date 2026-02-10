@@ -19,6 +19,10 @@ type Config struct {
 	JWTSecret       string
 	AIProvider      string
 	AIAPIKey        string
+	AIBaseURL       string
+	AIModel         string
+	AITimeout       time.Duration
+	AIMaxRetries    int
 
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -36,6 +40,10 @@ func Load() (Config, error) {
 		JWTSecret:       getEnv("JWT_SECRET", ""),
 		AIProvider:      getEnv("AI_PROVIDER", ""),
 		AIAPIKey:        getEnv("AI_API_KEY", ""),
+		AIBaseURL:       getEnv("AI_BASE_URL", ""),
+		AIModel:         getEnv("AI_MODEL", ""),
+		AITimeout:       getEnvDuration("AI_TIMEOUT", 15*time.Second),
+		AIMaxRetries:    getEnvInt("AI_MAX_RETRIES", 2),
 		ReadTimeout:     getEnvDuration("READ_TIMEOUT", 5*time.Second),
 		WriteTimeout:    getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
 		IdleTimeout:     getEnvDuration("IDLE_TIMEOUT", 60*time.Second),

@@ -11,6 +11,12 @@ Copie os exemplos de env e preencha as credenciais:
 - Variaveis chave:
   - `DATABASE_URL`
   - `JWT_SECRET`
+  - `AI_PROVIDER`
+  - `AI_API_KEY`
+  - `AI_BASE_URL`
+  - `AI_MODEL`
+  - `AI_TIMEOUT`
+  - `AI_MAX_RETRIES`
 
 ## Rodar local
 ```bash

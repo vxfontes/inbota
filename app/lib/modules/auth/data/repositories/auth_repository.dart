@@ -18,7 +18,11 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<Either<Failure, AuthSessionOutput>> login(AuthLoginInput input) async {
     try {
-      final response = await _httpClient.post('$_path/login', data: input.toJson());
+      final response = await _httpClient.post(
+        '$_path/login',
+        data: input.toJson(),
+        extra: const {'auth': false},
+      );
       final statusCode = response.statusCode ?? 0;
 
       if (_isSuccess(statusCode)) {
@@ -39,7 +43,11 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<Either<Failure, AuthSessionOutput>> signup(AuthSignupInput input) async {
     try {
-      final response = await _httpClient.post('$_path/signup', data: input.toJson());
+      final response = await _httpClient.post(
+        '$_path/signup',
+        data: input.toJson(),
+        extra: const {'auth': false},
+      );
       final statusCode = response.statusCode ?? 0;
 
       if (_isSuccess(statusCode)) {

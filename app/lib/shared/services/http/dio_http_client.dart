@@ -122,7 +122,9 @@ class DioHttpClient implements IHttpClient {
       headers.addAll(extraMap['headers'] as Map<String, dynamic>);
     }
 
-    if (extraMap['auth'] == true && _tokenStore != null) {
+    final authFlag = extraMap['auth'];
+    final shouldAttachToken = authFlag == null || authFlag == true;
+    if (shouldAttachToken && _tokenStore != null) {
       final token = await _tokenStore!.readToken();
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';

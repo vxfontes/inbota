@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/auth/data/models/auth_signup_input.dart';
 import 'package:inbota/modules/auth/domain/usecases/signup_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/utils/validators.dart';
 
 class SignupController {
   final SignupUsecase _signupUsecase;
@@ -19,8 +20,15 @@ class SignupController {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      error.value = 'Preencha todos os campos.';
+    final validationError = _validate(
+      name: name,
+      email: email,
+      password: password,
+      locale: locale,
+      timezone: timezone,
+    );
+    if (validationError != null) {
+      error.value = validationError;
       return false;
     }
 
@@ -53,5 +61,18 @@ class SignupController {
 
   String _failureMessage(Failure failure, {required String fallback}) {
     return failure.message?.trim().isNotEmpty == true ? failure.message! : fallback;
+  }
+
+  String? _validate({
+    required String name,
+    required String email,
+    required String password,
+    required String locale,
+    required String timezone,
+  }) {
+    return Validators.name(name) ??
+        Validators.email(email) ??
+        Validators.password(password) ??
+        Validators.localeAndTimezone(locale: locale, timezone: timezone);
   }
 }

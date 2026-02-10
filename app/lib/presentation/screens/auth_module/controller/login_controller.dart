@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/auth/data/models/auth_login_input.dart';
 import 'package:inbota/modules/auth/domain/usecases/login_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/utils/validators.dart';
 
 class LoginController {
   LoginController(this._loginUsecase);
@@ -17,8 +18,9 @@ class LoginController {
     if (loading.value) return false;
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
-    if (email.isEmpty || password.isEmpty) {
-      error.value = 'Preencha email e senha.';
+    final validationError = _validate(email: email, password: password);
+    if (validationError != null) {
+      error.value = validationError;
       return false;
     }
 
@@ -43,5 +45,9 @@ class LoginController {
 
   String _failureMessage(Failure failure, {required String fallback}) {
     return failure.message?.trim().isNotEmpty == true ? failure.message! : fallback;
+  }
+
+  String? _validate({required String email, required String password}) {
+    return Validators.email(email) ?? Validators.password(password);
   }
 }

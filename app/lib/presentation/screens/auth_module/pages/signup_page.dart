@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
-import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
 import 'package:inbota/presentation/screens/auth_module/controller/signup_controller.dart';
+import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text_field.dart';
+import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class SignupPage extends StatefulWidget {
@@ -17,25 +16,11 @@ class SignupPage extends StatefulWidget {
   State<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
-  late final SignupController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Modular.get<SignupController>();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _SignupPageState extends IBState<SignupPage, SignupController> {
   Future<void> _submit() async {
     final locale = WidgetsBinding.instance.platformDispatcher.locale.toLanguageTag();
     final timezone = DateTime.now().timeZoneName;
-    final success = await _controller.submit(locale: locale, timezone: timezone);
+    final success = await controller.submit(locale: locale, timezone: timezone);
     if (!success || !mounted) return;
     AppNavigation.clearAndPush(AppRoutes.root);
   }
@@ -54,27 +39,27 @@ class _SignupPageState extends State<SignupPage> {
         IBTextField(
           label: 'Nome completo',
           hint: 'Como podemos te chamar?',
-          prefixIcon: Icon(Icons.person_outline, color: AppColors.textMuted),
-          controller: _controller.nameController,
+          prefixIcon: const Icon(Icons.person_outline, color: AppColors.textMuted),
+          controller: controller.nameController,
         ),
         const SizedBox(height: 16),
         IBTextField(
           label: 'Email',
           hint: 'voce@exemplo.com',
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icon(Icons.mail_outline, color: AppColors.textMuted),
-          controller: _controller.emailController,
+          prefixIcon: const Icon(Icons.mail_outline, color: AppColors.textMuted),
+          controller: controller.emailController,
         ),
         const SizedBox(height: 16),
         IBTextField(
           label: 'Senha',
           hint: 'Crie uma senha segura',
           obscureText: true,
-          prefixIcon: Icon(Icons.lock_outline, color: AppColors.textMuted),
-          controller: _controller.passwordController,
+          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+          controller: controller.passwordController,
         ),
         ValueListenableBuilder<String?>(
-          valueListenable: _controller.error,
+          valueListenable: controller.error,
           builder: (context, error, _) {
             if (error == null || error.isEmpty) {
               return const SizedBox.shrink();
@@ -90,7 +75,7 @@ class _SignupPageState extends State<SignupPage> {
         ),
       ],
       primaryAction: ValueListenableBuilder<bool>(
-        valueListenable: _controller.loading,
+        valueListenable: controller.loading,
         builder: (context, loading, _) {
           return IBButton(
             label: 'Criar conta',

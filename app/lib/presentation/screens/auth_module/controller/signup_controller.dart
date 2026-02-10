@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/auth/data/models/auth_signup_input.dart';
 import 'package:inbota/modules/auth/domain/usecases/signup_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/utils/validators.dart';
 
-class SignupController {
+class SignupController implements IBController {
   final SignupUsecase _signupUsecase;
 
   SignupController(this._signupUsecase);

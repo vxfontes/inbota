@@ -93,3 +93,56 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+
+class IBLightAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const IBLightAppBar({
+    super.key,
+    required this.title,
+    this.onBack,
+  });
+
+  final String title;
+  final VoidCallback? onBack;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      toolbarHeight: kToolbarHeight + 8,
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      centerTitle: false,
+      leadingWidth: 56,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16),
+        child: InkWell(
+          onTap: onBack ?? () => Navigator.of(context).maybePop(),
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary700,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary700.withAlpha((0.25 * 255).round()),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.arrow_back_rounded,
+              size: 18,
+              color: AppColors.surface,
+            ),
+          ),
+        ),
+      ),
+      title: IBText(title, context: context).titulo.build(),
+    );
+  }
+}

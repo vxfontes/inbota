@@ -4,6 +4,7 @@ import 'package:inbota/modules/shared_module.dart';
 import '../screens/auth_module/auth_module.dart';
 import '../screens/home_module/home_module.dart';
 import '../screens/root_module/root_module.dart';
+import '../screens/settings_module/settings_module.dart';
 import '../screens/splash_module/splash_module.dart';
 import 'app_routes.dart';
 
@@ -17,5 +18,6 @@ class AppModule extends Module {
     r.module(AppRoutes.auth, module: AuthModule());
     r.module(AppRoutes.root, module: RootModule());
     r.module(AppRoutes.home, module: HomeModule());
+    r.module(AppRoutes.settings, module: SettingsModule());
   }
 }

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
-import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
 import 'package:inbota/presentation/screens/auth_module/controller/login_controller.dart';
+import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text_field.dart';
+import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,23 +17,9 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  late final LoginController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = Modular.get<LoginController>();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _LoginPageState extends IBState<LoginPage, LoginController> {
   Future<void> _submit() async {
-    final success = await _controller.submit();
+    final success = await controller.submit();
     if (!success || !mounted) return;
     AppNavigation.clearAndPush(AppRoutes.root);
   }
@@ -53,13 +39,8 @@ class _LoginPageState extends State<LoginPage> {
           label: 'Email',
           hint: 'voce@exemplo.com',
           keyboardType: TextInputType.emailAddress,
-          controller: _controller.emailController,
-          prefixIcon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedMail01,
-            color: AppColors.textMuted,
-            size: 20,
-            strokeWidth: 1.8,
-          ),
+          prefixIcon: const Icon(Icons.mail_outline, color: AppColors.textMuted),
+          controller: controller.emailController,
         ),
         const SizedBox(height: 16),
         IBTextField(
@@ -67,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
           hint: 'Digite sua senha',
           obscureText: true,
           prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
-          controller: _controller.passwordController,
+          controller: controller.passwordController,
         ),
         const SizedBox(height: 12),
         Align(
@@ -81,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         ValueListenableBuilder<String?>(
-          valueListenable: _controller.error,
+          valueListenable: controller.error,
           builder: (context, error, _) {
             if (error == null || error.isEmpty) {
               return const SizedBox.shrink();
@@ -97,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ],
       primaryAction: ValueListenableBuilder<bool>(
-        valueListenable: _controller.loading,
+        valueListenable: controller.loading,
         builder: (context, loading, _) {
           return IBButton(
             label: 'Entrar',

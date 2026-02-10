@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"inbota/backend/internal/app/repository"
+	"inbota/backend/internal/app/domain"
 )
 
 var ErrUserNotFound = errors.New("user_not_found")
@@ -18,7 +18,7 @@ func NewUserRepository(db *DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) Create(ctx context.Context, user repository.User) (repository.User, error) {
+func (r *UserRepository) Create(ctx context.Context, user domain.User) (domain.User, error) {
 	row := r.db.QueryRowContext(ctx, `
 		INSERT INTO inbota.users (email, display_name, password, locale, timezone)
 		VALUES ($1, $2, $3, $4, $5)
@@ -27,13 +27,13 @@ func (r *UserRepository) Create(ctx context.Context, user repository.User) (repo
 
 	var id string
 	if err := row.Scan(&id); err != nil {
-		return repository.User{}, err
+		return domain.User{}, err
 	}
 	user.ID = id
 	return user, nil
 }
 
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (repository.User, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, email, display_name, password, locale, timezone
 		FROM inbota.users
@@ -41,12 +41,12 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (reposit
 		LIMIT 1
 	`, email)
 
-	var user repository.User
+	var user domain.User
 	if err := row.Scan(&user.ID, &user.Email, &user.DisplayName, &user.Password, &user.Locale, &user.Timezone); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return repository.User{}, ErrUserNotFound
+			return domain.User{}, ErrUserNotFound
 		}
-		return repository.User{}, err
+		return domain.User{}, err
 	}
 	return user, nil
 }

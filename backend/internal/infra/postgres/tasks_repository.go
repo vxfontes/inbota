@@ -1,0 +1,138 @@
+package postgres
+
+import (
+	"context"
+	"database/sql"
+
+	"inbota/backend/internal/app/domain"
+	"inbota/backend/internal/app/repository"
+)
+
+type TaskRepository struct {
+	db *DB
+}
+
+func NewTaskRepository(db *DB) *TaskRepository {
+	return &TaskRepository{db: db}
+}
+
+func (r *TaskRepository) Create(ctx context.Context, task domain.Task) (domain.Task, error) {
+	if task.Status == "" {
+		task.Status = domain.TaskStatusOpen
+	}
+
+	row := r.db.QueryRowContext(ctx, `
+		INSERT INTO inbota.tasks (user_id, title, description, status, due_at, source_inbox_item_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, created_at, updated_at
+	`, task.UserID, task.Title, task.Description, string(task.Status), task.DueAt, task.SourceInboxItemID)
+
+	if err := row.Scan(&task.ID, &task.CreatedAt, &task.UpdatedAt); err != nil {
+		return domain.Task{}, err
+	}
+	return task, nil
+}
+
+func (r *TaskRepository) Update(ctx context.Context, task domain.Task) (domain.Task, error) {
+	row := r.db.QueryRowContext(ctx, `
+		UPDATE inbota.tasks
+		SET title = $1, description = $2, status = $3, due_at = $4, updated_at = now()
+		WHERE id = $5 AND user_id = $6
+		RETURNING created_at, updated_at
+	`, task.Title, task.Description, string(task.Status), task.DueAt, task.ID, task.UserID)
+
+	if err := row.Scan(&task.CreatedAt, &task.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Task{}, ErrNotFound
+		}
+		return domain.Task{}, err
+	}
+	return task, nil
+}
+
+func (r *TaskRepository) Delete(ctx context.Context, userID, id string) error {
+	result, err := r.db.ExecContext(ctx, `
+		DELETE FROM inbota.tasks
+		WHERE id = $1 AND user_id = $2
+	`, id, userID)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *TaskRepository) Get(ctx context.Context, userID, id string) (domain.Task, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, user_id, title, description, status, due_at, source_inbox_item_id, created_at, updated_at
+		FROM inbota.tasks
+		WHERE id = $1 AND user_id = $2
+		LIMIT 1
+	`, id, userID)
+
+	var description sql.NullString
+	var dueAt sql.NullTime
+	var sourceInboxID sql.NullString
+	var status string
+	var task domain.Task
+	if err := row.Scan(&task.ID, &task.UserID, &task.Title, &description, &status, &dueAt, &sourceInboxID, &task.CreatedAt, &task.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Task{}, ErrNotFound
+		}
+		return domain.Task{}, err
+	}
+	task.Description = stringPtrFromNull(description)
+	task.Status = domain.TaskStatus(status)
+	task.DueAt = timePtrFromNull(dueAt)
+	task.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
+	return task, nil
+}
+
+func (r *TaskRepository) List(ctx context.Context, userID string, opts repository.ListOptions) ([]domain.Task, *string, error) {
+	limit, offset, err := limitOffset(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, title, description, status, due_at, source_inbox_item_id, created_at, updated_at
+		FROM inbota.tasks
+		WHERE user_id = $1
+		ORDER BY due_at NULLS LAST, created_at DESC
+		LIMIT $2 OFFSET $3
+	`, userID, limit, offset)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.Task, 0)
+	for rows.Next() {
+		var description sql.NullString
+		var dueAt sql.NullTime
+		var sourceInboxID sql.NullString
+		var status string
+		var task domain.Task
+		if err := rows.Scan(&task.ID, &task.UserID, &task.Title, &description, &status, &dueAt, &sourceInboxID, &task.CreatedAt, &task.UpdatedAt); err != nil {
+			return nil, nil, err
+		}
+		task.Description = stringPtrFromNull(description)
+		task.Status = domain.TaskStatus(status)
+		task.DueAt = timePtrFromNull(dueAt)
+		task.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
+		items = append(items, task)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	next := nextOffsetCursor(offset, len(items), limit)
+	return items, next, nil
+}

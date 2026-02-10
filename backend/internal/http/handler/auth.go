@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"inbota/backend/internal/app/repository"
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 )
 
@@ -101,7 +101,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func toAuthResponse(user repository.User, token string) AuthResponse {
+func toAuthResponse(user domain.User, token string) AuthResponse {
 	var resp AuthResponse
 	resp.Token = token
 	resp.User.ID = user.ID

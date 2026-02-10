@@ -1,0 +1,134 @@
+package postgres
+
+import (
+	"context"
+	"database/sql"
+
+	"inbota/backend/internal/app/domain"
+	"inbota/backend/internal/app/repository"
+)
+
+type ReminderRepository struct {
+	db *DB
+}
+
+func NewReminderRepository(db *DB) *ReminderRepository {
+	return &ReminderRepository{db: db}
+}
+
+func (r *ReminderRepository) Create(ctx context.Context, reminder domain.Reminder) (domain.Reminder, error) {
+	if reminder.Status == "" {
+		reminder.Status = domain.ReminderStatusOpen
+	}
+
+	row := r.db.QueryRowContext(ctx, `
+		INSERT INTO inbota.reminders (user_id, title, status, remind_at, source_inbox_item_id)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, created_at, updated_at
+	`, reminder.UserID, reminder.Title, string(reminder.Status), reminder.RemindAt, reminder.SourceInboxItemID)
+
+	if err := row.Scan(&reminder.ID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
+		return domain.Reminder{}, err
+	}
+	return reminder, nil
+}
+
+func (r *ReminderRepository) Update(ctx context.Context, reminder domain.Reminder) (domain.Reminder, error) {
+	row := r.db.QueryRowContext(ctx, `
+		UPDATE inbota.reminders
+		SET title = $1, status = $2, remind_at = $3, updated_at = now()
+		WHERE id = $4 AND user_id = $5
+		RETURNING created_at, updated_at
+	`, reminder.Title, string(reminder.Status), reminder.RemindAt, reminder.ID, reminder.UserID)
+
+	if err := row.Scan(&reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Reminder{}, ErrNotFound
+		}
+		return domain.Reminder{}, err
+	}
+	return reminder, nil
+}
+
+func (r *ReminderRepository) Delete(ctx context.Context, userID, id string) error {
+	result, err := r.db.ExecContext(ctx, `
+		DELETE FROM inbota.reminders
+		WHERE id = $1 AND user_id = $2
+	`, id, userID)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *ReminderRepository) Get(ctx context.Context, userID, id string) (domain.Reminder, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, user_id, title, status, remind_at, source_inbox_item_id, created_at, updated_at
+		FROM inbota.reminders
+		WHERE id = $1 AND user_id = $2
+		LIMIT 1
+	`, id, userID)
+
+	var remindAt sql.NullTime
+	var sourceInboxID sql.NullString
+	var status string
+	var reminder domain.Reminder
+	if err := row.Scan(&reminder.ID, &reminder.UserID, &reminder.Title, &status, &remindAt, &sourceInboxID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Reminder{}, ErrNotFound
+		}
+		return domain.Reminder{}, err
+	}
+	reminder.Status = domain.ReminderStatus(status)
+	reminder.RemindAt = timePtrFromNull(remindAt)
+	reminder.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
+	return reminder, nil
+}
+
+func (r *ReminderRepository) List(ctx context.Context, userID string, opts repository.ListOptions) ([]domain.Reminder, *string, error) {
+	limit, offset, err := limitOffset(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, title, status, remind_at, source_inbox_item_id, created_at, updated_at
+		FROM inbota.reminders
+		WHERE user_id = $1
+		ORDER BY remind_at NULLS LAST, created_at DESC
+		LIMIT $2 OFFSET $3
+	`, userID, limit, offset)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.Reminder, 0)
+	for rows.Next() {
+		var remindAt sql.NullTime
+		var sourceInboxID sql.NullString
+		var status string
+		var reminder domain.Reminder
+		if err := rows.Scan(&reminder.ID, &reminder.UserID, &reminder.Title, &status, &remindAt, &sourceInboxID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
+			return nil, nil, err
+		}
+		reminder.Status = domain.ReminderStatus(status)
+		reminder.RemindAt = timePtrFromNull(remindAt)
+		reminder.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
+		items = append(items, reminder)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	next := nextOffsetCursor(offset, len(items), limit)
+	return items, next, nil
+}

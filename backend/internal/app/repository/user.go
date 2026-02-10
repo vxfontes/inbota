@@ -1,17 +1,12 @@
 package repository
 
-import "context"
+import (
+	"context"
 
-type User struct {
-	ID           string
-	Email        string
-	DisplayName  string
-	Password     string
-	Locale       string
-	Timezone     string
-}
+	"inbota/backend/internal/app/domain"
+)
 
 type UserRepository interface {
-	Create(ctx context.Context, user User) (User, error)
-	FindByEmail(ctx context.Context, email string) (User, error)
+	Create(ctx context.Context, user domain.User) (domain.User, error)
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
 }

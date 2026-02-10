@@ -33,6 +33,24 @@ func (r *UserRepository) Create(ctx context.Context, user domain.User) (domain.U
 	return user, nil
 }
 
+func (r *UserRepository) Get(ctx context.Context, id string) (domain.User, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, email, display_name, password, locale, timezone, created_at, updated_at
+		FROM inbota.users
+		WHERE id = $1
+		LIMIT 1
+	`, id)
+
+	var user domain.User
+	if err := row.Scan(&user.ID, &user.Email, &user.DisplayName, &user.Password, &user.Locale, &user.Timezone, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, ErrUserNotFound
+		}
+		return domain.User{}, err
+	}
+	return user, nil
+}
+
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, email, display_name, password, locale, timezone

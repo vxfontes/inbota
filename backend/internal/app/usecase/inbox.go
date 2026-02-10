@@ -1,0 +1,503 @@
+package usecase
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"strings"
+	"time"
+
+	"inbota/backend/internal/app/domain"
+	"inbota/backend/internal/app/repository"
+	"inbota/backend/internal/app/service"
+	"inbota/backend/internal/infra/postgres"
+)
+
+type InboxUsecase struct {
+	Users           repository.UserRepository
+	Inbox           repository.InboxRepository
+	Suggestions     repository.AiSuggestionRepository
+	Flags           repository.FlagRepository
+	Subflags        repository.SubflagRepository
+	ContextRules    repository.ContextRuleRepository
+	Tasks           repository.TaskRepository
+	Reminders       repository.ReminderRepository
+	Events          repository.EventRepository
+	ShoppingLists   repository.ShoppingListRepository
+	ShoppingItems   repository.ShoppingItemRepository
+	PromptBuilder   *service.PromptBuilder
+	AIClient        service.AIClient
+	SchemaValidator *service.AiSchemaValidator
+	RuleMatcher     *service.ContextRuleMatcher
+	Now             func() time.Time
+}
+
+type InboxListInput struct {
+	Status *string
+	Source *string
+}
+
+type InboxItemResult struct {
+	Item       domain.InboxItem
+	Suggestion *domain.AiSuggestion
+}
+
+type ConfirmInboxInput struct {
+	Type      string
+	Title     string
+	FlagID    *string
+	SubflagID *string
+	Payload   json.RawMessage
+}
+
+type ConfirmResult struct {
+	Type          domain.AiSuggestionType
+	Task          *domain.Task
+	Reminder      *domain.Reminder
+	Event         *domain.Event
+	ShoppingList  *domain.ShoppingList
+	ShoppingItems []domain.ShoppingItem
+}
+
+func (uc *InboxUsecase) CreateInboxItem(ctx context.Context, userID string, source *string, rawText string, rawMediaURL *string) (domain.InboxItem, error) {
+	rawText = normalizeString(rawText)
+	if userID == "" || rawText == "" {
+		return domain.InboxItem{}, ErrMissingRequiredFields
+	}
+
+	item := domain.InboxItem{
+		UserID:      userID,
+		RawText:     rawText,
+		RawMediaURL: normalizeOptionalString(rawMediaURL),
+		Status:      domain.InboxStatusNew,
+		Source:      domain.InboxSourceManual,
+	}
+	if source != nil && strings.TrimSpace(*source) != "" {
+		parsed, ok := parseInboxSource(*source)
+		if !ok {
+			return domain.InboxItem{}, ErrInvalidSource
+		}
+		item.Source = parsed
+	}
+
+	return uc.Inbox.Create(ctx, item)
+}
+
+func (uc *InboxUsecase) ListInboxItems(ctx context.Context, userID string, input InboxListInput, opts repository.ListOptions) ([]InboxItemResult, *string, error) {
+	if userID == "" {
+		return nil, nil, ErrMissingRequiredFields
+	}
+
+	filter := repository.InboxListFilter{}
+	if input.Status != nil && strings.TrimSpace(*input.Status) != "" {
+		parsed, ok := parseInboxStatus(*input.Status)
+		if !ok {
+			return nil, nil, ErrInvalidStatus
+		}
+		filter.Status = &parsed
+	}
+	if input.Source != nil && strings.TrimSpace(*input.Source) != "" {
+		parsed, ok := parseInboxSource(*input.Source)
+		if !ok {
+			return nil, nil, ErrInvalidSource
+		}
+		filter.Source = &parsed
+	}
+
+	items, next, err := uc.Inbox.List(ctx, userID, filter, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	results := make([]InboxItemResult, 0, len(items))
+	for _, item := range items {
+		var suggestion *domain.AiSuggestion
+		if uc.Suggestions != nil {
+			latest, err := uc.Suggestions.GetLatestByInboxItem(ctx, userID, item.ID)
+			if err != nil {
+				if !errors.Is(err, postgres.ErrNotFound) {
+					return nil, nil, err
+				}
+			} else {
+				suggestion = &latest
+			}
+		}
+		results = append(results, InboxItemResult{Item: item, Suggestion: suggestion})
+	}
+
+	return results, next, nil
+}
+
+func (uc *InboxUsecase) GetInboxItem(ctx context.Context, userID, id string) (InboxItemResult, error) {
+	if userID == "" || id == "" {
+		return InboxItemResult{}, ErrMissingRequiredFields
+	}
+	item, err := uc.Inbox.Get(ctx, userID, id)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+
+	var suggestion *domain.AiSuggestion
+	if uc.Suggestions != nil {
+		latest, err := uc.Suggestions.GetLatestByInboxItem(ctx, userID, item.ID)
+		if err != nil {
+			if !errors.Is(err, postgres.ErrNotFound) {
+				return InboxItemResult{}, err
+			}
+		} else {
+			suggestion = &latest
+		}
+	}
+
+	return InboxItemResult{Item: item, Suggestion: suggestion}, nil
+}
+
+func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id string) (InboxItemResult, error) {
+	if userID == "" || id == "" {
+		return InboxItemResult{}, ErrMissingRequiredFields
+	}
+	if uc.Inbox == nil || uc.AIClient == nil {
+		return InboxItemResult{}, ErrDependencyMissing
+	}
+	if uc.PromptBuilder == nil || uc.SchemaValidator == nil {
+		return InboxItemResult{}, ErrDependencyMissing
+	}
+	if uc.Users == nil || uc.Flags == nil || uc.Subflags == nil || uc.ContextRules == nil {
+		return InboxItemResult{}, ErrDependencyMissing
+	}
+
+	item, err := uc.Inbox.Get(ctx, userID, id)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+	if item.Status == domain.InboxStatusConfirmed || item.Status == domain.InboxStatusDismissed {
+		return InboxItemResult{}, ErrInvalidStatus
+	}
+
+	item.Status = domain.InboxStatusProcessing
+	item.LastError = nil
+	item, err = uc.Inbox.Update(ctx, item)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+
+	user, err := uc.Users.Get(ctx, userID)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+
+	now := time.Now()
+	if uc.Now != nil {
+		now = uc.Now()
+	}
+	if tz := strings.TrimSpace(user.Timezone); tz != "" {
+		if loc, err := time.LoadLocation(tz); err == nil {
+			now = now.In(loc)
+		}
+	}
+
+	flags, err := listAllFlags(ctx, uc.Flags, userID)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+	subflagsByFlag := make(map[string][]domain.Subflag, len(flags))
+	for _, flag := range flags {
+		subflags, err := listAllSubflags(ctx, uc.Subflags, userID, flag.ID)
+		if err != nil {
+			return InboxItemResult{}, err
+		}
+		subflagsByFlag[flag.ID] = subflags
+	}
+	rules, err := listAllContextRules(ctx, uc.ContextRules, userID)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+
+	contexts := make([]service.ContextItem, 0)
+	for _, flag := range flags {
+		flagName := flag.Name
+		contexts = append(contexts, service.ContextItem{
+			FlagID:   flag.ID,
+			FlagName: flagName,
+		})
+		for _, sub := range subflagsByFlag[flag.ID] {
+			subID := sub.ID
+			subName := sub.Name
+			contexts = append(contexts, service.ContextItem{
+				FlagID:      flag.ID,
+				FlagName:    flagName,
+				SubflagID:   &subID,
+				SubflagName: &subName,
+			})
+		}
+	}
+
+	ruleItems := make([]service.RuleItem, 0, len(rules))
+	for _, rule := range rules {
+		ruleItems = append(ruleItems, service.RuleItem{
+			Keyword:   rule.Keyword,
+			FlagID:    rule.FlagID,
+			SubflagID: rule.SubflagID,
+		})
+	}
+
+	var hint *service.ContextHint
+	matcher := uc.RuleMatcher
+	if matcher != nil {
+		if match := matcher.Match(item.RawText, rules); match != nil {
+			reason := "keyword:" + match.Keyword
+			hint = &service.ContextHint{
+				FlagID:    match.FlagID,
+				SubflagID: match.SubflagID,
+				Reason:    reason,
+			}
+		}
+	}
+
+	prompt := uc.PromptBuilder.Build(service.PromptInput{
+		RawText:  item.RawText,
+		Locale:   strings.TrimSpace(user.Locale),
+		Timezone: strings.TrimSpace(user.Timezone),
+		Now:      now,
+		Contexts: contexts,
+		Rules:    ruleItems,
+		Hint:     hint,
+	})
+
+	completion, err := uc.AIClient.Complete(ctx, prompt)
+	if err != nil {
+		return uc.failInboxProcessing(ctx, item, err)
+	}
+
+	validated, err := uc.SchemaValidator.Validate([]byte(completion.Content))
+	if err != nil {
+		return uc.failInboxProcessing(ctx, item, err)
+	}
+
+	suggestion := domain.AiSuggestion{
+		UserID:      userID,
+		InboxItemID: item.ID,
+		Type:        domain.AiSuggestionType(validated.Output.Type),
+		Title:       validated.Output.Title,
+		Confidence:  validated.Output.Confidence,
+		NeedsReview: validated.Output.NeedsReview,
+		PayloadJSON: validated.Output.Payload,
+	}
+	if validated.Output.Context != nil {
+		suggestion.FlagID = normalizeOptionalString(validated.Output.Context.FlagID)
+		suggestion.SubflagID = normalizeOptionalString(validated.Output.Context.SubflagID)
+	}
+
+	if uc.Suggestions == nil {
+		return InboxItemResult{}, ErrDependencyMissing
+	}
+	suggestion, err = uc.Suggestions.Create(ctx, suggestion)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+
+	if suggestion.NeedsReview {
+		item.Status = domain.InboxStatusNeedsReview
+	} else {
+		item.Status = domain.InboxStatusSuggested
+	}
+	item.LastError = nil
+	item, err = uc.Inbox.Update(ctx, item)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+
+	return InboxItemResult{Item: item, Suggestion: &suggestion}, nil
+}
+
+func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string, input ConfirmInboxInput) (ConfirmResult, error) {
+	title := normalizeString(input.Title)
+	if userID == "" || id == "" || title == "" || input.Type == "" {
+		return ConfirmResult{}, ErrMissingRequiredFields
+	}
+	if uc.SchemaValidator == nil || uc.Inbox == nil {
+		return ConfirmResult{}, ErrDependencyMissing
+	}
+
+	typ, ok := parseSuggestionType(input.Type)
+	if !ok || typ == domain.AiSuggestionTypeNote {
+		return ConfirmResult{}, ErrInvalidType
+	}
+
+	item, err := uc.Inbox.Get(ctx, userID, id)
+	if err != nil {
+		return ConfirmResult{}, err
+	}
+	if item.Status == domain.InboxStatusConfirmed || item.Status == domain.InboxStatusDismissed {
+		return ConfirmResult{}, ErrInvalidStatus
+	}
+
+	flagID := normalizeOptionalString(input.FlagID)
+	subflagID := normalizeOptionalString(input.SubflagID)
+	var ctxHint *service.AIContext
+	if flagID != nil || subflagID != nil {
+		ctxHint = &service.AIContext{
+			FlagID:    flagID,
+			SubflagID: subflagID,
+		}
+	}
+
+	payload := input.Payload
+	if len(payload) == 0 {
+		return ConfirmResult{}, ErrMissingRequiredFields
+	}
+	output := service.AIOutput{
+		Type:        string(typ),
+		Title:       title,
+		NeedsReview: false,
+		Context:     ctxHint,
+		Payload:     payload,
+	}
+	raw, err := json.Marshal(output)
+	if err != nil {
+		return ConfirmResult{}, err
+	}
+	validated, err := uc.SchemaValidator.Validate(raw)
+	if err != nil {
+		return ConfirmResult{}, err
+	}
+
+	result := ConfirmResult{Type: typ}
+	switch typ {
+	case domain.AiSuggestionTypeTask:
+		if uc.Tasks == nil {
+			return ConfirmResult{}, ErrDependencyMissing
+		}
+		taskPayload, ok := validated.Payload.(service.TaskPayload)
+		if !ok {
+			return ConfirmResult{}, ErrInvalidPayload
+		}
+		task := domain.Task{
+			UserID:            userID,
+			Title:             title,
+			DueAt:             taskPayload.DueAt,
+			SourceInboxItemID: &item.ID,
+		}
+		created, err := uc.Tasks.Create(ctx, task)
+		if err != nil {
+			return ConfirmResult{}, err
+		}
+		result.Task = &created
+	case domain.AiSuggestionTypeReminder:
+		if uc.Reminders == nil {
+			return ConfirmResult{}, ErrDependencyMissing
+		}
+		reminderPayload, ok := validated.Payload.(service.ReminderPayload)
+		if !ok {
+			return ConfirmResult{}, ErrInvalidPayload
+		}
+		reminder := domain.Reminder{
+			UserID:            userID,
+			Title:             title,
+			RemindAt:          &reminderPayload.At,
+			SourceInboxItemID: &item.ID,
+		}
+		created, err := uc.Reminders.Create(ctx, reminder)
+		if err != nil {
+			return ConfirmResult{}, err
+		}
+		result.Reminder = &created
+	case domain.AiSuggestionTypeEvent:
+		if uc.Events == nil {
+			return ConfirmResult{}, ErrDependencyMissing
+		}
+		eventPayload, ok := validated.Payload.(service.EventPayload)
+		if !ok {
+			return ConfirmResult{}, ErrInvalidPayload
+		}
+		event := domain.Event{
+			UserID:            userID,
+			Title:             title,
+			StartAt:           &eventPayload.Start,
+			EndAt:             eventPayload.End,
+			AllDay:            eventPayload.AllDay,
+			SourceInboxItemID: &item.ID,
+		}
+		created, err := uc.Events.Create(ctx, event)
+		if err != nil {
+			return ConfirmResult{}, err
+		}
+		result.Event = &created
+	case domain.AiSuggestionTypeShopping:
+		if uc.ShoppingLists == nil || uc.ShoppingItems == nil {
+			return ConfirmResult{}, ErrDependencyMissing
+		}
+		shopPayload, ok := validated.Payload.(service.ShoppingPayload)
+		if !ok {
+			return ConfirmResult{}, ErrInvalidPayload
+		}
+		list := domain.ShoppingList{
+			UserID:            userID,
+			Title:             title,
+			SourceInboxItemID: &item.ID,
+		}
+		createdList, err := uc.ShoppingLists.Create(ctx, list)
+		if err != nil {
+			return ConfirmResult{}, err
+		}
+		result.ShoppingList = &createdList
+
+		items := make([]domain.ShoppingItem, 0, len(shopPayload.Items))
+		for idx, shopItem := range shopPayload.Items {
+			item := domain.ShoppingItem{
+				UserID:    userID,
+				ListID:    createdList.ID,
+				Title:     shopItem.Title,
+				Quantity:  shopItem.Quantity,
+				Checked:   false,
+				SortOrder: idx,
+			}
+			created, err := uc.ShoppingItems.Create(ctx, item)
+			if err != nil {
+				return ConfirmResult{}, err
+			}
+			items = append(items, created)
+		}
+		result.ShoppingItems = items
+	default:
+		return ConfirmResult{}, ErrInvalidType
+	}
+
+	item.Status = domain.InboxStatusConfirmed
+	item.LastError = nil
+	if _, err := uc.Inbox.Update(ctx, item); err != nil {
+		return ConfirmResult{}, err
+	}
+
+	return result, nil
+}
+
+func (uc *InboxUsecase) DismissInboxItem(ctx context.Context, userID, id string) (domain.InboxItem, error) {
+	if userID == "" || id == "" {
+		return domain.InboxItem{}, ErrMissingRequiredFields
+	}
+	item, err := uc.Inbox.Get(ctx, userID, id)
+	if err != nil {
+		return domain.InboxItem{}, err
+	}
+	if item.Status == domain.InboxStatusConfirmed {
+		return domain.InboxItem{}, ErrInvalidStatus
+	}
+	item.Status = domain.InboxStatusDismissed
+	item.LastError = nil
+	return uc.Inbox.Update(ctx, item)
+}
+
+func (uc *InboxUsecase) failInboxProcessing(ctx context.Context, item domain.InboxItem, cause error) (InboxItemResult, error) {
+	errText := cause.Error()
+	if len(errText) > 500 {
+		errText = errText[:500]
+	}
+	item.Status = domain.InboxStatusNeedsReview
+	item.LastError = &errText
+	updated, err := uc.Inbox.Update(ctx, item)
+	if err != nil {
+		return InboxItemResult{}, err
+	}
+	return InboxItemResult{Item: updated}, nil
+}

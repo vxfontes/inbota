@@ -42,7 +42,15 @@ Com o `docker compose up`, a API usa `air` e recarrega ao salvar arquivos Go.
 ## Swagger (gerar docs)
 ```bash
 cd backend
-swag init -g cmd/api/main.go -o ./docs
+swag init -g cmd/api/main.go --parseInternal -o ./docs
+```
+Se o `swag` nao estiver instalado:
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+Se estiver rodando via Docker, reinicie o container da API para recarregar a nova doc:
+```bash
+docker compose restart api
 ```
 
 ## Observacoes

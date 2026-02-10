@@ -1,0 +1,1702 @@
+basePath: /
+definitions:
+  dto.AiSuggestionResponse:
+    properties:
+      confidence:
+        type: number
+      createdAt:
+        type: string
+      flagId:
+        type: string
+      id:
+        type: string
+      needsReview:
+        type: boolean
+      payload:
+        type: object
+      subflagId:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  dto.ConfirmInboxItemRequest:
+    properties:
+      flagId:
+        type: string
+      payload:
+        type: object
+      subflagId:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  dto.ConfirmInboxItemResponse:
+    properties:
+      event:
+        $ref: '#/definitions/dto.EventResponse'
+      reminder:
+        $ref: '#/definitions/dto.ReminderResponse'
+      shoppingItems:
+        items:
+          $ref: '#/definitions/dto.ShoppingItemResponse'
+        type: array
+      shoppingList:
+        $ref: '#/definitions/dto.ShoppingListResponse'
+      task:
+        $ref: '#/definitions/dto.TaskResponse'
+      type:
+        type: string
+    type: object
+  dto.ContextRuleResponse:
+    properties:
+      createdAt:
+        type: string
+      flagId:
+        type: string
+      id:
+        type: string
+      keyword:
+        type: string
+      subflagId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.CreateContextRuleRequest:
+    properties:
+      flagId:
+        type: string
+      keyword:
+        type: string
+      subflagId:
+        type: string
+    type: object
+  dto.CreateEventRequest:
+    properties:
+      allDay:
+        type: boolean
+      endAt:
+        type: string
+      location:
+        type: string
+      startAt:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.CreateFlagRequest:
+    properties:
+      color:
+        type: string
+      name:
+        type: string
+      sortOrder:
+        type: integer
+    type: object
+  dto.CreateInboxItemRequest:
+    properties:
+      rawMediaUrl:
+        type: string
+      rawText:
+        type: string
+      source:
+        type: string
+    type: object
+  dto.CreateReminderRequest:
+    properties:
+      remindAt:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.CreateShoppingItemRequest:
+    properties:
+      checked:
+        type: boolean
+      quantity:
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        type: string
+    type: object
+  dto.CreateShoppingListRequest:
+    properties:
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.CreateSubflagRequest:
+    properties:
+      name:
+        type: string
+      sortOrder:
+        type: integer
+    type: object
+  dto.CreateTaskRequest:
+    properties:
+      description:
+        type: string
+      dueAt:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+      requestId:
+        type: string
+    type: object
+  dto.EventResponse:
+    properties:
+      allDay:
+        type: boolean
+      createdAt:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: string
+      location:
+        type: string
+      sourceInboxItemId:
+        type: string
+      startAt:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.FlagResponse:
+    properties:
+      color:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sortOrder:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  dto.InboxItemResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastError:
+        type: string
+      rawMediaUrl:
+        type: string
+      rawText:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      suggestion:
+        $ref: '#/definitions/dto.AiSuggestionResponse'
+      updatedAt:
+        type: string
+    type: object
+  dto.ListContextRulesResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ContextRuleResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListEventsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.EventResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListFlagsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.FlagResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListInboxItemsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.InboxItemResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListRemindersResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ReminderResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListShoppingItemsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ShoppingItemResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListShoppingListsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ShoppingListResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListSubflagsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.SubflagResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ListTasksResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.TaskResponse'
+        type: array
+      nextCursor:
+        type: string
+    type: object
+  dto.ReminderResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      remindAt:
+        type: string
+      sourceInboxItemId:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.ShoppingItemResponse:
+    properties:
+      checked:
+        type: boolean
+      createdAt:
+        type: string
+      id:
+        type: string
+      listId:
+        type: string
+      quantity:
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.ShoppingListResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      sourceInboxItemId:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.SubflagResponse:
+    properties:
+      createdAt:
+        type: string
+      flagId:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sortOrder:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  dto.TaskResponse:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      dueAt:
+        type: string
+      id:
+        type: string
+      sourceInboxItemId:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.UpdateContextRuleRequest:
+    properties:
+      flagId:
+        type: string
+      keyword:
+        type: string
+      subflagId:
+        type: string
+    type: object
+  dto.UpdateEventRequest:
+    properties:
+      allDay:
+        type: boolean
+      endAt:
+        type: string
+      location:
+        type: string
+      startAt:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.UpdateFlagRequest:
+    properties:
+      color:
+        type: string
+      name:
+        type: string
+      sortOrder:
+        type: integer
+    type: object
+  dto.UpdateReminderRequest:
+    properties:
+      remindAt:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.UpdateShoppingItemRequest:
+    properties:
+      checked:
+        type: boolean
+      quantity:
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        type: string
+    type: object
+  dto.UpdateShoppingListRequest:
+    properties:
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.UpdateSubflagRequest:
+    properties:
+      name:
+        type: string
+      sortOrder:
+        type: integer
+    type: object
+  dto.UpdateTaskRequest:
+    properties:
+      description:
+        type: string
+      dueAt:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  handler.AuthRequest:
+    properties:
+      displayName:
+        type: string
+      email:
+        type: string
+      locale:
+        type: string
+      password:
+        type: string
+      timezone:
+        type: string
+    required:
+    - displayName
+    - email
+    - locale
+    - password
+    - timezone
+    type: object
+  handler.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        properties:
+          displayName:
+            type: string
+          email:
+            type: string
+          id:
+            type: string
+          locale:
+            type: string
+          timezone:
+            type: string
+        type: object
+    type: object
+  handler.HealthResponse:
+    properties:
+      status:
+        type: string
+      time:
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+info:
+  contact: {}
+  description: API do MVP Inbota.
+  title: Inbota API
+  version: "0.1"
+paths:
+  /healthz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Healthcheck (liveness)
+  /readyz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Readiness
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login
+      tags:
+      - Auth
+  /v1/auth/signup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Auth request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Criar conta
+      tags:
+      - Auth
+  /v1/context-rules:
+    get:
+      parameters:
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListContextRulesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar regras de contexto
+      tags:
+      - ContextRules
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Context rule payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateContextRuleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ContextRuleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar regra de contexto
+      tags:
+      - ContextRules
+  /v1/context-rules/{id}:
+    delete:
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remover regra de contexto
+      tags:
+      - ContextRules
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Context rule payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateContextRuleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ContextRuleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar regra de contexto
+      tags:
+      - ContextRules
+  /v1/events:
+    get:
+      parameters:
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListEventsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar eventos
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar evento
+      tags:
+      - Events
+  /v1/events/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Event payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar evento
+      tags:
+      - Events
+  /v1/flags:
+    get:
+      parameters:
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListFlagsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar flags
+      tags:
+      - Flags
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Flag payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateFlagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.FlagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar flag
+      tags:
+      - Flags
+  /v1/flags/{id}:
+    delete:
+      parameters:
+      - description: Flag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remover flag
+      tags:
+      - Flags
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Flag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Flag payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateFlagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FlagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar flag
+      tags:
+      - Flags
+  /v1/flags/{id}/subflags:
+    get:
+      parameters:
+      - description: Flag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListSubflagsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar subflags por flag
+      tags:
+      - Subflags
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Flag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Subflag payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateSubflagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SubflagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar subflag
+      tags:
+      - Subflags
+  /v1/inbox-items:
+    get:
+      parameters:
+      - description: Status
+        in: query
+        name: status
+        type: string
+      - description: Source
+        in: query
+        name: source
+        type: string
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListInboxItemsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar inbox items
+      tags:
+      - Inbox
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inbox payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateInboxItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.InboxItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar inbox item
+      tags:
+      - Inbox
+  /v1/inbox-items/{id}:
+    get:
+      parameters:
+      - description: Inbox item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.InboxItemResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter inbox item
+      tags:
+      - Inbox
+  /v1/inbox-items/{id}/confirm:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inbox item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Confirm payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ConfirmInboxItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ConfirmInboxItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Confirmar inbox item
+      tags:
+      - Inbox
+  /v1/inbox-items/{id}/dismiss:
+    post:
+      parameters:
+      - description: Inbox item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.InboxItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Descartar inbox item
+      tags:
+      - Inbox
+  /v1/inbox-items/{id}/reprocess:
+    post:
+      parameters:
+      - description: Inbox item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.InboxItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reprocessar inbox item
+      tags:
+      - Inbox
+  /v1/reminders:
+    get:
+      parameters:
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListRemindersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar lembretes
+      tags:
+      - Reminders
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reminder payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateReminderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ReminderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar lembrete
+      tags:
+      - Reminders
+  /v1/reminders/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reminder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Reminder payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateReminderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ReminderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar lembrete
+      tags:
+      - Reminders
+  /v1/shopping-items/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Shopping item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Shopping item payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateShoppingItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ShoppingItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar item de compra
+      tags:
+      - ShoppingItems
+  /v1/shopping-lists:
+    get:
+      parameters:
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListShoppingListsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar listas de compras
+      tags:
+      - ShoppingLists
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Shopping list payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateShoppingListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ShoppingListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar lista de compras
+      tags:
+      - ShoppingLists
+  /v1/shopping-lists/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Shopping list ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Shopping list payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateShoppingListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ShoppingListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar lista de compras
+      tags:
+      - ShoppingLists
+  /v1/shopping-lists/{id}/items:
+    get:
+      parameters:
+      - description: Shopping list ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListShoppingItemsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar itens da lista
+      tags:
+      - ShoppingItems
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Shopping list ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Shopping item payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateShoppingItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ShoppingItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar item de compra
+      tags:
+      - ShoppingItems
+  /v1/subflags/{id}:
+    delete:
+      parameters:
+      - description: Subflag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remover subflag
+      tags:
+      - Subflags
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Subflag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Subflag payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateSubflagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SubflagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar subflag
+      tags:
+      - Subflags
+  /v1/tasks:
+    get:
+      parameters:
+      - description: Limite
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListTasksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar tarefas
+      tags:
+      - Tasks
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Task payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar tarefa
+      tags:
+      - Tasks
+  /v1/tasks/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Task payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar tarefa
+      tags:
+      - Tasks
+securityDefinitions:
+  BearerAuth:
+    description: 'Formato: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

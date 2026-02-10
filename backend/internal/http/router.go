@@ -13,7 +13,7 @@ import (
 )
 
 // NewRouter wires handlers and middleware.
-func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHandler, readinessCheckers ...handler.Checker) *gin.Engine {
+func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHandler, apiHandlers *handler.APIHandlers, readinessCheckers ...handler.Checker) *gin.Engine {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 	engine.Use(middleware.RequestID(cfg.RequestIDHeader))
@@ -31,7 +31,60 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 		v1.POST("/auth/login", authHandler.Login)
 	}
 
-	_ = v1.Group("", middleware.Auth(cfg.JWTSecret))
+	authGroup := v1.Group("", middleware.Auth(cfg.JWTSecret))
+	if apiHandlers != nil {
+		if apiHandlers.Flags != nil {
+			authGroup.GET("/flags", apiHandlers.Flags.List)
+			authGroup.POST("/flags", apiHandlers.Flags.Create)
+			authGroup.PATCH("/flags/:id", apiHandlers.Flags.Update)
+			authGroup.DELETE("/flags/:id", apiHandlers.Flags.Delete)
+		}
+		if apiHandlers.Subflags != nil {
+			authGroup.GET("/flags/:id/subflags", apiHandlers.Subflags.ListByFlag)
+			authGroup.POST("/flags/:id/subflags", apiHandlers.Subflags.Create)
+			authGroup.PATCH("/subflags/:id", apiHandlers.Subflags.Update)
+			authGroup.DELETE("/subflags/:id", apiHandlers.Subflags.Delete)
+		}
+		if apiHandlers.ContextRules != nil {
+			authGroup.GET("/context-rules", apiHandlers.ContextRules.List)
+			authGroup.POST("/context-rules", apiHandlers.ContextRules.Create)
+			authGroup.PATCH("/context-rules/:id", apiHandlers.ContextRules.Update)
+			authGroup.DELETE("/context-rules/:id", apiHandlers.ContextRules.Delete)
+		}
+		if apiHandlers.Inbox != nil {
+			authGroup.GET("/inbox-items", apiHandlers.Inbox.List)
+			authGroup.POST("/inbox-items", apiHandlers.Inbox.Create)
+			authGroup.GET("/inbox-items/:id", apiHandlers.Inbox.Get)
+			authGroup.POST("/inbox-items/:id/reprocess", apiHandlers.Inbox.Reprocess)
+			authGroup.POST("/inbox-items/:id/confirm", apiHandlers.Inbox.Confirm)
+			authGroup.POST("/inbox-items/:id/dismiss", apiHandlers.Inbox.Dismiss)
+		}
+		if apiHandlers.Tasks != nil {
+			authGroup.GET("/tasks", apiHandlers.Tasks.List)
+			authGroup.POST("/tasks", apiHandlers.Tasks.Create)
+			authGroup.PATCH("/tasks/:id", apiHandlers.Tasks.Update)
+		}
+		if apiHandlers.Reminders != nil {
+			authGroup.GET("/reminders", apiHandlers.Reminders.List)
+			authGroup.POST("/reminders", apiHandlers.Reminders.Create)
+			authGroup.PATCH("/reminders/:id", apiHandlers.Reminders.Update)
+		}
+		if apiHandlers.Events != nil {
+			authGroup.GET("/events", apiHandlers.Events.List)
+			authGroup.POST("/events", apiHandlers.Events.Create)
+			authGroup.PATCH("/events/:id", apiHandlers.Events.Update)
+		}
+		if apiHandlers.ShoppingLists != nil {
+			authGroup.GET("/shopping-lists", apiHandlers.ShoppingLists.List)
+			authGroup.POST("/shopping-lists", apiHandlers.ShoppingLists.Create)
+			authGroup.PATCH("/shopping-lists/:id", apiHandlers.ShoppingLists.Update)
+		}
+		if apiHandlers.ShoppingItems != nil {
+			authGroup.GET("/shopping-lists/:id/items", apiHandlers.ShoppingItems.ListByList)
+			authGroup.POST("/shopping-lists/:id/items", apiHandlers.ShoppingItems.Create)
+			authGroup.PATCH("/shopping-items/:id", apiHandlers.ShoppingItems.Update)
+		}
+	}
 
 	return engine
 }

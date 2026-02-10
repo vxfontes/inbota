@@ -129,7 +129,7 @@ type AiSuggestionResponse struct {
 	FlagID      *string         `json:"flagId,omitempty"`
 	SubflagID   *string         `json:"subflagId,omitempty"`
 	NeedsReview bool            `json:"needsReview"`
-	Payload     json.RawMessage `json:"payload"`
+	Payload     json.RawMessage `json:"payload" swaggertype:"object"`
 	CreatedAt   time.Time       `json:"createdAt"`
 }
 
@@ -161,7 +161,16 @@ type ConfirmInboxItemRequest struct {
 	Title     string          `json:"title"`
 	FlagID    *string         `json:"flagId,omitempty"`
 	SubflagID *string         `json:"subflagId,omitempty"`
-	Payload   json.RawMessage `json:"payload"`
+	Payload   json.RawMessage `json:"payload" swaggertype:"object"`
+}
+
+type ConfirmInboxItemResponse struct {
+	Type          string                 `json:"type"`
+	Task          *TaskResponse          `json:"task,omitempty"`
+	Reminder      *ReminderResponse      `json:"reminder,omitempty"`
+	Event         *EventResponse         `json:"event,omitempty"`
+	ShoppingList  *ShoppingListResponse  `json:"shoppingList,omitempty"`
+	ShoppingItems []ShoppingItemResponse `json:"shoppingItems,omitempty"`
 }
 
 // Tasks

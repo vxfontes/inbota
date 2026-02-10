@@ -18,6 +18,13 @@ cd backend
 go run ./cmd/api
 ```
 
+## Seed (dados iniciais)
+```bash
+cd backend
+go run ./cmd/seed
+docker compose run --rm api go run ./cmd/seed
+```
+
 ## Rodar com Docker (API + Postgres)
 Dentro de `backend/`:
 ```bash

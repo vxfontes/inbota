@@ -5,16 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type EventsHandler struct {
 	Usecase *usecase.EventUsecase
+	Inbox   *usecase.InboxUsecase
 }
 
-func NewEventsHandler(uc *usecase.EventUsecase) *EventsHandler {
-	return &EventsHandler{Usecase: uc}
+func NewEventsHandler(uc *usecase.EventUsecase, inbox *usecase.InboxUsecase) *EventsHandler {
+	return &EventsHandler{Usecase: uc, Inbox: inbox}
 }
 
 // List events.
@@ -44,9 +46,24 @@ func (h *EventsHandler) List(c *gin.Context) {
 		return
 	}
 
+	inboxCache := make(map[string]*domain.InboxItem)
 	items := make([]dto.EventResponse, 0, len(events))
 	for _, event := range events {
-		items = append(items, toEventResponse(event))
+		var source *domain.InboxItem
+		if h.Inbox != nil && event.SourceInboxItemID != nil {
+			if cached, ok := inboxCache[*event.SourceInboxItemID]; ok {
+				source = cached
+			} else {
+				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *event.SourceInboxItemID)
+				if err != nil {
+					writeUsecaseError(c, err)
+					return
+				}
+				source = &res.Item
+				inboxCache[*event.SourceInboxItemID] = source
+			}
+		}
+		items = append(items, toEventResponse(event, source))
 	}
 
 	c.JSON(http.StatusOK, dto.ListEventsResponse{Items: items, NextCursor: next})
@@ -81,7 +98,7 @@ func (h *EventsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toEventResponse(event))
+	c.JSON(http.StatusCreated, toEventResponse(event, nil))
 }
 
 // Update event.
@@ -122,5 +139,15 @@ func (h *EventsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toEventResponse(event))
+	var source *domain.InboxItem
+	if h.Inbox != nil && event.SourceInboxItemID != nil {
+		res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *event.SourceInboxItemID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		source = &res.Item
+	}
+
+	c.JSON(http.StatusOK, toEventResponse(event, source))
 }

@@ -48,6 +48,12 @@ type FlagResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+type FlagObject struct {
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color,omitempty"`
+}
+
 type ListFlagsResponse struct {
 	Items      []FlagResponse `json:"items"`
 	NextCursor *string        `json:"nextCursor,omitempty"`
@@ -68,12 +74,19 @@ type UpdateFlagRequest struct {
 // Subflags
 
 type SubflagResponse struct {
-	ID        string    `json:"id"`
-	FlagID    string    `json:"flagId"`
-	Name      string    `json:"name"`
-	SortOrder int       `json:"sortOrder"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        string      `json:"id"`
+	Flag      *FlagObject `json:"flag,omitempty"`
+	Name      string      `json:"name"`
+	Color     *string     `json:"color,omitempty"`
+	SortOrder int         `json:"sortOrder"`
+	CreatedAt time.Time   `json:"createdAt"`
+	UpdatedAt time.Time   `json:"updatedAt"`
+}
+
+type SubflagObject struct {
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	Color *string `json:"color,omitempty"`
 }
 
 type ListSubflagsResponse struct {
@@ -94,12 +107,12 @@ type UpdateSubflagRequest struct {
 // Context rules
 
 type ContextRuleResponse struct {
-	ID        string    `json:"id"`
-	Keyword   string    `json:"keyword"`
-	FlagID    string    `json:"flagId"`
-	SubflagID *string   `json:"subflagId,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        string         `json:"id"`
+	Keyword   string         `json:"keyword"`
+	Flag      *FlagObject    `json:"flag,omitempty"`
+	Subflag   *SubflagObject `json:"subflag,omitempty"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
 }
 
 type ListContextRulesResponse struct {
@@ -126,8 +139,8 @@ type AiSuggestionResponse struct {
 	Type        string          `json:"type"`
 	Title       string          `json:"title"`
 	Confidence  *float64        `json:"confidence,omitempty"`
-	FlagID      *string         `json:"flagId,omitempty"`
-	SubflagID   *string         `json:"subflagId,omitempty"`
+	Flag        *FlagObject     `json:"flag,omitempty"`
+	Subflag     *SubflagObject  `json:"subflag,omitempty"`
 	NeedsReview bool            `json:"needsReview"`
 	Payload     json.RawMessage `json:"payload" swaggertype:"object"`
 	CreatedAt   time.Time       `json:"createdAt"`
@@ -176,14 +189,14 @@ type ConfirmInboxItemResponse struct {
 // Tasks
 
 type TaskResponse struct {
-	ID                string     `json:"id"`
-	Title             string     `json:"title"`
-	Description       *string    `json:"description,omitempty"`
-	Status            string     `json:"status"`
-	DueAt             *time.Time `json:"dueAt,omitempty"`
-	SourceInboxItemID *string    `json:"sourceInboxItemId,omitempty"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         time.Time  `json:"updatedAt"`
+	ID              string           `json:"id"`
+	Title           string           `json:"title"`
+	Description     *string          `json:"description,omitempty"`
+	Status          string           `json:"status"`
+	DueAt           *time.Time       `json:"dueAt,omitempty"`
+	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
+	CreatedAt       time.Time        `json:"createdAt"`
+	UpdatedAt       time.Time        `json:"updatedAt"`
 }
 
 type ListTasksResponse struct {
@@ -208,13 +221,13 @@ type UpdateTaskRequest struct {
 // Reminders
 
 type ReminderResponse struct {
-	ID                string     `json:"id"`
-	Title             string     `json:"title"`
-	Status            string     `json:"status"`
-	RemindAt          *time.Time `json:"remindAt,omitempty"`
-	SourceInboxItemID *string    `json:"sourceInboxItemId,omitempty"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         time.Time  `json:"updatedAt"`
+	ID              string           `json:"id"`
+	Title           string           `json:"title"`
+	Status          string           `json:"status"`
+	RemindAt        *time.Time       `json:"remindAt,omitempty"`
+	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
+	CreatedAt       time.Time        `json:"createdAt"`
+	UpdatedAt       time.Time        `json:"updatedAt"`
 }
 
 type ListRemindersResponse struct {
@@ -237,15 +250,15 @@ type UpdateReminderRequest struct {
 // Events
 
 type EventResponse struct {
-	ID                string     `json:"id"`
-	Title             string     `json:"title"`
-	StartAt           *time.Time `json:"startAt,omitempty"`
-	EndAt             *time.Time `json:"endAt,omitempty"`
-	AllDay            bool       `json:"allDay"`
-	Location          *string    `json:"location,omitempty"`
-	SourceInboxItemID *string    `json:"sourceInboxItemId,omitempty"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         time.Time  `json:"updatedAt"`
+	ID              string           `json:"id"`
+	Title           string           `json:"title"`
+	StartAt         *time.Time       `json:"startAt,omitempty"`
+	EndAt           *time.Time       `json:"endAt,omitempty"`
+	AllDay          bool             `json:"allDay"`
+	Location        *string          `json:"location,omitempty"`
+	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
+	CreatedAt       time.Time        `json:"createdAt"`
+	UpdatedAt       time.Time        `json:"updatedAt"`
 }
 
 type ListEventsResponse struct {
@@ -272,12 +285,18 @@ type UpdateEventRequest struct {
 // Shopping
 
 type ShoppingListResponse struct {
-	ID                string    `json:"id"`
-	Title             string    `json:"title"`
-	Status            string    `json:"status"`
-	SourceInboxItemID *string   `json:"sourceInboxItemId,omitempty"`
-	CreatedAt         time.Time `json:"createdAt"`
-	UpdatedAt         time.Time `json:"updatedAt"`
+	ID              string           `json:"id"`
+	Title           string           `json:"title"`
+	Status          string           `json:"status"`
+	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
+	CreatedAt       time.Time        `json:"createdAt"`
+	UpdatedAt       time.Time        `json:"updatedAt"`
+}
+
+type ShoppingListObject struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Status string `json:"status"`
 }
 
 type ListShoppingListsResponse struct {
@@ -296,14 +315,25 @@ type UpdateShoppingListRequest struct {
 }
 
 type ShoppingItemResponse struct {
-	ID        string    `json:"id"`
-	ListID    string    `json:"listId"`
-	Title     string    `json:"title"`
-	Quantity  *string   `json:"quantity,omitempty"`
-	Checked   bool      `json:"checked"`
-	SortOrder int       `json:"sortOrder"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        string              `json:"id"`
+	List      *ShoppingListObject `json:"list,omitempty"`
+	Title     string              `json:"title"`
+	Quantity  *string             `json:"quantity,omitempty"`
+	Checked   bool                `json:"checked"`
+	SortOrder int                 `json:"sortOrder"`
+	CreatedAt time.Time           `json:"createdAt"`
+	UpdatedAt time.Time           `json:"updatedAt"`
+}
+
+type InboxItemObject struct {
+	ID          string    `json:"id"`
+	Source      string    `json:"source"`
+	RawText     string    `json:"rawText"`
+	RawMediaURL *string   `json:"rawMediaUrl,omitempty"`
+	Status      string    `json:"status"`
+	LastError   *string   `json:"lastError,omitempty"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 type ListShoppingItemsResponse struct {

@@ -5,16 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type RemindersHandler struct {
 	Usecase *usecase.ReminderUsecase
+	Inbox   *usecase.InboxUsecase
 }
 
-func NewRemindersHandler(uc *usecase.ReminderUsecase) *RemindersHandler {
-	return &RemindersHandler{Usecase: uc}
+func NewRemindersHandler(uc *usecase.ReminderUsecase, inbox *usecase.InboxUsecase) *RemindersHandler {
+	return &RemindersHandler{Usecase: uc, Inbox: inbox}
 }
 
 // List reminders.
@@ -44,9 +46,24 @@ func (h *RemindersHandler) List(c *gin.Context) {
 		return
 	}
 
+	inboxCache := make(map[string]*domain.InboxItem)
 	items := make([]dto.ReminderResponse, 0, len(reminders))
 	for _, reminder := range reminders {
-		items = append(items, toReminderResponse(reminder))
+		var source *domain.InboxItem
+		if h.Inbox != nil && reminder.SourceInboxItemID != nil {
+			if cached, ok := inboxCache[*reminder.SourceInboxItemID]; ok {
+				source = cached
+			} else {
+				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *reminder.SourceInboxItemID)
+				if err != nil {
+					writeUsecaseError(c, err)
+					return
+				}
+				source = &res.Item
+				inboxCache[*reminder.SourceInboxItemID] = source
+			}
+		}
+		items = append(items, toReminderResponse(reminder, source))
 	}
 
 	c.JSON(http.StatusOK, dto.ListRemindersResponse{Items: items, NextCursor: next})
@@ -81,7 +98,7 @@ func (h *RemindersHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toReminderResponse(reminder))
+	c.JSON(http.StatusCreated, toReminderResponse(reminder, nil))
 }
 
 // Update reminder.
@@ -120,5 +137,15 @@ func (h *RemindersHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toReminderResponse(reminder))
+	var source *domain.InboxItem
+	if h.Inbox != nil && reminder.SourceInboxItemID != nil {
+		res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *reminder.SourceInboxItemID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		source = &res.Item
+	}
+
+	c.JSON(http.StatusOK, toReminderResponse(reminder, source))
 }

@@ -5,16 +5,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type ContextRulesHandler struct {
-	Usecase *usecase.ContextRuleUsecase
+	Usecase  *usecase.ContextRuleUsecase
+	Flags    *usecase.FlagUsecase
+	Subflags *usecase.SubflagUsecase
 }
 
-func NewContextRulesHandler(uc *usecase.ContextRuleUsecase) *ContextRulesHandler {
-	return &ContextRulesHandler{Usecase: uc}
+func NewContextRulesHandler(uc *usecase.ContextRuleUsecase, flags *usecase.FlagUsecase, subflags *usecase.SubflagUsecase) *ContextRulesHandler {
+	return &ContextRulesHandler{Usecase: uc, Flags: flags, Subflags: subflags}
 }
 
 // List context rules.
@@ -44,9 +47,41 @@ func (h *ContextRulesHandler) List(c *gin.Context) {
 		return
 	}
 
+	flagCache := make(map[string]*domain.Flag)
+	subflagCache := make(map[string]*domain.Subflag)
 	items := make([]dto.ContextRuleResponse, 0, len(rules))
 	for _, rule := range rules {
-		items = append(items, toContextRuleResponse(rule))
+		var flag *domain.Flag
+		if h.Flags != nil {
+			if cached, ok := flagCache[rule.FlagID]; ok {
+				flag = cached
+			} else {
+				f, err := h.Flags.Get(c.Request.Context(), userID, rule.FlagID)
+				if err != nil {
+					writeUsecaseError(c, err)
+					return
+				}
+				flag = &f
+				flagCache[rule.FlagID] = flag
+			}
+		}
+
+		var subflag *domain.Subflag
+		if h.Subflags != nil && rule.SubflagID != nil {
+			if cached, ok := subflagCache[*rule.SubflagID]; ok {
+				subflag = cached
+			} else {
+				sf, err := h.Subflags.Get(c.Request.Context(), userID, *rule.SubflagID)
+				if err != nil {
+					writeUsecaseError(c, err)
+					return
+				}
+				subflag = &sf
+				subflagCache[*rule.SubflagID] = subflag
+			}
+		}
+
+		items = append(items, toContextRuleResponse(rule, flag, subflag))
 	}
 
 	c.JSON(http.StatusOK, dto.ListContextRulesResponse{Items: items, NextCursor: next})
@@ -81,7 +116,26 @@ func (h *ContextRulesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toContextRuleResponse(rule))
+	var flag *domain.Flag
+	if h.Flags != nil {
+		f, err := h.Flags.Get(c.Request.Context(), userID, rule.FlagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		flag = &f
+	}
+	var subflag *domain.Subflag
+	if h.Subflags != nil && rule.SubflagID != nil {
+		sf, err := h.Subflags.Get(c.Request.Context(), userID, *rule.SubflagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		subflag = &sf
+	}
+
+	c.JSON(http.StatusCreated, toContextRuleResponse(rule, flag, subflag))
 }
 
 // Update context rule.
@@ -116,7 +170,26 @@ func (h *ContextRulesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toContextRuleResponse(rule))
+	var flag *domain.Flag
+	if h.Flags != nil {
+		f, err := h.Flags.Get(c.Request.Context(), userID, rule.FlagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		flag = &f
+	}
+	var subflag *domain.Subflag
+	if h.Subflags != nil && rule.SubflagID != nil {
+		sf, err := h.Subflags.Get(c.Request.Context(), userID, *rule.SubflagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		subflag = &sf
+	}
+
+	c.JSON(http.StatusOK, toContextRuleResponse(rule, flag, subflag))
 }
 
 // Delete context rule.

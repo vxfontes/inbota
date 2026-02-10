@@ -1895,8 +1895,8 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "flagId": {
-                    "type": "string"
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
                 },
                 "id": {
                     "type": "string"
@@ -1907,8 +1907,8 @@ const docTemplate = `{
                 "payload": {
                     "type": "object"
                 },
-                "subflagId": {
-                    "type": "string"
+                "subflag": {
+                    "$ref": "#/definitions/dto.SubflagObject"
                 },
                 "title": {
                     "type": "string"
@@ -1970,8 +1970,8 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "flagId": {
-                    "type": "string"
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
                 },
                 "id": {
                     "type": "string"
@@ -1979,8 +1979,8 @@ const docTemplate = `{
                 "keyword": {
                     "type": "string"
                 },
-                "subflagId": {
-                    "type": "string"
+                "subflag": {
+                    "$ref": "#/definitions/dto.SubflagObject"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2148,8 +2148,8 @@ const docTemplate = `{
                 "location": {
                     "type": "string"
                 },
-                "sourceInboxItemId": {
-                    "type": "string"
+                "sourceInboxItem": {
+                    "$ref": "#/definitions/dto.InboxItemObject"
                 },
                 "startAt": {
                     "type": "string"
@@ -2158,6 +2158,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.FlagObject": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -2179,6 +2193,35 @@ const docTemplate = `{
                 },
                 "sortOrder": {
                     "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.InboxItemObject": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastError": {
+                    "type": "string"
+                },
+                "rawMediaUrl": {
+                    "type": "string"
+                },
+                "rawText": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2355,8 +2398,8 @@ const docTemplate = `{
                 "remindAt": {
                     "type": "string"
                 },
-                "sourceInboxItemId": {
-                    "type": "string"
+                "sourceInboxItem": {
+                    "$ref": "#/definitions/dto.InboxItemObject"
                 },
                 "status": {
                     "type": "string"
@@ -2381,8 +2424,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "listId": {
-                    "type": "string"
+                "list": {
+                    "$ref": "#/definitions/dto.ShoppingListObject"
                 },
                 "quantity": {
                     "type": "string"
@@ -2398,6 +2441,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ShoppingListObject": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ShoppingListResponse": {
             "type": "object",
             "properties": {
@@ -2407,8 +2464,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "sourceInboxItemId": {
-                    "type": "string"
+                "sourceInboxItem": {
+                    "$ref": "#/definitions/dto.InboxItemObject"
                 },
                 "status": {
                     "type": "string"
@@ -2421,14 +2478,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SubflagObject": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.SubflagResponse": {
             "type": "object",
             "properties": {
+                "color": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
-                "flagId": {
-                    "type": "string"
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
                 },
                 "id": {
                     "type": "string"
@@ -2459,8 +2533,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "sourceInboxItemId": {
-                    "type": "string"
+                "sourceInboxItem": {
+                    "$ref": "#/definitions/dto.InboxItemObject"
                 },
                 "status": {
                     "type": "string"

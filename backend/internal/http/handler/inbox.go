@@ -5,16 +5,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type InboxHandler struct {
-	Usecase *usecase.InboxUsecase
+	Usecase  *usecase.InboxUsecase
+	Flags    *usecase.FlagUsecase
+	Subflags *usecase.SubflagUsecase
 }
 
-func NewInboxHandler(uc *usecase.InboxUsecase) *InboxHandler {
-	return &InboxHandler{Usecase: uc}
+func NewInboxHandler(uc *usecase.InboxUsecase, flags *usecase.FlagUsecase, subflags *usecase.SubflagUsecase) *InboxHandler {
+	return &InboxHandler{Usecase: uc, Flags: flags, Subflags: subflags}
 }
 
 // List inbox items.
@@ -57,9 +60,45 @@ func (h *InboxHandler) List(c *gin.Context) {
 		return
 	}
 
+	flagCache := make(map[string]*domain.Flag)
+	subflagCache := make(map[string]*domain.Subflag)
 	items := make([]dto.InboxItemResponse, 0, len(results))
 	for _, result := range results {
-		items = append(items, toInboxItemResponse(result.Item, result.Suggestion))
+		var suggestionResp *dto.AiSuggestionResponse
+		if result.Suggestion != nil {
+			var flag *domain.Flag
+			if h.Flags != nil && result.Suggestion.FlagID != nil {
+				if cached, ok := flagCache[*result.Suggestion.FlagID]; ok {
+					flag = cached
+				} else {
+					f, err := h.Flags.Get(c.Request.Context(), userID, *result.Suggestion.FlagID)
+					if err != nil {
+						writeUsecaseError(c, err)
+						return
+					}
+					flag = &f
+					flagCache[*result.Suggestion.FlagID] = flag
+				}
+			}
+			var subflag *domain.Subflag
+			if h.Subflags != nil && result.Suggestion.SubflagID != nil {
+				if cached, ok := subflagCache[*result.Suggestion.SubflagID]; ok {
+					subflag = cached
+				} else {
+					sf, err := h.Subflags.Get(c.Request.Context(), userID, *result.Suggestion.SubflagID)
+					if err != nil {
+						writeUsecaseError(c, err)
+						return
+					}
+					subflag = &sf
+					subflagCache[*result.Suggestion.SubflagID] = subflag
+				}
+			}
+			resp := toSuggestionResponse(*result.Suggestion, flag, subflag)
+			suggestionResp = &resp
+		}
+
+		items = append(items, toInboxItemResponse(result.Item, suggestionResp))
 	}
 
 	c.JSON(http.StatusOK, dto.ListInboxItemsResponse{Items: items, NextCursor: next})
@@ -124,7 +163,31 @@ func (h *InboxHandler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toInboxItemResponse(result.Item, result.Suggestion))
+	var suggestionResp *dto.AiSuggestionResponse
+	if result.Suggestion != nil {
+		var flag *domain.Flag
+		if h.Flags != nil && result.Suggestion.FlagID != nil {
+			f, err := h.Flags.Get(c.Request.Context(), userID, *result.Suggestion.FlagID)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flag = &f
+		}
+		var subflag *domain.Subflag
+		if h.Subflags != nil && result.Suggestion.SubflagID != nil {
+			sf, err := h.Subflags.Get(c.Request.Context(), userID, *result.Suggestion.SubflagID)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflag = &sf
+		}
+		resp := toSuggestionResponse(*result.Suggestion, flag, subflag)
+		suggestionResp = &resp
+	}
+
+	c.JSON(http.StatusOK, toInboxItemResponse(result.Item, suggestionResp))
 }
 
 // Reprocess inbox item.
@@ -151,7 +214,31 @@ func (h *InboxHandler) Reprocess(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toInboxItemResponse(result.Item, result.Suggestion))
+	var suggestionResp *dto.AiSuggestionResponse
+	if result.Suggestion != nil {
+		var flag *domain.Flag
+		if h.Flags != nil && result.Suggestion.FlagID != nil {
+			f, err := h.Flags.Get(c.Request.Context(), userID, *result.Suggestion.FlagID)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flag = &f
+		}
+		var subflag *domain.Subflag
+		if h.Subflags != nil && result.Suggestion.SubflagID != nil {
+			sf, err := h.Subflags.Get(c.Request.Context(), userID, *result.Suggestion.SubflagID)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflag = &sf
+		}
+		resp := toSuggestionResponse(*result.Suggestion, flag, subflag)
+		suggestionResp = &resp
+	}
+
+	c.JSON(http.StatusOK, toInboxItemResponse(result.Item, suggestionResp))
 }
 
 // Confirm inbox item.
@@ -194,25 +281,25 @@ func (h *InboxHandler) Confirm(c *gin.Context) {
 
 	resp := dto.ConfirmInboxItemResponse{Type: string(result.Type)}
 	if result.Task != nil {
-		task := toTaskResponse(*result.Task)
+		task := toTaskResponse(*result.Task, nil)
 		resp.Task = &task
 	}
 	if result.Reminder != nil {
-		reminder := toReminderResponse(*result.Reminder)
+		reminder := toReminderResponse(*result.Reminder, nil)
 		resp.Reminder = &reminder
 	}
 	if result.Event != nil {
-		event := toEventResponse(*result.Event)
+		event := toEventResponse(*result.Event, nil)
 		resp.Event = &event
 	}
 	if result.ShoppingList != nil {
-		list := toShoppingListResponse(*result.ShoppingList)
+		list := toShoppingListResponse(*result.ShoppingList, nil)
 		resp.ShoppingList = &list
 	}
 	if len(result.ShoppingItems) > 0 {
 		items := make([]dto.ShoppingItemResponse, 0, len(result.ShoppingItems))
 		for _, item := range result.ShoppingItems {
-			items = append(items, toShoppingItemResponse(item))
+			items = append(items, toShoppingItemResponse(item, result.ShoppingList))
 		}
 		resp.ShoppingItems = items
 	}

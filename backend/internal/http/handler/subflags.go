@@ -5,16 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type SubflagsHandler struct {
 	Usecase *usecase.SubflagUsecase
+	Flags   *usecase.FlagUsecase
 }
 
-func NewSubflagsHandler(uc *usecase.SubflagUsecase) *SubflagsHandler {
-	return &SubflagsHandler{Usecase: uc}
+func NewSubflagsHandler(uc *usecase.SubflagUsecase, flags *usecase.FlagUsecase) *SubflagsHandler {
+	return &SubflagsHandler{Usecase: uc, Flags: flags}
 }
 
 // List subflags by flag.
@@ -46,9 +48,19 @@ func (h *SubflagsHandler) ListByFlag(c *gin.Context) {
 		return
 	}
 
+	var flag *domain.Flag
+	if h.Flags != nil {
+		f, err := h.Flags.Get(c.Request.Context(), userID, flagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		flag = &f
+	}
+
 	items := make([]dto.SubflagResponse, 0, len(subflags))
 	for _, subflag := range subflags {
-		items = append(items, toSubflagResponse(subflag))
+		items = append(items, toSubflagResponse(subflag, flag))
 	}
 
 	c.JSON(http.StatusOK, dto.ListSubflagsResponse{Items: items, NextCursor: next})
@@ -85,7 +97,17 @@ func (h *SubflagsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toSubflagResponse(subflag))
+	var flag *domain.Flag
+	if h.Flags != nil {
+		f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		flag = &f
+	}
+
+	c.JSON(http.StatusCreated, toSubflagResponse(subflag, flag))
 }
 
 // Update subflag.
@@ -120,7 +142,17 @@ func (h *SubflagsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toSubflagResponse(subflag))
+	var flag *domain.Flag
+	if h.Flags != nil {
+		f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		flag = &f
+	}
+
+	c.JSON(http.StatusOK, toSubflagResponse(subflag, flag))
 }
 
 // Delete subflag.

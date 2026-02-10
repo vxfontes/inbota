@@ -5,24 +5,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type ShoppingListsHandler struct {
 	Usecase *usecase.ShoppingListUsecase
+	Inbox   *usecase.InboxUsecase
 }
 
 type ShoppingItemsHandler struct {
 	Usecase *usecase.ShoppingItemUsecase
+	Lists   *usecase.ShoppingListUsecase
 }
 
-func NewShoppingListsHandler(uc *usecase.ShoppingListUsecase) *ShoppingListsHandler {
-	return &ShoppingListsHandler{Usecase: uc}
+func NewShoppingListsHandler(uc *usecase.ShoppingListUsecase, inbox *usecase.InboxUsecase) *ShoppingListsHandler {
+	return &ShoppingListsHandler{Usecase: uc, Inbox: inbox}
 }
 
-func NewShoppingItemsHandler(uc *usecase.ShoppingItemUsecase) *ShoppingItemsHandler {
-	return &ShoppingItemsHandler{Usecase: uc}
+func NewShoppingItemsHandler(uc *usecase.ShoppingItemUsecase, lists *usecase.ShoppingListUsecase) *ShoppingItemsHandler {
+	return &ShoppingItemsHandler{Usecase: uc, Lists: lists}
 }
 
 // List shopping lists.
@@ -52,9 +55,24 @@ func (h *ShoppingListsHandler) List(c *gin.Context) {
 		return
 	}
 
+	inboxCache := make(map[string]*domain.InboxItem)
 	items := make([]dto.ShoppingListResponse, 0, len(lists))
 	for _, list := range lists {
-		items = append(items, toShoppingListResponse(list))
+		var source *domain.InboxItem
+		if h.Inbox != nil && list.SourceInboxItemID != nil {
+			if cached, ok := inboxCache[*list.SourceInboxItemID]; ok {
+				source = cached
+			} else {
+				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *list.SourceInboxItemID)
+				if err != nil {
+					writeUsecaseError(c, err)
+					return
+				}
+				source = &res.Item
+				inboxCache[*list.SourceInboxItemID] = source
+			}
+		}
+		items = append(items, toShoppingListResponse(list, source))
 	}
 
 	c.JSON(http.StatusOK, dto.ListShoppingListsResponse{Items: items, NextCursor: next})
@@ -89,7 +107,7 @@ func (h *ShoppingListsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toShoppingListResponse(list))
+	c.JSON(http.StatusCreated, toShoppingListResponse(list, nil))
 }
 
 // Update shopping list.
@@ -127,7 +145,17 @@ func (h *ShoppingListsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toShoppingListResponse(list))
+	var source *domain.InboxItem
+	if h.Inbox != nil && list.SourceInboxItemID != nil {
+		res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *list.SourceInboxItemID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		source = &res.Item
+	}
+
+	c.JSON(http.StatusOK, toShoppingListResponse(list, source))
 }
 
 // List shopping items by list.
@@ -159,9 +187,19 @@ func (h *ShoppingItemsHandler) ListByList(c *gin.Context) {
 		return
 	}
 
+	var list *domain.ShoppingList
+	if h.Lists != nil {
+		l, err := h.Lists.Get(c.Request.Context(), userID, listID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		list = &l
+	}
+
 	respItems := make([]dto.ShoppingItemResponse, 0, len(items))
 	for _, item := range items {
-		respItems = append(respItems, toShoppingItemResponse(item))
+		respItems = append(respItems, toShoppingItemResponse(item, list))
 	}
 
 	c.JSON(http.StatusOK, dto.ListShoppingItemsResponse{Items: respItems, NextCursor: next})
@@ -198,7 +236,17 @@ func (h *ShoppingItemsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toShoppingItemResponse(item))
+	var list *domain.ShoppingList
+	if h.Lists != nil {
+		l, err := h.Lists.Get(c.Request.Context(), userID, item.ListID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		list = &l
+	}
+
+	c.JSON(http.StatusCreated, toShoppingItemResponse(item, list))
 }
 
 // Update shopping item.
@@ -238,5 +286,15 @@ func (h *ShoppingItemsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toShoppingItemResponse(item))
+	var list *domain.ShoppingList
+	if h.Lists != nil {
+		l, err := h.Lists.Get(c.Request.Context(), userID, item.ListID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		list = &l
+	}
+
+	c.JSON(http.StatusOK, toShoppingItemResponse(item, list))
 }

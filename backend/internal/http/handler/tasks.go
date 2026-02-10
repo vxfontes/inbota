@@ -5,16 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
 )
 
 type TasksHandler struct {
 	Usecase *usecase.TaskUsecase
+	Inbox   *usecase.InboxUsecase
 }
 
-func NewTasksHandler(uc *usecase.TaskUsecase) *TasksHandler {
-	return &TasksHandler{Usecase: uc}
+func NewTasksHandler(uc *usecase.TaskUsecase, inbox *usecase.InboxUsecase) *TasksHandler {
+	return &TasksHandler{Usecase: uc, Inbox: inbox}
 }
 
 // List tasks.
@@ -44,9 +46,24 @@ func (h *TasksHandler) List(c *gin.Context) {
 		return
 	}
 
+	inboxCache := make(map[string]*domain.InboxItem)
 	items := make([]dto.TaskResponse, 0, len(tasks))
 	for _, task := range tasks {
-		items = append(items, toTaskResponse(task))
+		var source *domain.InboxItem
+		if h.Inbox != nil && task.SourceInboxItemID != nil {
+			if cached, ok := inboxCache[*task.SourceInboxItemID]; ok {
+				source = cached
+			} else {
+				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *task.SourceInboxItemID)
+				if err != nil {
+					writeUsecaseError(c, err)
+					return
+				}
+				source = &res.Item
+				inboxCache[*task.SourceInboxItemID] = source
+			}
+		}
+		items = append(items, toTaskResponse(task, source))
 	}
 
 	c.JSON(http.StatusOK, dto.ListTasksResponse{Items: items, NextCursor: next})
@@ -81,7 +98,7 @@ func (h *TasksHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, toTaskResponse(task))
+	c.JSON(http.StatusCreated, toTaskResponse(task, nil))
 }
 
 // Update task.
@@ -121,5 +138,15 @@ func (h *TasksHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toTaskResponse(task))
+	var source *domain.InboxItem
+	if h.Inbox != nil && task.SourceInboxItemID != nil {
+		res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *task.SourceInboxItemID)
+		if err != nil {
+			writeUsecaseError(c, err)
+			return
+		}
+		source = &res.Item
+	}
+
+	c.JSON(http.StatusOK, toTaskResponse(task, source))
 }

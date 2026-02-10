@@ -105,14 +105,14 @@ func main() {
 
 		apiHandlers = &handler.APIHandlers{
 			Flags:         handler.NewFlagsHandler(flagUC),
-			Subflags:      handler.NewSubflagsHandler(subflagUC),
-			ContextRules:  handler.NewContextRulesHandler(ruleUC),
-			Inbox:         handler.NewInboxHandler(inboxUC),
-			Tasks:         handler.NewTasksHandler(taskUC),
-			Reminders:     handler.NewRemindersHandler(reminderUC),
-			Events:        handler.NewEventsHandler(eventUC),
-			ShoppingLists: handler.NewShoppingListsHandler(shoppingListUC),
-			ShoppingItems: handler.NewShoppingItemsHandler(shoppingItemUC),
+			Subflags:      handler.NewSubflagsHandler(subflagUC, flagUC),
+			ContextRules:  handler.NewContextRulesHandler(ruleUC, flagUC, subflagUC),
+			Inbox:         handler.NewInboxHandler(inboxUC, flagUC, subflagUC),
+			Tasks:         handler.NewTasksHandler(taskUC, inboxUC),
+			Reminders:     handler.NewRemindersHandler(reminderUC, inboxUC),
+			Events:        handler.NewEventsHandler(eventUC, inboxUC),
+			ShoppingLists: handler.NewShoppingListsHandler(shoppingListUC, inboxUC),
+			ShoppingItems: handler.NewShoppingItemsHandler(shoppingItemUC, shoppingListUC),
 		}
 	}
 

@@ -17,14 +17,55 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 24);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 16);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      toolbarHeight: kToolbarHeight + 16,
       title: Padding(
         padding: padding ?? const EdgeInsets.all(0),
-        child: IBText(title, context: context).titulo.color(AppColors.surface2).build(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 34,
+              width: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surface.withAlpha((0.18 * 255).round()),
+                border: Border.all(color: AppColors.surface.withAlpha((0.35 * 255).round())),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.text.withAlpha((0.14 * 255).round()),
+                    blurRadius: 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.surface,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IBText(title, context: context)
+                    .titulo
+                    .color(AppColors.surface)
+                    .build(),
+                IBText('Seu dia, mais leve', context: context)
+                    .label
+                    .color(AppColors.surface.withAlpha((0.78 * 255).round()))
+                    .build(),
+              ],
+            ),
+          ],
+        ),
       ),
       centerTitle: centerTitle,
       actions: actions,

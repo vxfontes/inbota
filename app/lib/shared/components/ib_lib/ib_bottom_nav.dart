@@ -4,11 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBBottomNav extends StatelessWidget {
-  const IBBottomNav({
-    super.key,
-    this.currentIndex = 2,
-    this.onTap,
-  });
+  const IBBottomNav({super.key, this.currentIndex = 2, this.onTap});
 
   final int currentIndex;
   final ValueChanged<int>? onTap;
@@ -49,31 +45,31 @@ class IBBottomNav extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                  _NavIcon(
-                    index: 0,
-                    icon: HugeIcons.strokeRoundedInbox,
-                    isActive: currentIndex == 0,
-                    onTap: onTap,
-                  ),
-                  _NavIcon(
-                    index: 1,
-                    icon: HugeIcons.strokeRoundedReminder,
-                    isActive: currentIndex == 1,
-                    onTap: onTap,
-                  ),
+                    _NavIcon(
+                      index: 0,
+                      icon: HugeIcons.strokeRoundedInbox,
+                      isActive: currentIndex == 0,
+                      onTap: onTap,
+                    ),
+                    _NavIcon(
+                      index: 1,
+                      icon: HugeIcons.strokeRoundedReminder,
+                      isActive: currentIndex == 1,
+                      onTap: onTap,
+                    ),
                     const SizedBox(width: 56),
-                  _NavIcon(
-                    index: 3,
-                    icon: HugeIcons.strokeRoundedShoppingBag01,
-                    isActive: currentIndex == 3,
-                    onTap: onTap,
-                  ),
-                  _NavIcon(
-                    index: 4,
-                    icon: HugeIcons.strokeRoundedCalendar01,
-                    isActive: currentIndex == 4,
-                    onTap: onTap,
-                  ),
+                    _NavIcon(
+                      index: 3,
+                      icon: HugeIcons.strokeRoundedShoppingBag01,
+                      isActive: currentIndex == 3,
+                      onTap: onTap,
+                    ),
+                    _NavIcon(
+                      index: 4,
+                      icon: HugeIcons.strokeRoundedCalendar01,
+                      isActive: currentIndex == 4,
+                      onTap: onTap,
+                    ),
                   ],
                 ),
               ),
@@ -81,10 +77,7 @@ class IBBottomNav extends StatelessWidget {
           ),
           Positioned(
             bottom: 35,
-            child: _CenterAction(
-              isActive: currentIndex == 2,
-              onTap: onTap,
-            ),
+            child: _CenterAction(isActive: currentIndex == 2, onTap: onTap),
           ),
         ],
       ),
@@ -116,12 +109,7 @@ class _NavIcon extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: icon,
-              color: color,
-              size: 22,
-              strokeWidth: 1.8,
-            ),
+            HugeIcon(icon: icon, color: color, size: 22, strokeWidth: 1.8),
           ],
         ),
       ),
@@ -146,7 +134,9 @@ class _CenterAction extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: AppColors.primary600,
-          border: Border.all(color: AppColors.surface, width: 4),
+          border: Border.all(
+            color: AppColors.surface.withAlpha((0.35 * 255).round()),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary700.withAlpha((0.35 * 255).round()),
@@ -160,11 +150,10 @@ class _CenterAction extends StatelessWidget {
             ),
           ],
         ),
-        child: const HugeIcon(
-          icon: HugeIcons.strokeRoundedAdd01,
+        child: const Icon(
+          Icons.auto_awesome_rounded,
           color: AppColors.surface,
-          size: 28,
-          strokeWidth: 2.2,
+          size: 24,
         ),
       ),
     );

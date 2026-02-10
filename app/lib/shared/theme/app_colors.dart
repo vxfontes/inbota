@@ -22,4 +22,5 @@ class AppColors {
   static const success600 = Color(0xFF16A34A);
 
   static const transparent = Colors.transparent;
+  static const dark = Color(0xFF111827);
 }

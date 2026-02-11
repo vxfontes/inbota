@@ -9,11 +9,15 @@ import (
 )
 
 type AiSuggestionRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewAiSuggestionRepository(db *DB) *AiSuggestionRepository {
 	return &AiSuggestionRepository{db: db}
+}
+
+func NewAiSuggestionRepositoryTx(tx *sql.Tx) *AiSuggestionRepository {
+	return &AiSuggestionRepository{db: tx}
 }
 
 func (r *AiSuggestionRepository) Create(ctx context.Context, suggestion domain.AiSuggestion) (domain.AiSuggestion, error) {

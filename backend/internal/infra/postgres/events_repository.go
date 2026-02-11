@@ -9,11 +9,15 @@ import (
 )
 
 type EventRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewEventRepository(db *DB) *EventRepository {
 	return &EventRepository{db: db}
+}
+
+func NewEventRepositoryTx(tx *sql.Tx) *EventRepository {
+	return &EventRepository{db: tx}
 }
 
 func (r *EventRepository) Create(ctx context.Context, event domain.Event) (domain.Event, error) {

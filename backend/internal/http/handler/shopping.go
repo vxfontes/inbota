@@ -55,21 +55,32 @@ func (h *ShoppingListsHandler) List(c *gin.Context) {
 		return
 	}
 
-	inboxCache := make(map[string]*domain.InboxItem)
+	sourceIDs := make([]string, 0)
+	for _, list := range lists {
+		if list.SourceInboxItemID != nil {
+			sourceIDs = append(sourceIDs, *list.SourceInboxItemID)
+		}
+	}
+
+	sourcesByID := make(map[string]domain.InboxItem)
+	if h.Inbox != nil {
+		ids := uniqueStrings(sourceIDs)
+		if len(ids) > 0 {
+			items, err := h.Inbox.GetInboxItemsByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			sourcesByID = items
+		}
+	}
+
 	items := make([]dto.ShoppingListResponse, 0, len(lists))
 	for _, list := range lists {
 		var source *domain.InboxItem
-		if h.Inbox != nil && list.SourceInboxItemID != nil {
-			if cached, ok := inboxCache[*list.SourceInboxItemID]; ok {
-				source = cached
-			} else {
-				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *list.SourceInboxItemID)
-				if err != nil {
-					writeUsecaseError(c, err)
-					return
-				}
-				source = &res.Item
-				inboxCache[*list.SourceInboxItemID] = source
+		if list.SourceInboxItemID != nil {
+			if item, ok := sourcesByID[*list.SourceInboxItemID]; ok {
+				source = &item
 			}
 		}
 		items = append(items, toShoppingListResponse(list, source))

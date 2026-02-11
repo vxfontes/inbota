@@ -31,6 +31,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   - `invalid_email`
   - `invalid_password`
   - `invalid_display_name`
+  - `invalid_credentials`
+  - `invalid_limit`
   - `invalid_cursor`
   - `not_found`
   - `dependency_missing`
@@ -59,6 +61,13 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
 **Limitacoes atuais**
 - `POST /v1/inbox-items/{id}/reprocess` exige AI client configurado (se nao, retorna `dependency_missing`).
 - Worker in-process (processamento automatico de `InboxItem` NEW) ainda nao foi implementado.
+
+**Notas recentes**
+- Signup/Login agora retornam erros no formato padrao da API (`ErrorResponse`).
+- `reprocess` e `confirm` sao executados de forma atomica quando o banco esta habilitado.
+  - Isso significa que as etapas internas (ex.: criar sugestao + atualizar status do inbox, ou criar entidade final + marcar inbox como CONFIRMED) rodam dentro de uma **transacao**.
+  - Se alguma etapa falhar, nenhuma alteracao parcial fica salva no banco.
+  - O resultado e um estado mais consistente, evitando sugestoes “orfãs” ou listas/tarefas criadas sem confirmar o inbox.
 
 **Configuracao de IA (Groq)**
 - Variaveis:

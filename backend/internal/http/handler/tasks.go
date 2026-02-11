@@ -46,21 +46,32 @@ func (h *TasksHandler) List(c *gin.Context) {
 		return
 	}
 
-	inboxCache := make(map[string]*domain.InboxItem)
+	sourceIDs := make([]string, 0)
+	for _, task := range tasks {
+		if task.SourceInboxItemID != nil {
+			sourceIDs = append(sourceIDs, *task.SourceInboxItemID)
+		}
+	}
+
+	sourcesByID := make(map[string]domain.InboxItem)
+	if h.Inbox != nil {
+		ids := uniqueStrings(sourceIDs)
+		if len(ids) > 0 {
+			items, err := h.Inbox.GetInboxItemsByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			sourcesByID = items
+		}
+	}
+
 	items := make([]dto.TaskResponse, 0, len(tasks))
 	for _, task := range tasks {
 		var source *domain.InboxItem
-		if h.Inbox != nil && task.SourceInboxItemID != nil {
-			if cached, ok := inboxCache[*task.SourceInboxItemID]; ok {
-				source = cached
-			} else {
-				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *task.SourceInboxItemID)
-				if err != nil {
-					writeUsecaseError(c, err)
-					return
-				}
-				source = &res.Item
-				inboxCache[*task.SourceInboxItemID] = source
+		if task.SourceInboxItemID != nil {
+			if item, ok := sourcesByID[*task.SourceInboxItemID]; ok {
+				source = &item
 			}
 		}
 		items = append(items, toTaskResponse(task, source))

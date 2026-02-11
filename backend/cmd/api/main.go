@@ -10,6 +10,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -33,7 +34,8 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
+		_, _ = fmt.Fprintln(os.Stderr, "config_load_error:", err.Error())
+		os.Exit(1)
 	}
 
 	log := observability.NewLogger(cfg.LogLevel)
@@ -79,13 +81,14 @@ func main() {
 		shoppingItemRepo := postgres.NewShoppingItemRepository(db)
 
 		flagUC := &usecase.FlagUsecase{Flags: flagRepo}
-		subflagUC := &usecase.SubflagUsecase{Subflags: subflagRepo}
-		ruleUC := &usecase.ContextRuleUsecase{Rules: ruleRepo}
+		subflagUC := &usecase.SubflagUsecase{Subflags: subflagRepo, Flags: flagRepo}
+		ruleUC := &usecase.ContextRuleUsecase{Rules: ruleRepo, Flags: flagRepo, Subflags: subflagRepo}
 		taskUC := &usecase.TaskUsecase{Tasks: taskRepo}
 		reminderUC := &usecase.ReminderUsecase{Reminders: reminderRepo}
 		eventUC := &usecase.EventUsecase{Events: eventRepo}
 		shoppingListUC := &usecase.ShoppingListUsecase{Lists: shoppingListRepo}
 		shoppingItemUC := &usecase.ShoppingItemUsecase{Items: shoppingItemRepo}
+		txRunner := postgres.NewTxRunner(db)
 
 		var aiClient service.AIClient
 		if cfg.AIAPIKey != "" || cfg.AIBaseURL != "" || cfg.AIModel != "" || cfg.AIProvider != "" {
@@ -118,6 +121,7 @@ func main() {
 			AIClient:        aiClient,
 			SchemaValidator: service.NewAiSchemaValidator(),
 			RuleMatcher:     service.NewContextRuleMatcher(),
+			TxRunner:        txRunner,
 		}
 
 		apiHandlers = &handler.APIHandlers{

@@ -29,6 +29,7 @@ type InboxUsecase struct {
 	AIClient        service.AIClient
 	SchemaValidator *service.AiSchemaValidator
 	RuleMatcher     *service.ContextRuleMatcher
+	TxRunner        repository.TxRunner
 	Now             func() time.Time
 }
 
@@ -150,6 +151,24 @@ func (uc *InboxUsecase) GetInboxItem(ctx context.Context, userID, id string) (In
 	}
 
 	return InboxItemResult{Item: item, Suggestion: suggestion}, nil
+}
+
+func (uc *InboxUsecase) GetInboxItemsByIDs(ctx context.Context, userID string, ids []string) (map[string]domain.InboxItem, error) {
+	if userID == "" {
+		return nil, ErrMissingRequiredFields
+	}
+	if len(ids) == 0 {
+		return map[string]domain.InboxItem{}, nil
+	}
+	items, err := uc.Inbox.GetByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]domain.InboxItem, len(items))
+	for _, item := range items {
+		out[item.ID] = item
+	}
+	return out, nil
 }
 
 func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id string) (InboxItemResult, error) {
@@ -288,23 +307,49 @@ func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id strin
 		suggestion.SubflagID = normalizeOptionalString(validated.Output.Context.SubflagID)
 	}
 
-	if uc.Suggestions == nil {
-		return InboxItemResult{}, ErrDependencyMissing
-	}
-	suggestion, err = uc.Suggestions.Create(ctx, suggestion)
-	if err != nil {
-		return InboxItemResult{}, err
-	}
-
-	if suggestion.NeedsReview {
-		item.Status = domain.InboxStatusNeedsReview
+	if uc.TxRunner != nil {
+		if err := uc.TxRunner.WithTx(ctx, func(tx repository.TxRepositories) error {
+			if tx.Suggestions == nil || tx.Inbox == nil {
+				return ErrDependencyMissing
+			}
+			var err error
+			suggestion, err = tx.Suggestions.Create(ctx, suggestion)
+			if err != nil {
+				return err
+			}
+			if suggestion.NeedsReview {
+				item.Status = domain.InboxStatusNeedsReview
+			} else {
+				item.Status = domain.InboxStatusSuggested
+			}
+			item.LastError = nil
+			item, err = tx.Inbox.Update(ctx, item)
+			if err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+			return InboxItemResult{}, err
+		}
 	} else {
-		item.Status = domain.InboxStatusSuggested
-	}
-	item.LastError = nil
-	item, err = uc.Inbox.Update(ctx, item)
-	if err != nil {
-		return InboxItemResult{}, err
+		if uc.Suggestions == nil {
+			return InboxItemResult{}, ErrDependencyMissing
+		}
+		suggestion, err = uc.Suggestions.Create(ctx, suggestion)
+		if err != nil {
+			return InboxItemResult{}, err
+		}
+
+		if suggestion.NeedsReview {
+			item.Status = domain.InboxStatusNeedsReview
+		} else {
+			item.Status = domain.InboxStatusSuggested
+		}
+		item.LastError = nil
+		item, err = uc.Inbox.Update(ctx, item)
+		if err != nil {
+			return InboxItemResult{}, err
+		}
 	}
 
 	return InboxItemResult{Item: item, Suggestion: &suggestion}, nil
@@ -363,110 +408,226 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	}
 
 	result := ConfirmResult{Type: typ}
-	switch typ {
-	case domain.AiSuggestionTypeTask:
-		if uc.Tasks == nil {
-			return ConfirmResult{}, ErrDependencyMissing
-		}
-		taskPayload, ok := validated.Payload.(service.TaskPayload)
-		if !ok {
-			return ConfirmResult{}, ErrInvalidPayload
-		}
-		task := domain.Task{
-			UserID:            userID,
-			Title:             title,
-			DueAt:             taskPayload.DueAt,
-			SourceInboxItemID: &item.ID,
-		}
-		created, err := uc.Tasks.Create(ctx, task)
-		if err != nil {
-			return ConfirmResult{}, err
-		}
-		result.Task = &created
-	case domain.AiSuggestionTypeReminder:
-		if uc.Reminders == nil {
-			return ConfirmResult{}, ErrDependencyMissing
-		}
-		reminderPayload, ok := validated.Payload.(service.ReminderPayload)
-		if !ok {
-			return ConfirmResult{}, ErrInvalidPayload
-		}
-		reminder := domain.Reminder{
-			UserID:            userID,
-			Title:             title,
-			RemindAt:          &reminderPayload.At,
-			SourceInboxItemID: &item.ID,
-		}
-		created, err := uc.Reminders.Create(ctx, reminder)
-		if err != nil {
-			return ConfirmResult{}, err
-		}
-		result.Reminder = &created
-	case domain.AiSuggestionTypeEvent:
-		if uc.Events == nil {
-			return ConfirmResult{}, ErrDependencyMissing
-		}
-		eventPayload, ok := validated.Payload.(service.EventPayload)
-		if !ok {
-			return ConfirmResult{}, ErrInvalidPayload
-		}
-		event := domain.Event{
-			UserID:            userID,
-			Title:             title,
-			StartAt:           &eventPayload.Start,
-			EndAt:             eventPayload.End,
-			AllDay:            eventPayload.AllDay,
-			SourceInboxItemID: &item.ID,
-		}
-		created, err := uc.Events.Create(ctx, event)
-		if err != nil {
-			return ConfirmResult{}, err
-		}
-		result.Event = &created
-	case domain.AiSuggestionTypeShopping:
-		if uc.ShoppingLists == nil || uc.ShoppingItems == nil {
-			return ConfirmResult{}, ErrDependencyMissing
-		}
-		shopPayload, ok := validated.Payload.(service.ShoppingPayload)
-		if !ok {
-			return ConfirmResult{}, ErrInvalidPayload
-		}
-		list := domain.ShoppingList{
-			UserID:            userID,
-			Title:             title,
-			SourceInboxItemID: &item.ID,
-		}
-		createdList, err := uc.ShoppingLists.Create(ctx, list)
-		if err != nil {
-			return ConfirmResult{}, err
-		}
-		result.ShoppingList = &createdList
-
-		items := make([]domain.ShoppingItem, 0, len(shopPayload.Items))
-		for idx, shopItem := range shopPayload.Items {
-			item := domain.ShoppingItem{
-				UserID:    userID,
-				ListID:    createdList.ID,
-				Title:     shopItem.Title,
-				Quantity:  shopItem.Quantity,
-				Checked:   false,
-				SortOrder: idx,
+	if uc.TxRunner != nil {
+		if err := uc.TxRunner.WithTx(ctx, func(tx repository.TxRepositories) error {
+			if tx.Inbox == nil {
+				return ErrDependencyMissing
 			}
-			created, err := uc.ShoppingItems.Create(ctx, item)
+			switch typ {
+			case domain.AiSuggestionTypeTask:
+				if tx.Tasks == nil {
+					return ErrDependencyMissing
+				}
+				taskPayload, ok := validated.Payload.(service.TaskPayload)
+				if !ok {
+					return ErrInvalidPayload
+				}
+				task := domain.Task{
+					UserID:            userID,
+					Title:             title,
+					DueAt:             taskPayload.DueAt,
+					SourceInboxItemID: &item.ID,
+				}
+				created, err := tx.Tasks.Create(ctx, task)
+				if err != nil {
+					return err
+				}
+				result.Task = &created
+			case domain.AiSuggestionTypeReminder:
+				if tx.Reminders == nil {
+					return ErrDependencyMissing
+				}
+				reminderPayload, ok := validated.Payload.(service.ReminderPayload)
+				if !ok {
+					return ErrInvalidPayload
+				}
+				reminder := domain.Reminder{
+					UserID:            userID,
+					Title:             title,
+					RemindAt:          &reminderPayload.At,
+					SourceInboxItemID: &item.ID,
+				}
+				created, err := tx.Reminders.Create(ctx, reminder)
+				if err != nil {
+					return err
+				}
+				result.Reminder = &created
+			case domain.AiSuggestionTypeEvent:
+				if tx.Events == nil {
+					return ErrDependencyMissing
+				}
+				eventPayload, ok := validated.Payload.(service.EventPayload)
+				if !ok {
+					return ErrInvalidPayload
+				}
+				event := domain.Event{
+					UserID:            userID,
+					Title:             title,
+					StartAt:           &eventPayload.Start,
+					EndAt:             eventPayload.End,
+					AllDay:            eventPayload.AllDay,
+					SourceInboxItemID: &item.ID,
+				}
+				created, err := tx.Events.Create(ctx, event)
+				if err != nil {
+					return err
+				}
+				result.Event = &created
+			case domain.AiSuggestionTypeShopping:
+				if tx.ShoppingLists == nil || tx.ShoppingItems == nil {
+					return ErrDependencyMissing
+				}
+				shopPayload, ok := validated.Payload.(service.ShoppingPayload)
+				if !ok {
+					return ErrInvalidPayload
+				}
+				list := domain.ShoppingList{
+					UserID:            userID,
+					Title:             title,
+					SourceInboxItemID: &item.ID,
+				}
+				createdList, err := tx.ShoppingLists.Create(ctx, list)
+				if err != nil {
+					return err
+				}
+				result.ShoppingList = &createdList
+
+				items := make([]domain.ShoppingItem, 0, len(shopPayload.Items))
+				for idx, shopItem := range shopPayload.Items {
+					item := domain.ShoppingItem{
+						UserID:    userID,
+						ListID:    createdList.ID,
+						Title:     shopItem.Title,
+						Quantity:  shopItem.Quantity,
+						Checked:   false,
+						SortOrder: idx,
+					}
+					created, err := tx.ShoppingItems.Create(ctx, item)
+					if err != nil {
+						return err
+					}
+					items = append(items, created)
+				}
+				result.ShoppingItems = items
+			default:
+				return ErrInvalidType
+			}
+
+			item.Status = domain.InboxStatusConfirmed
+			item.LastError = nil
+			if _, err := tx.Inbox.Update(ctx, item); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+			return ConfirmResult{}, err
+		}
+	} else {
+		switch typ {
+		case domain.AiSuggestionTypeTask:
+			if uc.Tasks == nil {
+				return ConfirmResult{}, ErrDependencyMissing
+			}
+			taskPayload, ok := validated.Payload.(service.TaskPayload)
+			if !ok {
+				return ConfirmResult{}, ErrInvalidPayload
+			}
+			task := domain.Task{
+				UserID:            userID,
+				Title:             title,
+				DueAt:             taskPayload.DueAt,
+				SourceInboxItemID: &item.ID,
+			}
+			created, err := uc.Tasks.Create(ctx, task)
 			if err != nil {
 				return ConfirmResult{}, err
 			}
-			items = append(items, created)
-		}
-		result.ShoppingItems = items
-	default:
-		return ConfirmResult{}, ErrInvalidType
-	}
+			result.Task = &created
+		case domain.AiSuggestionTypeReminder:
+			if uc.Reminders == nil {
+				return ConfirmResult{}, ErrDependencyMissing
+			}
+			reminderPayload, ok := validated.Payload.(service.ReminderPayload)
+			if !ok {
+				return ConfirmResult{}, ErrInvalidPayload
+			}
+			reminder := domain.Reminder{
+				UserID:            userID,
+				Title:             title,
+				RemindAt:          &reminderPayload.At,
+				SourceInboxItemID: &item.ID,
+			}
+			created, err := uc.Reminders.Create(ctx, reminder)
+			if err != nil {
+				return ConfirmResult{}, err
+			}
+			result.Reminder = &created
+		case domain.AiSuggestionTypeEvent:
+			if uc.Events == nil {
+				return ConfirmResult{}, ErrDependencyMissing
+			}
+			eventPayload, ok := validated.Payload.(service.EventPayload)
+			if !ok {
+				return ConfirmResult{}, ErrInvalidPayload
+			}
+			event := domain.Event{
+				UserID:            userID,
+				Title:             title,
+				StartAt:           &eventPayload.Start,
+				EndAt:             eventPayload.End,
+				AllDay:            eventPayload.AllDay,
+				SourceInboxItemID: &item.ID,
+			}
+			created, err := uc.Events.Create(ctx, event)
+			if err != nil {
+				return ConfirmResult{}, err
+			}
+			result.Event = &created
+		case domain.AiSuggestionTypeShopping:
+			if uc.ShoppingLists == nil || uc.ShoppingItems == nil {
+				return ConfirmResult{}, ErrDependencyMissing
+			}
+			shopPayload, ok := validated.Payload.(service.ShoppingPayload)
+			if !ok {
+				return ConfirmResult{}, ErrInvalidPayload
+			}
+			list := domain.ShoppingList{
+				UserID:            userID,
+				Title:             title,
+				SourceInboxItemID: &item.ID,
+			}
+			createdList, err := uc.ShoppingLists.Create(ctx, list)
+			if err != nil {
+				return ConfirmResult{}, err
+			}
+			result.ShoppingList = &createdList
 
-	item.Status = domain.InboxStatusConfirmed
-	item.LastError = nil
-	if _, err := uc.Inbox.Update(ctx, item); err != nil {
-		return ConfirmResult{}, err
+			items := make([]domain.ShoppingItem, 0, len(shopPayload.Items))
+			for idx, shopItem := range shopPayload.Items {
+				item := domain.ShoppingItem{
+					UserID:    userID,
+					ListID:    createdList.ID,
+					Title:     shopItem.Title,
+					Quantity:  shopItem.Quantity,
+					Checked:   false,
+					SortOrder: idx,
+				}
+				created, err := uc.ShoppingItems.Create(ctx, item)
+				if err != nil {
+					return ConfirmResult{}, err
+				}
+				items = append(items, created)
+			}
+			result.ShoppingItems = items
+		default:
+			return ConfirmResult{}, ErrInvalidType
+		}
+
+		item.Status = domain.InboxStatusConfirmed
+		item.LastError = nil
+		if _, err := uc.Inbox.Update(ctx, item); err != nil {
+			return ConfirmResult{}, err
+		}
 	}
 
 	return result, nil

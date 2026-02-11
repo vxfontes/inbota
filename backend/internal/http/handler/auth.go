@@ -53,17 +53,13 @@ func NewAuthHandler(uc *usecase.AuthUsecase) *AuthHandler {
 func (h *AuthHandler) Signup(c *gin.Context) {
 	var req AuthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
-		return
-	}
-	if req.Email == "" || req.Password == "" || req.DisplayName == "" || req.Locale == "" || req.Timezone == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing_required_fields"})
+		writeError(c, http.StatusBadRequest, "invalid_payload")
 		return
 	}
 
 	user, token, err := h.Usecase.Signup(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Locale, req.Timezone)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		writeUsecaseError(c, err)
 		return
 	}
 
@@ -83,17 +79,13 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_payload"})
-		return
-	}
-	if req.Email == "" || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing_required_fields"})
+		writeError(c, http.StatusBadRequest, "invalid_payload")
 		return
 	}
 
 	user, token, err := h.Usecase.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid_credentials"})
+		writeUsecaseError(c, err)
 		return
 	}
 

@@ -9,11 +9,15 @@ import (
 )
 
 type ReminderRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewReminderRepository(db *DB) *ReminderRepository {
 	return &ReminderRepository{db: db}
+}
+
+func NewReminderRepositoryTx(tx *sql.Tx) *ReminderRepository {
+	return &ReminderRepository{db: tx}
 }
 
 func (r *ReminderRepository) Create(ctx context.Context, reminder domain.Reminder) (domain.Reminder, error) {

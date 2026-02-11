@@ -4,16 +4,22 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/lib/pq"
+
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
 )
 
 type FlagRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewFlagRepository(db *DB) *FlagRepository {
 	return &FlagRepository{db: db}
+}
+
+func NewFlagRepositoryTx(tx *sql.Tx) *FlagRepository {
+	return &FlagRepository{db: tx}
 }
 
 func (r *FlagRepository) Create(ctx context.Context, flag domain.Flag) (domain.Flag, error) {
@@ -83,6 +89,38 @@ func (r *FlagRepository) Get(ctx context.Context, userID, id string) (domain.Fla
 	}
 	flag.Color = stringPtrFromNull(color)
 	return flag, nil
+}
+
+func (r *FlagRepository) GetByIDs(ctx context.Context, userID string, ids []string) ([]domain.Flag, error) {
+	if len(ids) == 0 {
+		return []domain.Flag{}, nil
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, name, color, sort_order, created_at, updated_at
+		FROM inbota.flags
+		WHERE user_id = $1 AND id = ANY($2)
+	`, userID, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	flags := make([]domain.Flag, 0)
+	for rows.Next() {
+		var color sql.NullString
+		var flag domain.Flag
+		if err := rows.Scan(&flag.ID, &flag.UserID, &flag.Name, &color, &flag.SortOrder, &flag.CreatedAt, &flag.UpdatedAt); err != nil {
+			return nil, err
+		}
+		flag.Color = stringPtrFromNull(color)
+		flags = append(flags, flag)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return flags, nil
 }
 
 func (r *FlagRepository) List(ctx context.Context, userID string, opts repository.ListOptions) ([]domain.Flag, *string, error) {

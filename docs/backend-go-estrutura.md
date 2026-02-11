@@ -77,6 +77,8 @@ O que existe hoje:
 - `inbox.go`: CRUD do inbox e acoes (reprocess/confirm/dismiss).
 - `tasks.go`, `reminders.go`, `events.go`: CRUD basico das entidades finais.
 - `shopping.go`: CRUD de listas e itens de compras.
+Nota:
+- Handlers de listagem fazem fetch em lote para evitar N+1 (ex.: inbox/tasks/reminders/events/shopping lists).
 
 ### `internal/http/dto/dto.go`
 Responsabilidade: contratos HTTP (request/response).
@@ -113,6 +115,7 @@ O que existe hoje:
 - `context.go`: flags, subflags e context rules.
 - `tasks.go`, `reminders.go`, `events.go`, `shopping.go`: CRUD minimo.
 - `errors.go` e `validation.go`: erros e parse de status/tipos.
+ - `TxRunner` e `TxRepositories` (em `internal/app/repository/tx.go`) para operacoes atomicas.
 
 ### `internal/app/service/`
 Responsabilidade: logica que nao e banco.
@@ -127,15 +130,30 @@ O que vai morar aqui:
 - Interfaces como `InboxRepository`, `UserRepository`.
 Quando mexer aqui:
 - Quando um usecase precisa salvar/buscar algo novo.
+Observacoes recentes:
+- Alguns repositorios expõem `GetByIDs` para fetch em lote.
+- `TxRunner` agrupa repos por transacao:
+  - Interface definida em `internal/app/repository/tx.go`.
+  - Expondo `WithTx(ctx, fn)` para executar um bloco dentro de `BEGIN/COMMIT`.
+  - Se `fn` retorna erro, faz `ROLLBACK`.
+  - `TxRepositories` e um bundle com repositorios ja ligados a `*sql.Tx`.
 
 ### `internal/infra/postgres/`
 Responsabilidade: implementacao concreta dos repositorios.
 O que vai morar aqui:
 - Queries SQL.
 - Mapeamento entre structs e tabelas.
+- `tx.go`: runner de transacoes e factories `New*RepositoryTx`.
 Quando mexer aqui:
 - Ao criar novas tabelas.
 - Ao otimizar queries.
+Detalhe do `tx.go`:
+- Cria uma transacao com `BeginTx`.
+- Monta repositorios “Tx” (ex.: `NewInboxRepositoryTx`, `NewTaskRepositoryTx`).
+- Executa a funcao callback e decide entre `Commit` ou `Rollback`.
+Onde e usado hoje:
+- `InboxUsecase.ReprocessInboxItem` (cria sugestao + atualiza inbox).
+- `InboxUsecase.ConfirmInboxItem` (cria entidade final + confirma inbox).
 
 ### `internal/infra/ai/`
 Responsabilidade: integracao com IA.

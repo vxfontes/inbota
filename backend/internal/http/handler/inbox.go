@@ -60,38 +60,68 @@ func (h *InboxHandler) List(c *gin.Context) {
 		return
 	}
 
-	flagCache := make(map[string]*domain.Flag)
-	subflagCache := make(map[string]*domain.Subflag)
+	subflagIDs := make([]string, 0)
+	for _, result := range results {
+		if result.Suggestion != nil && result.Suggestion.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *result.Suggestion.SubflagID)
+		}
+	}
+
+	subflagsByID := make(map[string]domain.Subflag)
+	if h.Subflags != nil {
+		ids := uniqueStrings(subflagIDs)
+		if len(ids) > 0 {
+			subflags, err := h.Subflags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflagsByID = subflags
+		}
+	}
+
+	flagIDs := make([]string, 0)
+	for _, result := range results {
+		if result.Suggestion != nil && result.Suggestion.FlagID != nil {
+			flagIDs = append(flagIDs, *result.Suggestion.FlagID)
+		}
+	}
+	for _, subflag := range subflagsByID {
+		flagIDs = append(flagIDs, subflag.FlagID)
+	}
+
+	flagsByID := make(map[string]domain.Flag)
+	if h.Flags != nil {
+		ids := uniqueStrings(flagIDs)
+		if len(ids) > 0 {
+			flags, err := h.Flags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flagsByID = flags
+		}
+	}
+
 	items := make([]dto.InboxItemResponse, 0, len(results))
 	for _, result := range results {
 		var suggestionResp *dto.AiSuggestionResponse
 		if result.Suggestion != nil {
 			var flag *domain.Flag
-			if h.Flags != nil && result.Suggestion.FlagID != nil {
-				if cached, ok := flagCache[*result.Suggestion.FlagID]; ok {
-					flag = cached
-				} else {
-					f, err := h.Flags.Get(c.Request.Context(), userID, *result.Suggestion.FlagID)
-					if err != nil {
-						writeUsecaseError(c, err)
-						return
-					}
+			if result.Suggestion.FlagID != nil {
+				if f, ok := flagsByID[*result.Suggestion.FlagID]; ok {
 					flag = &f
-					flagCache[*result.Suggestion.FlagID] = flag
 				}
 			}
 			var subflag *domain.Subflag
-			if h.Subflags != nil && result.Suggestion.SubflagID != nil {
-				if cached, ok := subflagCache[*result.Suggestion.SubflagID]; ok {
-					subflag = cached
-				} else {
-					sf, err := h.Subflags.Get(c.Request.Context(), userID, *result.Suggestion.SubflagID)
-					if err != nil {
-						writeUsecaseError(c, err)
-						return
-					}
+			if result.Suggestion.SubflagID != nil {
+				if sf, ok := subflagsByID[*result.Suggestion.SubflagID]; ok {
 					subflag = &sf
-					subflagCache[*result.Suggestion.SubflagID] = subflag
+				}
+			}
+			if flag == nil && subflag != nil {
+				if f, ok := flagsByID[subflag.FlagID]; ok {
+					flag = &f
 				}
 			}
 			resp := toSuggestionResponse(*result.Suggestion, flag, subflag)

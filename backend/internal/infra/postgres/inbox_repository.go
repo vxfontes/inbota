@@ -6,16 +6,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lib/pq"
+
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
 )
 
 type InboxRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewInboxRepository(db *DB) *InboxRepository {
 	return &InboxRepository{db: db}
+}
+
+func NewInboxRepositoryTx(tx *sql.Tx) *InboxRepository {
+	return &InboxRepository{db: tx}
 }
 
 func (r *InboxRepository) Create(ctx context.Context, item domain.InboxItem) (domain.InboxItem, error) {
@@ -79,6 +85,44 @@ func (r *InboxRepository) Get(ctx context.Context, userID, id string) (domain.In
 	item.RawMediaURL = stringPtrFromNull(rawMedia)
 	item.LastError = stringPtrFromNull(lastError)
 	return item, nil
+}
+
+func (r *InboxRepository) GetByIDs(ctx context.Context, userID string, ids []string) ([]domain.InboxItem, error) {
+	if len(ids) == 0 {
+		return []domain.InboxItem{}, nil
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, source, raw_text, raw_media_url, status, last_error, created_at, updated_at
+		FROM inbota.inbox_items
+		WHERE user_id = $1 AND id = ANY($2)
+	`, userID, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.InboxItem, 0)
+	for rows.Next() {
+		var source string
+		var status string
+		var rawMedia sql.NullString
+		var lastError sql.NullString
+		var item domain.InboxItem
+		if err := rows.Scan(&item.ID, &item.UserID, &source, &item.RawText, &rawMedia, &status, &lastError, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		item.Source = domain.InboxSource(source)
+		item.Status = domain.InboxStatus(status)
+		item.RawMediaURL = stringPtrFromNull(rawMedia)
+		item.LastError = stringPtrFromNull(lastError)
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
 
 func (r *InboxRepository) List(ctx context.Context, userID string, filter repository.InboxListFilter, opts repository.ListOptions) ([]domain.InboxItem, *string, error) {

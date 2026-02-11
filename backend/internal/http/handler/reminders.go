@@ -46,21 +46,32 @@ func (h *RemindersHandler) List(c *gin.Context) {
 		return
 	}
 
-	inboxCache := make(map[string]*domain.InboxItem)
+	sourceIDs := make([]string, 0)
+	for _, reminder := range reminders {
+		if reminder.SourceInboxItemID != nil {
+			sourceIDs = append(sourceIDs, *reminder.SourceInboxItemID)
+		}
+	}
+
+	sourcesByID := make(map[string]domain.InboxItem)
+	if h.Inbox != nil {
+		ids := uniqueStrings(sourceIDs)
+		if len(ids) > 0 {
+			items, err := h.Inbox.GetInboxItemsByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			sourcesByID = items
+		}
+	}
+
 	items := make([]dto.ReminderResponse, 0, len(reminders))
 	for _, reminder := range reminders {
 		var source *domain.InboxItem
-		if h.Inbox != nil && reminder.SourceInboxItemID != nil {
-			if cached, ok := inboxCache[*reminder.SourceInboxItemID]; ok {
-				source = cached
-			} else {
-				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *reminder.SourceInboxItemID)
-				if err != nil {
-					writeUsecaseError(c, err)
-					return
-				}
-				source = &res.Item
-				inboxCache[*reminder.SourceInboxItemID] = source
+		if reminder.SourceInboxItemID != nil {
+			if item, ok := sourcesByID[*reminder.SourceInboxItemID]; ok {
+				source = &item
 			}
 		}
 		items = append(items, toReminderResponse(reminder, source))

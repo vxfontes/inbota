@@ -66,6 +66,8 @@ func writeUsecaseError(c *gin.Context, err error) {
 		writeError(c, http.StatusBadRequest, "invalid_password")
 	case errors.Is(err, usecase.ErrInvalidDisplayName):
 		writeError(c, http.StatusBadRequest, "invalid_display_name")
+	case errors.Is(err, usecase.ErrInvalidCredentials):
+		writeError(c, http.StatusUnauthorized, "invalid_credentials")
 	case errors.Is(err, usecase.ErrDependencyMissing):
 		writeError(c, http.StatusInternalServerError, "dependency_missing")
 	case errors.Is(err, service.ErrAISchemaInvalid):
@@ -77,4 +79,20 @@ func writeUsecaseError(c *gin.Context, err error) {
 	default:
 		writeError(c, http.StatusInternalServerError, "internal_error")
 	}
+}
+
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, v := range values {
+		if v == "" {
+			continue
+		}
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
 }

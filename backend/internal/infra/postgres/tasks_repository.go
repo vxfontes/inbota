@@ -9,11 +9,15 @@ import (
 )
 
 type TaskRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewTaskRepository(db *DB) *TaskRepository {
 	return &TaskRepository{db: db}
+}
+
+func NewTaskRepositoryTx(tx *sql.Tx) *TaskRepository {
+	return &TaskRepository{db: tx}
 }
 
 func (r *TaskRepository) Create(ctx context.Context, task domain.Task) (domain.Task, error) {

@@ -4,16 +4,22 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/lib/pq"
+
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
 )
 
 type SubflagRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewSubflagRepository(db *DB) *SubflagRepository {
 	return &SubflagRepository{db: db}
+}
+
+func NewSubflagRepositoryTx(tx *sql.Tx) *SubflagRepository {
+	return &SubflagRepository{db: tx}
 }
 
 func (r *SubflagRepository) Create(ctx context.Context, subflag domain.Subflag) (domain.Subflag, error) {
@@ -81,6 +87,36 @@ func (r *SubflagRepository) Get(ctx context.Context, userID, id string) (domain.
 		return domain.Subflag{}, err
 	}
 	return subflag, nil
+}
+
+func (r *SubflagRepository) GetByIDs(ctx context.Context, userID string, ids []string) ([]domain.Subflag, error) {
+	if len(ids) == 0 {
+		return []domain.Subflag{}, nil
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, flag_id, name, sort_order, created_at, updated_at
+		FROM inbota.subflags
+		WHERE user_id = $1 AND id = ANY($2)
+	`, userID, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	subflags := make([]domain.Subflag, 0)
+	for rows.Next() {
+		var subflag domain.Subflag
+		if err := rows.Scan(&subflag.ID, &subflag.UserID, &subflag.FlagID, &subflag.Name, &subflag.SortOrder, &subflag.CreatedAt, &subflag.UpdatedAt); err != nil {
+			return nil, err
+		}
+		subflags = append(subflags, subflag)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return subflags, nil
 }
 
 func (r *SubflagRepository) ListByFlag(ctx context.Context, userID, flagID string, opts repository.ListOptions) ([]domain.Subflag, *string, error) {

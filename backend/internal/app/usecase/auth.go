@@ -26,7 +26,7 @@ func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName,
 	locale = strings.TrimSpace(locale)
 	timezone = strings.TrimSpace(timezone)
 	if email == "" || password == "" || displayName == "" || locale == "" || timezone == "" {
-		return domain.User{}, "", errors.New("missing_required_fields")
+		return domain.User{}, "", ErrMissingRequiredFields
 	}
 	if !validateEmail(email) {
 		return domain.User{}, "", ErrInvalidEmail

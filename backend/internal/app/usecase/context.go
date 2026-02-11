@@ -2,9 +2,11 @@ package usecase
 
 import (
 	"context"
+	"errors"
 
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
+	"inbota/backend/internal/infra/postgres"
 )
 
 type FlagUsecase struct {
@@ -83,14 +85,42 @@ func (uc *FlagUsecase) List(ctx context.Context, userID string, opts repository.
 	return uc.Flags.List(ctx, userID, opts)
 }
 
+func (uc *FlagUsecase) GetByIDs(ctx context.Context, userID string, ids []string) (map[string]domain.Flag, error) {
+	if userID == "" {
+		return nil, ErrMissingRequiredFields
+	}
+	if len(ids) == 0 {
+		return map[string]domain.Flag{}, nil
+	}
+	flags, err := uc.Flags.GetByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]domain.Flag, len(flags))
+	for _, flag := range flags {
+		out[flag.ID] = flag
+	}
+	return out, nil
+}
+
 type SubflagUsecase struct {
 	Subflags repository.SubflagRepository
+	Flags    repository.FlagRepository
 }
 
 func (uc *SubflagUsecase) Create(ctx context.Context, userID, flagID, name string, sortOrder *int) (domain.Subflag, error) {
 	name = normalizeString(name)
 	if userID == "" || flagID == "" || name == "" {
 		return domain.Subflag{}, ErrMissingRequiredFields
+	}
+	if uc.Flags == nil {
+		return domain.Subflag{}, ErrDependencyMissing
+	}
+	if _, err := uc.Flags.Get(ctx, userID, flagID); err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			return domain.Subflag{}, ErrInvalidPayload
+		}
+		return domain.Subflag{}, err
 	}
 	order := 0
 	if sortOrder != nil {
@@ -156,14 +186,40 @@ func (uc *SubflagUsecase) ListByFlag(ctx context.Context, userID, flagID string,
 	return uc.Subflags.ListByFlag(ctx, userID, flagID, opts)
 }
 
+func (uc *SubflagUsecase) GetByIDs(ctx context.Context, userID string, ids []string) (map[string]domain.Subflag, error) {
+	if userID == "" {
+		return nil, ErrMissingRequiredFields
+	}
+	if len(ids) == 0 {
+		return map[string]domain.Subflag{}, nil
+	}
+	subflags, err := uc.Subflags.GetByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]domain.Subflag, len(subflags))
+	for _, subflag := range subflags {
+		out[subflag.ID] = subflag
+	}
+	return out, nil
+}
+
 type ContextRuleUsecase struct {
-	Rules repository.ContextRuleRepository
+	Rules    repository.ContextRuleRepository
+	Flags    repository.FlagRepository
+	Subflags repository.SubflagRepository
 }
 
 func (uc *ContextRuleUsecase) Create(ctx context.Context, userID, keyword, flagID string, subflagID *string) (domain.ContextRule, error) {
 	keyword = normalizeString(keyword)
 	if userID == "" || keyword == "" || flagID == "" {
 		return domain.ContextRule{}, ErrMissingRequiredFields
+	}
+	if err := uc.validateFlag(ctx, userID, flagID); err != nil {
+		return domain.ContextRule{}, err
+	}
+	if err := uc.validateSubflag(ctx, userID, flagID, subflagID); err != nil {
+		return domain.ContextRule{}, err
 	}
 
 	rule := domain.ContextRule{
@@ -191,13 +247,21 @@ func (uc *ContextRuleUsecase) Update(ctx context.Context, userID, id string, key
 		}
 		rule.Keyword = trimmed
 	}
+	nextFlagID := rule.FlagID
 	if flagID != nil {
 		if normalizeString(*flagID) == "" {
 			return domain.ContextRule{}, ErrMissingRequiredFields
 		}
-		rule.FlagID = normalizeString(*flagID)
+		nextFlagID = normalizeString(*flagID)
+		if err := uc.validateFlag(ctx, userID, nextFlagID); err != nil {
+			return domain.ContextRule{}, err
+		}
+		rule.FlagID = nextFlagID
 	}
 	if subflagID != nil {
+		if err := uc.validateSubflag(ctx, userID, nextFlagID, subflagID); err != nil {
+			return domain.ContextRule{}, err
+		}
 		rule.SubflagID = normalizeOptionalString(subflagID)
 	}
 
@@ -223,4 +287,37 @@ func (uc *ContextRuleUsecase) List(ctx context.Context, userID string, opts repo
 		return nil, nil, ErrMissingRequiredFields
 	}
 	return uc.Rules.List(ctx, userID, opts)
+}
+
+func (uc *ContextRuleUsecase) validateFlag(ctx context.Context, userID, flagID string) error {
+	if uc.Flags == nil {
+		return ErrDependencyMissing
+	}
+	if _, err := uc.Flags.Get(ctx, userID, flagID); err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			return ErrInvalidPayload
+		}
+		return err
+	}
+	return nil
+}
+
+func (uc *ContextRuleUsecase) validateSubflag(ctx context.Context, userID, flagID string, subflagID *string) error {
+	if subflagID == nil {
+		return nil
+	}
+	if uc.Subflags == nil {
+		return ErrDependencyMissing
+	}
+	subflag, err := uc.Subflags.Get(ctx, userID, *subflagID)
+	if err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			return ErrInvalidPayload
+		}
+		return err
+	}
+	if flagID != "" && subflag.FlagID != flagID {
+		return ErrInvalidPayload
+	}
+	return nil
 }

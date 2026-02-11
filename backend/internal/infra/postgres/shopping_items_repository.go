@@ -9,11 +9,15 @@ import (
 )
 
 type ShoppingItemRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewShoppingItemRepository(db *DB) *ShoppingItemRepository {
 	return &ShoppingItemRepository{db: db}
+}
+
+func NewShoppingItemRepositoryTx(tx *sql.Tx) *ShoppingItemRepository {
+	return &ShoppingItemRepository{db: tx}
 }
 
 func (r *ShoppingItemRepository) Create(ctx context.Context, item domain.ShoppingItem) (domain.ShoppingItem, error) {

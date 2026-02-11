@@ -46,21 +46,32 @@ func (h *EventsHandler) List(c *gin.Context) {
 		return
 	}
 
-	inboxCache := make(map[string]*domain.InboxItem)
+	sourceIDs := make([]string, 0)
+	for _, event := range events {
+		if event.SourceInboxItemID != nil {
+			sourceIDs = append(sourceIDs, *event.SourceInboxItemID)
+		}
+	}
+
+	sourcesByID := make(map[string]domain.InboxItem)
+	if h.Inbox != nil {
+		ids := uniqueStrings(sourceIDs)
+		if len(ids) > 0 {
+			items, err := h.Inbox.GetInboxItemsByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			sourcesByID = items
+		}
+	}
+
 	items := make([]dto.EventResponse, 0, len(events))
 	for _, event := range events {
 		var source *domain.InboxItem
-		if h.Inbox != nil && event.SourceInboxItemID != nil {
-			if cached, ok := inboxCache[*event.SourceInboxItemID]; ok {
-				source = cached
-			} else {
-				res, err := h.Inbox.GetInboxItem(c.Request.Context(), userID, *event.SourceInboxItemID)
-				if err != nil {
-					writeUsecaseError(c, err)
-					return
-				}
-				source = &res.Item
-				inboxCache[*event.SourceInboxItemID] = source
+		if event.SourceInboxItemID != nil {
+			if item, ok := sourcesByID[*event.SourceInboxItemID]; ok {
+				source = &item
 			}
 		}
 		items = append(items, toEventResponse(event, source))

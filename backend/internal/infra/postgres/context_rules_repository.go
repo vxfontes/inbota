@@ -9,11 +9,15 @@ import (
 )
 
 type ContextRuleRepository struct {
-	db *DB
+	db dbtx
 }
 
 func NewContextRuleRepository(db *DB) *ContextRuleRepository {
 	return &ContextRuleRepository{db: db}
+}
+
+func NewContextRuleRepositoryTx(tx *sql.Tx) *ContextRuleRepository {
+	return &ContextRuleRepository{db: tx}
 }
 
 func (r *ContextRuleRepository) Create(ctx context.Context, rule domain.ContextRule) (domain.ContextRule, error) {

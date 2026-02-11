@@ -4,6 +4,7 @@ import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/auth_module/components/auth_background.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
@@ -168,7 +169,7 @@ class _HeroCard extends StatelessWidget {
                 top: 26,
                 left: 22,
                 child: _MiniCard(
-                  icon: Icons.auto_awesome_rounded,
+                  icon: IBIcon.autoAwesomeRounded,
                   title: 'Ações inteligentes',
                   subtitle: 'Rotinas rápidas',
                   accent: AppColors.ai600,
@@ -178,7 +179,7 @@ class _HeroCard extends StatelessWidget {
                 bottom: 28,
                 right: 18,
                 child: _MiniCard(
-                  icon: Icons.task_alt_rounded,
+                  icon: IBIcon.taskAltRounded,
                   title: 'Listas claras',
                   subtitle: 'Tudo em ordem',
                   accent: AppColors.success600,
@@ -188,7 +189,7 @@ class _HeroCard extends StatelessWidget {
                 bottom: 80,
                 left: 18,
                 child: _MiniCard(
-                  icon: Icons.notifications_active_rounded,
+                  icon: IBIcon.notificationsActiveRounded,
                   title: 'Lembretes',
                   subtitle: 'Na hora certa',
                   accent: AppColors.warning500,
@@ -284,7 +285,7 @@ class _MiniCard extends StatelessWidget {
               color: accent.withAlpha((0.14 * 255).round()),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: accent, size: 18),
+            child: IBIcon(icon, color: accent, size: 18),
           ),
           const SizedBox(width: 10),
           Column(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
@@ -43,8 +44,8 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
+              child: const IBIcon(
+                IBIcon.autoAwesomeRounded,
                 color: AppColors.surface,
                 size: 18,
               ),
@@ -145,8 +146,8 @@ class IBLightAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.arrow_back_rounded,
+            child: const IBIcon(
+              IBIcon.arrowBackRounded,
               size: 18,
               color: AppColors.surface,
             ),

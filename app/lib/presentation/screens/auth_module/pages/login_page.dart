@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/auth_module/controller/login_controller.dart';
 import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text_field.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -39,7 +39,7 @@ class _LoginPageState extends IBState<LoginPage, LoginController> {
           label: 'Email',
           hint: 'voce@exemplo.com',
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: const Icon(Icons.mail_outline, color: AppColors.textMuted),
+          prefixIcon: const IBIcon(IBIcon.mailOutline, color: AppColors.textMuted),
           controller: controller.emailController,
         ),
         const SizedBox(height: 16),
@@ -47,7 +47,7 @@ class _LoginPageState extends IBState<LoginPage, LoginController> {
           label: 'Senha',
           hint: 'Digite sua senha',
           obscureText: true,
-          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+          prefixIcon: const IBIcon(IBIcon.lockOutline, color: AppColors.textMuted),
           controller: controller.passwordController,
         ),
         const SizedBox(height: 12),

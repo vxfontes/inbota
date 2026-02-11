@@ -4,6 +4,7 @@ import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/settings_module/controller/settings_controller.dart';
 import 'package:inbota/shared/components/ib_lib/ib_app_bar.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_menu_card.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -34,25 +35,25 @@ class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
                   IBMenuItem(
                     title: 'Conta',
                     subtitle: 'Dados pessoais e segurança',
-                    icon: Icons.person_outline,
+                    icon: IBIcon.personOutline,
                     onTap: () {},
                   ),
                   IBMenuItem(
                     title: 'Notificações',
                     subtitle: 'Lembretes e alertas',
-                    icon: Icons.notifications_none_outlined,
+                    icon: IBIcon.notificationsNoneOutlined,
                     onTap: () {},
                   ),
                   IBMenuItem(
                     title: 'Preferências',
                     subtitle: 'Idioma e aparência',
-                    icon: Icons.tune,
+                    icon: IBIcon.tune,
                     onTap: () {},
                   ),
                   IBMenuItem(
                     title: 'Componentes',
                     subtitle: 'Biblioteca visual',
-                    icon: Icons.grid_view_rounded,
+                    icon: IBIcon.gridViewRounded,
                     onTap: () => AppNavigation.push(AppRoutes.settingsComponents),
                   ),
                 ],
@@ -65,14 +66,14 @@ class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
                   IBMenuItem(
                     title: 'Central de ajuda',
                     subtitle: 'Perguntas frequentes',
-                    icon: Icons.help_outline,
+                    icon: IBIcon.helpOutline,
                     onTap: () {},
                     iconColor: AppColors.ai600,
                   ),
                   IBMenuItem(
                     title: 'Privacidade',
                     subtitle: 'Termos e políticas',
-                    icon: Icons.privacy_tip_outlined,
+                    icon: IBIcon.privacyTipOutlined,
                     onTap: () {},
                     iconColor: AppColors.ai600,
                   ),

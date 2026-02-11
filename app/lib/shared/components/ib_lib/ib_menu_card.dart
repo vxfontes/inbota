@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
@@ -91,7 +92,7 @@ class _IBMenuRow extends StatelessWidget {
                 color: AppColors.surface2,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
+              child: IBIcon(
                 item.icon,
                 color: item.iconColor ?? AppColors.primary600,
                 size: 22,
@@ -120,8 +121,8 @@ class _IBMenuRow extends StatelessWidget {
                 color: AppColors.surface2,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.chevron_right,
+              child: const IBIcon(
+                IBIcon.chevronRight,
                 color: AppColors.primary600,
                 size: 20,
               ),

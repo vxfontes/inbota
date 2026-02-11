@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/shared/components/ib_lib/ib_huge_icons.dart';
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBBottomNav extends StatelessWidget {
@@ -151,8 +152,8 @@ class _CenterAction extends StatelessWidget {
             ),
           ],
         ),
-        child: const Icon(
-          Icons.auto_awesome_rounded,
+        child: const IBIcon(
+          IBIcon.autoAwesomeRounded,
           color: AppColors.surface,
           size: 24,
         ),

@@ -4,6 +4,7 @@ import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/auth_module/controller/signup_controller.dart';
 import 'package:inbota/presentation/screens/auth_module/components/auth_form_scaffold.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
+import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text_field.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -39,7 +40,7 @@ class _SignupPageState extends IBState<SignupPage, SignupController> {
         IBTextField(
           label: 'Nome completo',
           hint: 'Como podemos te chamar?',
-          prefixIcon: const Icon(Icons.person_outline, color: AppColors.textMuted),
+          prefixIcon: const IBIcon(IBIcon.personOutline, color: AppColors.textMuted),
           controller: controller.nameController,
         ),
         const SizedBox(height: 16),
@@ -47,7 +48,7 @@ class _SignupPageState extends IBState<SignupPage, SignupController> {
           label: 'Email',
           hint: 'voce@exemplo.com',
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: const Icon(Icons.mail_outline, color: AppColors.textMuted),
+          prefixIcon: const IBIcon(IBIcon.mailOutline, color: AppColors.textMuted),
           controller: controller.emailController,
         ),
         const SizedBox(height: 16),
@@ -55,7 +56,7 @@ class _SignupPageState extends IBState<SignupPage, SignupController> {
           label: 'Senha',
           hint: 'Crie uma senha segura',
           obscureText: true,
-          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+          prefixIcon: const IBIcon(IBIcon.lockOutline, color: AppColors.textMuted),
           controller: controller.passwordController,
         ),
         ValueListenableBuilder<String?>(

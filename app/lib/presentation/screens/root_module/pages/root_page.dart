@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/home_module/pages/home_page.dart';
+import 'package:inbota/presentation/screens/reminders_module/pages/reminders_page.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
@@ -18,7 +19,7 @@ class _RootPageState extends State<RootPage> {
 
   List<Widget> get _pages => const [
         HomePage(),
-        _PlaceholderPage(title: 'Lembretes'),
+        RemindersPage(),
         _PlaceholderPage(title: 'Criar'),
         _PlaceholderPage(title: 'Compras'),
         _PlaceholderPage(title: 'Eventos'),

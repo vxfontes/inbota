@@ -58,7 +58,7 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
                     .titulo
                     .color(AppColors.surface)
                     .build(),
-                IBText('Seu dia, mais leve', context: context)
+                IBText('Seu dia mais leve', context: context)
                     .label
                     .color(AppColors.surface.withAlpha((0.78 * 255).round()))
                     .build(),

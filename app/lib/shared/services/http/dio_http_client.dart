@@ -84,6 +84,24 @@ class DioHttpClient implements IHttpClient {
     );
   }
 
+  @override
+  Future<ResponseModel> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? extra,
+  }) async {
+    final options = await _buildOptions(extra: extra, responseType: ResponseType.json);
+    return _request(
+      () => _instance.patch(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      ),
+    );
+  }
+
   Future<ResponseModel> _request(Future<Response<dynamic>> Function() call) async {
     try {
       final response = await call();

@@ -29,6 +29,13 @@ abstract class IHttpClient {
     Map<String, dynamic>? extra,
   });
 
+  Future<ResponseModel> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? extra,
+  });
+
 // Future<ResponseModel> download(String path,
 //     {dynamic data, Map<String, dynamic> queryParameters, Map<String, dynamic>? extra});
 }

@@ -198,8 +198,8 @@ class _HeroCard extends StatelessWidget {
                 child: _LogoOrb(
                   child: Image.asset(
                     'assets/app_icon.png',
-                    width: 70,
-                    height: 70,
+                    width: 120,
+                    height: 120,
                   ),
                 ),
               ),
@@ -240,25 +240,7 @@ class _LogoOrb extends StatelessWidget {
           ),
         ],
       ),
-      child: Center(
-        child: Container(
-          width: 92,
-          height: 92,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: AppColors.border),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.text.withAlpha((0.08 * 255).round()),
-                blurRadius: 16,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Center(child: child),
-        ),
-      ),
+      child: Center(child: child),
     );
   }
 }

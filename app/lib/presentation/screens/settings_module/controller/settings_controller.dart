@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inbota/modules/auth/domain/usecases/logout_usecase.dart';
+import 'package:inbota/presentation/routes/app_navigation.dart';
+import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 
@@ -11,7 +13,7 @@ class SettingsController implements IBController {
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
 
-  Future<bool> logout() async {
+  Future<bool> fetchLogout() async {
     if (loading.value) return false;
     loading.value = true;
     error.value = null;
@@ -23,6 +25,12 @@ class SettingsController implements IBController {
       error.value = _failureMessage(failure, fallback: 'Nao foi possivel sair agora.');
       return false;
     }, (_) => true);
+  }
+
+  Future<void> logout() async {
+    final success = await fetchLogout();
+    if (!success) return;
+    AppNavigation.clearAndPush(AppRoutes.auth);
   }
 
   void dispose() {

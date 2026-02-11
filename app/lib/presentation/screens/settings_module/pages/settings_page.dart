@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:inbota/presentation/routes/app_navigation.dart';
-import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/settings_module/controller/settings_controller.dart';
 import 'package:inbota/shared/components/ib_lib/ib_app_bar.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
+import 'package:inbota/shared/components/ib_lib/ib_menu_card.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
@@ -16,31 +15,69 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
-  Future<void> _logout() async {
-    final success = await controller.logout();
-    if (!success || !mounted) return;
-    AppNavigation.clearAndPush(AppRoutes.auth);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const IBLightAppBar(title: 'Configurações'),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IBText('Conta', context: context).subtitulo.build(),
+              IBText('Configurações', context: context).subtitulo.build(),
               const SizedBox(height: 12),
+              IBMenuCard(
+                items: [
+                  IBMenuItem(
+                    title: 'Conta',
+                    subtitle: 'Dados pessoais e segurança',
+                    icon: Icons.person_outline,
+                    onTap: () {},
+                  ),
+                  IBMenuItem(
+                    title: 'Notificações',
+                    subtitle: 'Lembretes e alertas',
+                    icon: Icons.notifications_none_outlined,
+                    onTap: () {},
+                  ),
+                  IBMenuItem(
+                    title: 'Preferências',
+                    subtitle: 'Idioma e aparência',
+                    icon: Icons.tune,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              IBText('Suporte', context: context).subtitulo.build(),
+              const SizedBox(height: 12),
+              IBMenuCard(
+                items: [
+                  IBMenuItem(
+                    title: 'Central de ajuda',
+                    subtitle: 'Perguntas frequentes',
+                    icon: Icons.help_outline,
+                    onTap: () {},
+                    iconColor: AppColors.ai600,
+                  ),
+                  IBMenuItem(
+                    title: 'Privacidade',
+                    subtitle: 'Termos e políticas',
+                    icon: Icons.privacy_tip_outlined,
+                    onTap: () {},
+                    iconColor: AppColors.ai600,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               ValueListenableBuilder<bool>(
                 valueListenable: controller.loading,
                 builder: (context, loading, _) {
                   return IBButton(
                     label: 'Sair',
                     loading: loading,
-                    onPressed: _logout,
+                    onPressed: () async => await controller.logout(),
                     variant: IBButtonVariant.secondary,
                   );
                 },

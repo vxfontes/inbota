@@ -6,6 +6,7 @@ export 'ib_chip.dart';
 export 'ib_empty_state.dart';
 export 'ib_huge_icons.dart';
 export 'ib_loader.dart';
+export 'ib_menu_card.dart';
 export 'ib_scaffold.dart';
 export 'ib_text.dart';
 export 'ib_text_field.dart';

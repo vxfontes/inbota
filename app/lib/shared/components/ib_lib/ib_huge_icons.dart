@@ -1,6 +1,7 @@
 import 'package:hugeicons/hugeicons.dart';
 
 enum IBHugeIcon {
+  home,
   inbox,
   reminder,
   shoppingBag,
@@ -12,6 +13,8 @@ enum IBHugeIcon {
 extension IBHugeIconData on IBHugeIcon {
   List<List<dynamic>> get data {
     switch (this) {
+      case IBHugeIcon.home:
+        return HugeIcons.strokeRoundedHome01;
       case IBHugeIcon.inbox:
         return HugeIcons.strokeRoundedInbox;
       case IBHugeIcon.reminder:

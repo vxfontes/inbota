@@ -115,6 +115,17 @@ class IBLightAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       centerTitle: false,
       leadingWidth: 56,
+      flexibleSpace: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+          ),
+        ),
+      ),
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
         child: InkWell(

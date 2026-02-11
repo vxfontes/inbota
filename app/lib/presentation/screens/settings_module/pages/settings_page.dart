@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/presentation/routes/app_navigation.dart';
+import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/settings_module/controller/settings_controller.dart';
 import 'package:inbota/shared/components/ib_lib/ib_app_bar.dart';
 import 'package:inbota/shared/components/ib_lib/ib_button.dart';
@@ -46,6 +48,12 @@ class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
                     subtitle: 'Idioma e aparência',
                     icon: Icons.tune,
                     onTap: () {},
+                  ),
+                  IBMenuItem(
+                    title: 'Componentes',
+                    subtitle: 'Biblioteca visual',
+                    icon: Icons.grid_view_rounded,
+                    onTap: () => AppNavigation.push(AppRoutes.settingsComponents),
                   ),
                 ],
               ),

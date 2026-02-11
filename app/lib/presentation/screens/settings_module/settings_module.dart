@@ -4,6 +4,7 @@ import 'package:inbota/modules/shared_module.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/settings_module/controller/settings_controller.dart';
 
+import 'pages/settings_components_page.dart';
 import 'pages/settings_page.dart';
 
 class SettingsModule extends Module {
@@ -21,5 +22,6 @@ class SettingsModule extends Module {
   @override
   void routes(RouteManager r) {
     r.child(AppRoutes.splash, child: (_) => const SettingsPage());
+    r.child(AppRoutes.components, child: (_) => const SettingsComponentsPage());
   }
 }

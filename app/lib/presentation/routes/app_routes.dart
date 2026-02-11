@@ -8,4 +8,6 @@ class AppRoutes {
   static const login = '/auth/login';
   static const signup = '/auth/signup';
   static const settings = '/settings/';
+  static const components = '/components';
+  static const settingsComponents = '/settings/components';
 }

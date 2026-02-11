@@ -48,7 +48,7 @@ class IBBottomNav extends StatelessWidget {
                   children: [
                     _NavIcon(
                       index: 0,
-                      icon: IBHugeIcon.inbox,
+                      icon: IBHugeIcon.home,
                       isActive: currentIndex == 0,
                       onTap: onTap,
                     ),

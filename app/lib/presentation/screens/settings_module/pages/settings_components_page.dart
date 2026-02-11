@@ -1,0 +1,134 @@
+import 'package:flutter/material.dart';
+
+import 'package:inbota/shared/components/ib_lib/index.dart';
+import 'package:inbota/shared/theme/app_colors.dart';
+
+class SettingsComponentsPage extends StatelessWidget {
+  const SettingsComponentsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const IBLightAppBar(title: 'Componentes'),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          IBText('Componentes IB (demo)', context: context).titulo.build(),
+          const SizedBox(height: 12),
+          IBText(
+            'Exemplo rápido com todos os componentes compartilhados.',
+            context: context,
+          ).body.build(),
+          const SizedBox(height: 20),
+          const IBTextField(
+            label: 'Texto rápido',
+            hint: 'Escreva aqui...',
+          ),
+          const SizedBox(height: 16),
+          IBText('Buttons', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              IBButton(label: 'Primário', onPressed: () {}),
+              IBButton(
+                label: 'Secundário',
+                variant: IBButtonVariant.secondary,
+                onPressed: () {},
+              ),
+              IBButton(
+                label: 'Ghost',
+                variant: IBButtonVariant.ghost,
+                onPressed: () {},
+              ),
+              const IBButton(
+                label: 'Loading',
+                loading: true,
+                onPressed: null,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              IBChip(label: 'PROCESSING', color: AppColors.ai600),
+              IBChip(label: 'NEEDS_REVIEW', color: AppColors.warning500),
+              IBChip(label: 'CONFIRMED', color: AppColors.success600),
+              IBChip(label: 'ERROR', color: AppColors.danger600),
+            ],
+          ),
+          const SizedBox(height: 24),
+          IBCard(
+            child: IBText('IBCard com padding padrão.', context: context)
+                .body
+                .build(),
+          ),
+          const SizedBox(height: 24),
+          const IBEmptyState(
+            title: 'Nada por aqui',
+            subtitle: 'Quando tiver itens, eles vão aparecer aqui.',
+          ),
+          const SizedBox(height: 24),
+          const Center(child: IBLoader(label: 'Carregando...')),
+          const SizedBox(height: 24),
+          IBText('Menu Card', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          IBMenuCard(
+            items: [
+              IBMenuItem(
+                title: 'Cartão',
+                subtitle: 'Gerenciar cartões',
+                icon: Icons.credit_card,
+              ),
+              IBMenuItem(
+                title: 'Seguros',
+                subtitle: 'Proteção e coberturas',
+                icon: Icons.verified_user_outlined,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          IBText('Variações de IBText', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          IBText('Título', context: context).titulo.build(),
+          const SizedBox(height: 6),
+          IBText('Subtítulo', context: context).subtitulo.build(),
+          const SizedBox(height: 6),
+          IBText('Body padrão', context: context).body.build(),
+          const SizedBox(height: 6),
+          IBText('Muted', context: context).muted.build(),
+          const SizedBox(height: 6),
+          IBText('Caption', context: context).caption.build(),
+          const SizedBox(height: 6),
+          IBText('Label', context: context).label.build(),
+          const SizedBox(height: 12),
+          IBText('Centralizado', context: context)
+              .body
+              .align(TextAlign.center)
+              .build(),
+          const SizedBox(height: 24),
+          IBText('App Bar', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          const SizedBox(
+            height: kToolbarHeight + 16,
+            child: IBAppBar(
+              title: 'Inbota',
+              padding: EdgeInsets.only(left: 12),
+            ),
+          ),
+          const SizedBox(height: 24),
+          IBText('Bottom Bar', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          IBBottomNav(
+            currentIndex: 0,
+            onTap: (_) {},
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}

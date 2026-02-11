@@ -21,6 +21,9 @@ class IBButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || loading;
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(14));
+    const padding = EdgeInsets.symmetric(horizontal: 16, vertical: 14);
+    const minimumSize = Size.fromHeight(48);
 
     Widget content = IBText(label, context: context).label.build();
     if (loading) {
@@ -38,6 +41,10 @@ class IBButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary700,
             foregroundColor: AppColors.surface,
+            padding: padding,
+            minimumSize: minimumSize,
+            shape: shape,
+            elevation: 0,
             disabledBackgroundColor: AppColors.primary700.withAlpha(
               (0.4 * 255).round(),
             ),
@@ -68,6 +75,9 @@ class IBButton extends StatelessWidget {
               (0.08 * 255).round(),
             ),
             side: const BorderSide(color: AppColors.primary600),
+            padding: padding,
+            minimumSize: minimumSize,
+            shape: shape,
             disabledForegroundColor: AppColors.primary600.withAlpha(
               (0.6 * 255).round(),
             ),
@@ -79,6 +89,9 @@ class IBButton extends StatelessWidget {
           onPressed: isDisabled ? null : onPressed,
           style: TextButton.styleFrom(
             foregroundColor: AppColors.primary700,
+            padding: padding,
+            minimumSize: minimumSize,
+            shape: shape,
             disabledForegroundColor: AppColors.primary700.withAlpha(
               (0.6 * 255).round(),
             ),

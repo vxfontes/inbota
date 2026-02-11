@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"net/mail"
 	"strings"
 
 	"inbota/backend/internal/app/domain"
@@ -103,4 +104,34 @@ func parseSuggestionType(value string) (domain.AiSuggestionType, bool) {
 	default:
 		return "", false
 	}
+}
+
+func validateEmail(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return false
+	}
+	parsed, err := mail.ParseAddress(trimmed)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(parsed.Address, trimmed)
+}
+
+func validatePassword(value string) bool {
+	const minLen = 8
+	const maxLen = 72
+	length := len(value)
+	return length >= minLen && length <= maxLen
+}
+
+func validateDisplayName(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return false
+	}
+	const minLen = 2
+	const maxLen = 60
+	length := len([]rune(trimmed))
+	return length >= minLen && length <= maxLen
 }

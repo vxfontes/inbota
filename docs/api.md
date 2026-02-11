@@ -28,6 +28,9 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   - `invalid_type`
   - `invalid_payload`
   - `invalid_time_range`
+  - `invalid_email`
+  - `invalid_password`
+  - `invalid_display_name`
   - `invalid_cursor`
   - `not_found`
   - `dependency_missing`
@@ -214,6 +217,10 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
 **Auth (JWT local)**
 - `POST /v1/auth/signup`
   - Body: `email`, `password`, `displayName`, `locale`, `timezone`
+  - Validacoes:
+    - `email`: formato valido
+    - `password`: 8 a 72 caracteres
+    - `displayName`: 2 a 60 caracteres
   - Response: `AuthResponse` (token + user)
 - `POST /v1/auth/login`
   - Body: `email`, `password`

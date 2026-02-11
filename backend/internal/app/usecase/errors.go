@@ -10,4 +10,7 @@ var (
 	ErrInvalidPayload        = errors.New("invalid_payload")
 	ErrInvalidTimeRange      = errors.New("invalid_time_range")
 	ErrDependencyMissing     = errors.New("dependency_missing")
+	ErrInvalidEmail          = errors.New("invalid_email")
+	ErrInvalidPassword       = errors.New("invalid_password")
+	ErrInvalidDisplayName    = errors.New("invalid_display_name")
 )

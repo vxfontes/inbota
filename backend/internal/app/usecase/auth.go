@@ -22,8 +22,20 @@ type AuthUsecase struct {
 
 func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName, locale, timezone string) (domain.User, string, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
+	displayName = strings.TrimSpace(displayName)
+	locale = strings.TrimSpace(locale)
+	timezone = strings.TrimSpace(timezone)
 	if email == "" || password == "" || displayName == "" || locale == "" || timezone == "" {
 		return domain.User{}, "", errors.New("missing_required_fields")
+	}
+	if !validateEmail(email) {
+		return domain.User{}, "", ErrInvalidEmail
+	}
+	if !validatePassword(password) {
+		return domain.User{}, "", ErrInvalidPassword
+	}
+	if !validateDisplayName(displayName) {
+		return domain.User{}, "", ErrInvalidDisplayName
 	}
 
 	hash, err := uc.Auth.HashPassword(password)

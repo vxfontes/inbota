@@ -60,6 +60,12 @@ func writeUsecaseError(c *gin.Context, err error) {
 		writeError(c, http.StatusBadRequest, "invalid_payload")
 	case errors.Is(err, usecase.ErrInvalidTimeRange):
 		writeError(c, http.StatusBadRequest, "invalid_time_range")
+	case errors.Is(err, usecase.ErrInvalidEmail):
+		writeError(c, http.StatusBadRequest, "invalid_email")
+	case errors.Is(err, usecase.ErrInvalidPassword):
+		writeError(c, http.StatusBadRequest, "invalid_password")
+	case errors.Is(err, usecase.ErrInvalidDisplayName):
+		writeError(c, http.StatusBadRequest, "invalid_display_name")
 	case errors.Is(err, usecase.ErrDependencyMissing):
 		writeError(c, http.StatusInternalServerError, "dependency_missing")
 	case errors.Is(err, service.ErrAISchemaInvalid):

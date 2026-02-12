@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:inbota/shared/services/http/app_service.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 import 'package:inbota/shared/storage/auth_token_store.dart';
@@ -143,7 +145,7 @@ class DioHttpClient implements IHttpClient {
     final authFlag = extraMap['auth'];
     final shouldAttachToken = authFlag == null || authFlag == true;
     if (shouldAttachToken && _tokenStore != null) {
-      final token = await _tokenStore!.readToken();
+      final token = await _tokenStore.readToken();
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -175,6 +177,20 @@ class DioHttpClient implements IHttpClient {
       // ErrorInterceptor(profile),
       // PerformanceInterceptor(profile),
     ]);
+
+    if (profile == Profile.DEV && !kReleaseMode) {
+      _instance.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseHeader: false,
+          responseBody: true,
+          error: true,
+          compact: true,
+          maxWidth: 90,
+        ),
+      );
+    }
   }
 
   Duration _timeoutByProfile(Profile profile) {

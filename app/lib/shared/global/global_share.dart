@@ -20,11 +20,11 @@ class GlobalShare {
     if (_stores.containsKey(key)) {
       if (_stores[key]?.expireTime?.isBefore(DateTime.now()) ?? false) {
         _stores.remove(key);
-        return defaultValue ?? null;
+        return defaultValue;
       }
       return _stores[key]!.value as T? ?? defaultValue;
     }
-    return defaultValue ?? null;
+    return defaultValue;
   }
 
   static void clearValue(String key) {

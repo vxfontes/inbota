@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_list_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/reminders/domain/usecases/get_reminders_usecase.dart';
+import 'package:inbota/modules/tasks/data/models/task_create_input.dart';
 import 'package:inbota/modules/tasks/data/models/task_list_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_update_input.dart';
+import 'package:inbota/modules/tasks/domain/usecases/create_task_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/get_tasks_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/update_task_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
@@ -13,11 +15,13 @@ import 'package:inbota/shared/state/ib_state.dart';
 
 class RemindersController implements IBController {
   RemindersController(
+    this._createTaskUsecase,
     this._getTasksUsecase,
     this._updateTaskUsecase,
     this._getRemindersUsecase,
   );
 
+  final CreateTaskUsecase _createTaskUsecase;
   final GetTasksUsecase _getTasksUsecase;
   final UpdateTaskUsecase _updateTaskUsecase;
   final GetRemindersUsecase _getRemindersUsecase;
@@ -76,6 +80,37 @@ class RemindersController implements IBController {
           list[index] = updated;
           tasks.value = list;
         }
+      },
+    );
+  }
+
+  Future<bool> createTask({required String title}) async {
+    if (loading.value) return false;
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      error.value = 'Informe um título para a tarefa.';
+      return false;
+    }
+
+    loading.value = true;
+    error.value = null;
+
+    final result = await _createTaskUsecase.call(
+      TaskCreateInput(title: trimmed, status: 'OPEN'),
+    );
+
+    loading.value = false;
+
+    return result.fold(
+      (failure) {
+        _setError(failure, fallback: 'Nao foi possivel criar a tarefa.');
+        return false;
+      },
+      (created) {
+        final list = List<TaskOutput>.from(tasks.value);
+        list.add(created);
+        tasks.value = list;
+        return true;
       },
     );
   }

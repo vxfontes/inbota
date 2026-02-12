@@ -6,6 +6,7 @@ import 'package:inbota/presentation/screens/reminders_module/controller/reminder
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/reminders_format.dart';
 
 class RemindersPage extends StatefulWidget {
   const RemindersPage({super.key});
@@ -19,6 +20,79 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
   void initState() {
     super.initState();
     controller.load();
+  }
+
+  Future<void> _openCreateTodo() async {
+    final titleController = TextEditingController();
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: 20 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: AnimatedBuilder(
+            animation: controller.loading,
+            builder: (context, _) {
+              final loading = controller.loading.value;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  IBText('Nova tarefa', context: context).subtitulo.build(),
+                  const SizedBox(height: 12),
+                  IBTextField(
+                    label: 'Titulo',
+                    hint: 'Ex: Enviar proposta',
+                    controller: titleController,
+                  ),
+                  const SizedBox(height: 16),
+                  IBButton(
+                    label: 'Adicionar',
+                    loading: loading,
+                    onPressed: loading
+                        ? null
+                        : () async {
+                            final success = await controller.createTask(
+                              title: titleController.text,
+                            );
+                            if (!mounted) return;
+                            if (success) {
+                              Navigator.of(context).pop();
+                              return;
+                            }
+                            final message = controller.error.value ??
+                                'Nao foi possivel criar a tarefa.';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          },
+                  ),
+                  const SizedBox(height: 8),
+                  IBButton(
+                    label: 'Cancelar',
+                    variant: IBButtonVariant.ghost,
+                    onPressed: loading ? null : () => Navigator.of(context).pop(),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    titleController.dispose();
   }
 
   @override
@@ -44,7 +118,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
             ColoredBox(
               color: AppColors.background,
               child: ListView(
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                 children: [
                   _buildHeader(context),
                   if (error != null && error.isNotEmpty) ...[
@@ -112,21 +186,23 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
   }
 
   Widget _buildTodoSection(BuildContext context, List<TaskOutput> tasks) {
-    if (tasks.isEmpty) {
-      return const IBEmptyState(
-        title: 'Nenhuma tarefa crítica',
-        subtitle: 'Quando surgirem tarefas, elas vão aparecer aqui.',
-      );
-    }
-
     return IBTodoList(
-      title: 'To-dos críticos',
-      subtitle: 'Marque ao concluir para limpar seu foco.',
+      title: 'To-dos',
+      action: IconButton(
+        tooltip: 'Adicionar tarefa',
+        onPressed: _openCreateTodo,
+        icon: const IBIcon(
+          IBIcon.addRounded,
+          color: AppColors.primary700,
+          size: 20,
+        ),
+      ),
+      emptyLabel: 'Quando surgirem tarefas, elas vão aparecer aqui.',
       items: tasks
           .map(
             (task) => IBTodoItemData(
               title: task.title,
-              subtitle: _taskSubtitle(task),
+              subtitle: RemindersFormat.taskSubtitle(task),
               done: task.isDone,
             ),
           )
@@ -149,7 +225,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     final items = _upcomingReminders(reminders.where((item) => !item.isDone).toList());
     return _buildReminderSection(
       context,
-      title: 'Próximos 7 dias',
+      title: 'Próximos dias',
       items: items,
       fallback: 'Sem lembretes programados.',
     );
@@ -188,7 +264,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
                 for (var i = 0; i < items.length; i++) ...[
                   IBReminderRow(
                     title: items[i].title,
-                    time: _formatReminderTime(items[i]),
+                    time: RemindersFormat.formatReminderTime(items[i]),
                     color: muted ? AppColors.textMuted : _reminderColor(title, i),
                   ),
                   if (i != items.length - 1)
@@ -212,16 +288,11 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     return sorted;
   }
 
-  String _taskSubtitle(TaskOutput task) {
-    if (task.dueAt == null) return 'Sem data definida';
-    final date = task.dueAt!.toLocal();
-    return 'Vence ${_formatDate(date)}';
-  }
-
   List<ReminderOutput> _todayReminders(List<ReminderOutput> reminders) {
     final now = DateTime.now();
     return reminders
-        .where((item) => item.remindAt != null && _isSameDay(item.remindAt!, now))
+        .where((item) =>
+            item.remindAt != null && RemindersFormat.isSameDay(item.remindAt!, now))
         .toList();
   }
 
@@ -231,48 +302,14 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     return reminders
         .where((item) =>
             item.remindAt == null ||
-            (_isAfterDay(item.remindAt!, now) && item.remindAt!.isBefore(limit)))
+            (RemindersFormat.isAfterDay(item.remindAt!, now) &&
+                item.remindAt!.isBefore(limit)))
         .toList();
-  }
-
-  String _formatReminderTime(ReminderOutput reminder) {
-    final date = reminder.remindAt?.toLocal();
-    if (date == null) return 'Sem data';
-
-    final now = DateTime.now();
-    if (_isSameDay(date, now)) {
-      return 'Hoje ${_formatHour(date)}';
-    }
-    if (_isSameDay(date, now.add(const Duration(days: 1)))) {
-      return 'Amanhã ${_formatHour(date)}';
-    }
-    return '${_formatDate(date)} ${_formatHour(date)}';
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month';
-  }
-
-  String _formatHour(DateTime date) {
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  bool _isAfterDay(DateTime a, DateTime b) {
-    if (_isSameDay(a, b)) return false;
-    return a.isAfter(DateTime(b.year, b.month, b.day, 23, 59, 59));
   }
 
   Color _reminderColor(String section, int index) {
     if (section == 'Hoje') return AppColors.primary700;
-    if (section == 'Próximos 7 dias') return AppColors.ai600;
+    if (section == 'Próximos dias') return AppColors.ai600;
     return index.isEven ? AppColors.warning500 : AppColors.success600;
   }
 }

@@ -11,7 +11,7 @@ class HomePage extends StatelessWidget {
     return ColoredBox(
       color: AppColors.background,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         children: [
           _buildHeader(context),
           const SizedBox(height: 16),

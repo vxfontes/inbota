@@ -8,7 +8,7 @@ class IBScaffold extends StatelessWidget {
     this.appBar,
     this.body,
     this.floatingActionButton,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(0),
     this.currentIndex = 2,
     this.onNavTap,
   });

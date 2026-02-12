@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:inbota/modules/tasks/data/models/task_list_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
+import 'package:inbota/modules/tasks/data/models/task_create_input.dart';
 import 'package:inbota/modules/tasks/data/models/task_update_input.dart';
 import 'package:inbota/modules/tasks/domain/repositories/i_task_repository.dart';
 import 'package:inbota/shared/errors/failures.dart';
@@ -34,6 +35,25 @@ class TaskRepository implements ITaskRepository {
       return Left(GetListFailure(message: _extractMessage(response.data)));
     } catch (err) {
       return Left(GetListFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, TaskOutput>> createTask(TaskCreateInput input) async {
+    try {
+      final response = await _httpClient.post(
+        _path,
+        data: input.toJson(),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(TaskOutput.fromJson(_asMap(response.data)));
+      }
+
+      return Left(SaveFailure(message: _extractMessage(response.data)));
+    } catch (err) {
+      return Left(SaveFailure(message: err.toString()));
     }
   }
 

@@ -23,12 +23,16 @@ class IBTodoList extends StatefulWidget {
     this.title,
     this.subtitle,
     this.onToggle,
+    this.action,
+    this.emptyLabel,
   });
 
   final String? title;
   final String? subtitle;
   final List<IBTodoItemData> items;
   final void Function(int index, bool done)? onToggle;
+  final Widget? action;
+  final String? emptyLabel;
 
   @override
   State<IBTodoList> createState() => _IBTodoListState();
@@ -67,7 +71,7 @@ class _IBTodoListState extends State<IBTodoList> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -84,12 +88,30 @@ class _IBTodoListState extends State<IBTodoList> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.title != null) ...[
-            IBText(widget.title!, context: context).subtitulo.build(),
-            if (widget.subtitle != null) ...[
-              const SizedBox(height: 4),
-              IBText(widget.subtitle!, context: context).muted.build(),
-            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    IBText(widget.title!, context: context).subtitulo.build(),
+                    if (widget.subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      IBText(widget.subtitle!, context: context).muted.build(),
+                    ],
+                  ],
+                ),
+                if (widget.action != null) ...[
+                  widget.action!,
+                ],
+              ],
+            ),
             const SizedBox(height: 12),
+          ],
+          if (widget.items.isEmpty && widget.emptyLabel != null) ...[
+            IBText(widget.emptyLabel!, context: context).muted.build(),
+            const SizedBox(height: 8),
           ],
           for (var i = 0; i < widget.items.length; i++) ...[
             _IBTodoRow(

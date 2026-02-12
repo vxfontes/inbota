@@ -1,4 +1,5 @@
 export 'ib_app_bar.dart';
+export 'ib_bottom_sheet.dart';
 export 'ib_bottom_nav.dart';
 export 'ib_button.dart';
 export 'ib_card.dart';

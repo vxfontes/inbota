@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
+import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/screens/reminders_module/controller/reminders_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -26,70 +27,42 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     final titleController = TextEditingController();
     if (!mounted) return;
 
-    await showModalBottomSheet<void>(
+    await IBBottomSheet.show<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: 20 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: AnimatedBuilder(
-            animation: controller.loading,
-            builder: (context, _) {
-              final loading = controller.loading.value;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  IBText('Nova tarefa', context: context).subtitulo.build(),
-                  const SizedBox(height: 12),
-                  IBTextField(
-                    label: 'Titulo',
-                    hint: 'Ex: Enviar proposta',
-                    controller: titleController,
-                  ),
-                  const SizedBox(height: 16),
-                  IBButton(
-                    label: 'Adicionar',
-                    loading: loading,
-                    onPressed: loading
-                        ? null
-                        : () async {
-                            final success = await controller.createTask(
-                              title: titleController.text,
-                            );
-                            if (!mounted) return;
-                            if (success) {
-                              Navigator.of(context).pop();
-                              return;
-                            }
-                            final message = controller.error.value ??
-                                'Nao foi possivel criar a tarefa.';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
-                            );
-                          },
-                  ),
-                  const SizedBox(height: 8),
-                  IBButton(
-                    label: 'Cancelar',
-                    variant: IBButtonVariant.ghost,
-                    onPressed: loading ? null : () => Navigator.of(context).pop(),
-                  ),
-                ],
+      child: AnimatedBuilder(
+        animation: controller.loading,
+        builder: (context, _) {
+          final loading = controller.loading.value;
+          return IBBottomSheet(
+            title: 'Nova tarefa',
+            primaryLabel: 'Adicionar',
+            primaryLoading: loading,
+            primaryEnabled: !loading,
+            onPrimaryPressed: () async {
+              final success = await controller.createTask(
+                title: titleController.text,
+              );
+              if (!mounted) return;
+              if (success) {
+                AppNavigation.pop();
+                return;
+              }
+              final message = controller.error.value ?? 'Nao foi possivel criar a tarefa.';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
               );
             },
-          ),
-        );
-      },
+            secondaryLabel: 'Cancelar',
+            secondaryEnabled: !loading,
+            onSecondaryPressed: () => AppNavigation.pop(),
+            child: IBTextField(
+              label: 'Titulo',
+              hint: 'Ex: Enviar proposta',
+              controller: titleController,
+            ),
+          );
+        },
+      ),
     );
 
     titleController.dispose();

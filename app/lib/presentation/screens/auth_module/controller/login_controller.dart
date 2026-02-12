@@ -37,6 +37,7 @@ class LoginController implements IBController {
     }, (_) => true);
   }
 
+  @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();

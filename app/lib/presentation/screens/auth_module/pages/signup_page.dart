@@ -23,7 +23,7 @@ class _SignupPageState extends IBState<SignupPage, SignupController> {
     final timezone = DateTime.now().timeZoneName;
     final success = await controller.submit(locale: locale, timezone: timezone);
     if (!success || !mounted) return;
-    AppNavigation.clearAndPush(AppRoutes.root);
+    AppNavigation.clearAndPush(AppRoutes.rootHome);
   }
 
   @override

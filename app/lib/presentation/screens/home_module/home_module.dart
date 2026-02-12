@@ -6,6 +6,11 @@ import 'package:inbota/presentation/screens/home_module/pages/home_page.dart';
 class HomeModule extends Module {
   @override
   void routes(RouteManager r) {
-    r.child(AppRoutes.splash, child: (_) => const HomePage());
+    r.child(
+      AppRoutes.splash,
+      child: (_) => const HomePage(),
+      transition: TransitionType.noTransition,
+      duration: Duration.zero,
+    );
   }
 }

@@ -1,0 +1,22 @@
+import 'package:flutter/material.dart';
+import 'package:inbota/shared/components/ib_lib/ib_text.dart';
+import 'package:inbota/shared/theme/app_colors.dart';
+
+class RootPlaceholderPage extends StatelessWidget {
+  const RootPlaceholderPage({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.background,
+      child: Center(
+        child: IBText(title, context: context)
+            .titulo
+            .color(AppColors.textMuted)
+            .build(),
+      ),
+    );
+  }
+}

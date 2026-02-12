@@ -52,6 +52,7 @@ class SignupController implements IBController {
     }, (_) => true);
   }
 
+  @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();

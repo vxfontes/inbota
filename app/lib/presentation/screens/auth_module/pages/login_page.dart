@@ -21,7 +21,7 @@ class _LoginPageState extends IBState<LoginPage, LoginController> {
   Future<void> _submit() async {
     final success = await controller.submit();
     if (!success || !mounted) return;
-    AppNavigation.clearAndPush(AppRoutes.root);
+    AppNavigation.clearAndPush(AppRoutes.rootHome);
   }
 
   @override

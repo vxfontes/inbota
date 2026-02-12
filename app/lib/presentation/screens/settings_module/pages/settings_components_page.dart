@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
@@ -231,11 +232,31 @@ class SettingsComponentsPage extends StatelessWidget {
           const SizedBox(height: 24),
           IBText('App Bar', context: context).subtitulo.build(),
           const SizedBox(height: 12),
-          const SizedBox(
+          SizedBox(
             height: kToolbarHeight + 16,
             child: IBAppBar(
-              title: 'Inbota',
-              padding: EdgeInsets.only(left: 12),
+              title: 'titulo',
+              subtitle: 'subtitulo',
+              padding: const EdgeInsets.only(left: 12, right: 12),
+              actions: [
+                IconButton(
+                  onPressed: () {},
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedSettings01,
+                    color: AppColors.surface,
+                    size: 22,
+                    strokeWidth: 1.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IBText('App Bar Light', context: context).subtitulo.build(),
+          const SizedBox(height: 12),
+          const SizedBox(
+            height: kToolbarHeight + 16,
+            child: IBLightAppBar(
+              title: 'blabla',
             ),
           ),
           const SizedBox(height: 24),

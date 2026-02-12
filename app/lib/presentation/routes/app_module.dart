@@ -2,8 +2,6 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:inbota/modules/shared_module.dart';
 
 import '../screens/auth_module/auth_module.dart';
-import '../screens/home_module/home_module.dart';
-import '../screens/reminders_module/reminders_module.dart';
 import '../screens/root_module/root_module.dart';
 import '../screens/settings_module/settings_module.dart';
 import '../screens/splash_module/splash_module.dart';
@@ -18,8 +16,6 @@ class AppModule extends Module {
     r.module(AppRoutes.splash, module: SplashModule());
     r.module(AppRoutes.auth, module: AuthModule());
     r.module(AppRoutes.root, module: RootModule());
-    r.module(AppRoutes.home, module: HomeModule());
-    r.module(AppRoutes.reminders, module: RemindersModule());
     r.module(AppRoutes.settings, module: SettingsModule());
   }
 }

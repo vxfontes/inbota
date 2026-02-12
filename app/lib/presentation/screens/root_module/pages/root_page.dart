@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
-import 'package:inbota/presentation/screens/home_module/pages/home_page.dart';
-import 'package:inbota/presentation/screens/reminders_module/pages/reminders_page.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
@@ -17,13 +16,69 @@ class RootPage extends StatefulWidget {
 class _RootPageState extends State<RootPage> {
   int _currentIndex = 0;
 
-  List<Widget> get _pages => const [
-        HomePage(),
-        RemindersPage(),
-        _PlaceholderPage(title: 'Criar'),
-        _PlaceholderPage(title: 'Compras'),
-        _PlaceholderPage(title: 'Eventos'),
-      ];
+  @override
+  void initState() {
+    super.initState();
+    _syncIndex();
+    AppNavigation.addListener(_handleRouteChange);
+    _ensureChildRoute();
+  }
+
+  @override
+  void dispose() {
+    AppNavigation.removeListener(_handleRouteChange);
+    super.dispose();
+  }
+
+  void _handleRouteChange() {
+    if (!mounted) return;
+    _syncIndex();
+  }
+
+  void _syncIndex() {
+    final nextIndex = _indexForPath(AppNavigation.path);
+    if (nextIndex != _currentIndex) {
+      setState(() => _currentIndex = nextIndex);
+    }
+  }
+
+  void _ensureChildRoute() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final path = AppNavigation.path;
+      if (path == AppRoutes.root || path == '/root') {
+        AppNavigation.navigate(AppRoutes.rootHome);
+      }
+    });
+  }
+
+  int _indexForPath(String path) {
+    if (path.startsWith(AppRoutes.rootReminders)) return 1;
+    if (path.startsWith(AppRoutes.rootCreate)) return 2;
+    if (path.startsWith(AppRoutes.rootShopping)) return 3;
+    if (path.startsWith(AppRoutes.rootEvents)) return 4;
+    return 0;
+  }
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        AppNavigation.navigate(AppRoutes.rootHome);
+        break;
+      case 1:
+        AppNavigation.navigate(AppRoutes.rootReminders);
+        break;
+      case 2:
+        AppNavigation.navigate(AppRoutes.rootCreate);
+        break;
+      case 3:
+        AppNavigation.navigate(AppRoutes.rootShopping);
+        break;
+      case 4:
+        AppNavigation.navigate(AppRoutes.rootEvents);
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,29 +98,10 @@ class _RootPageState extends State<RootPage> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: const RouterOutlet(),
       currentIndex: _currentIndex,
-      onNavTap: (index) => setState(() => _currentIndex = index),
+      onNavTap: _onNavTap,
       floatingActionButton: null,
-    );
-  }
-}
-
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: IBText(title, context: context)
-          .titulo
-          .color(AppColors.textMuted)
-          .build(),
     );
   }
 }

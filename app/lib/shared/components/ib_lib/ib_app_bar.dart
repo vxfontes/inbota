@@ -5,6 +5,7 @@ import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final String? subtitle;
   final List<Widget>? actions;
   final bool centerTitle;
   final EdgeInsetsGeometry? padding;
@@ -14,6 +15,7 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.actions,
     this.centerTitle = false,
+    this.subtitle = "Seu dia mais leve",
     this.padding,
   });
 
@@ -59,7 +61,7 @@ class IBAppBar extends StatelessWidget implements PreferredSizeWidget {
                     .titulo
                     .color(AppColors.surface)
                     .build(),
-                IBText('Seu dia mais leve', context: context)
+                IBText(subtitle!, context: context)
                     .label
                     .color(AppColors.surface.withAlpha((0.78 * 255).round()))
                     .build(),

@@ -8,24 +8,27 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: [
-        _buildHeader(context),
-        const SizedBox(height: 16),
-        _buildTodoSection(context),
-        const SizedBox(height: 20),
-        _buildInboxSnapshot(context),
-        const SizedBox(height: 20),
-        _buildOverviewSection(context),
-        const SizedBox(height: 24),
-        _buildReviewSection(context),
-        const SizedBox(height: 24),
-        _buildReminderSection(context),
-        const SizedBox(height: 24),
-        _buildContextsSection(context),
-        const SizedBox(height: 24),
-      ],
+    return ColoredBox(
+      color: AppColors.background,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          _buildHeader(context),
+          const SizedBox(height: 16),
+          _buildTodoSection(context),
+          const SizedBox(height: 20),
+          _buildInboxSnapshot(context),
+          const SizedBox(height: 20),
+          _buildOverviewSection(context),
+          const SizedBox(height: 24),
+          _buildReviewSection(context),
+          const SizedBox(height: 24),
+          _buildReminderSection(context),
+          const SizedBox(height: 24),
+          _buildContextsSection(context),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
@@ -165,10 +168,10 @@ class HomePage extends StatelessWidget {
       children: [
         _buildSectionHeader(context, 'Próximos lembretes'),
         const SizedBox(height: 12),
-        IBCard(
+        const IBCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               IBReminderRow(
                 title: 'Enviar documentos do TCC',
                 time: 'Hoje 18:00',

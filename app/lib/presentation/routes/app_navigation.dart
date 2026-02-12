@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_modular/flutter_modular.dart';
 
 class AppNavigation {
@@ -16,8 +18,24 @@ class AppNavigation {
   }
 
   static void pop<T extends Object?>([T? result]) {
-    Modular.to.pop(result);
+    if (Modular.to.canPop()) {
+      Modular.to.pop(result);
+    }
   }
+
+  static bool canPop() {
+    return Modular.to.canPop();
+  }
+
+  static void addListener(VoidCallback listener) {
+    Modular.to.addListener(listener);
+  }
+
+  static void removeListener(VoidCallback listener) {
+    Modular.to.removeListener(listener);
+  }
+
+  static String get path => Modular.to.path;
 
   static Future<T?> clearAndPush<T extends Object?>(String route, {dynamic args}) {
     return Modular.to.pushNamedAndRemoveUntil<T>(route, (r) => false, arguments: args);

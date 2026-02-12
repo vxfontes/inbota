@@ -33,6 +33,7 @@ class SettingsController implements IBController {
     AppNavigation.clearAndPush(AppRoutes.auth);
   }
 
+  @override
   void dispose() {
     loading.dispose();
     error.dispose();

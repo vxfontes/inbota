@@ -1,29 +1,83 @@
 import 'package:flutter/material.dart';
 
+import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
+import 'package:inbota/modules/tasks/data/models/task_output.dart';
+import 'package:inbota/presentation/screens/reminders_module/controller/reminders_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
+import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
-class RemindersPage extends StatelessWidget {
+class RemindersPage extends StatefulWidget {
   const RemindersPage({super.key});
 
   @override
+  State<RemindersPage> createState() => _RemindersPageState();
+}
+
+class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
+  @override
+  void initState() {
+    super.initState();
+    controller.load();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: [
-        _buildHeader(context),
-        const SizedBox(height: 16),
-        _buildQuickStats(context),
-        const SizedBox(height: 20),
-        _buildTodoSection(context),
-        const SizedBox(height: 24),
-        _buildTodaySection(context),
-        const SizedBox(height: 24),
-        _buildUpcomingSection(context),
-        const SizedBox(height: 24),
-        _buildDoneSection(context),
-        const SizedBox(height: 24),
-      ],
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        controller.loading,
+        controller.error,
+        controller.tasks,
+        controller.reminders,
+      ]),
+      builder: (context, _) {
+        final tasks = _sortedTasks(controller.tasks.value);
+        final reminders = controller.reminders.value;
+        final loading = controller.loading.value;
+        final error = controller.error.value;
+        final showFullLoading = loading;
+        final loadingLabel =
+            tasks.isEmpty && reminders.isEmpty ? 'Carregando...' : 'Atualizando...';
+
+        return Stack(
+          children: [
+            ColoredBox(
+              color: AppColors.background,
+              child: ListView(
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  _buildHeader(context),
+                  if (error != null && error.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    IBText(error, context: context)
+                        .caption
+                        .color(AppColors.danger600)
+                        .build(),
+                  ],
+                  const SizedBox(height: 16),
+                  _buildQuickStats(context, reminders),
+                  const SizedBox(height: 20),
+                  _buildTodoSection(context, tasks),
+                  const SizedBox(height: 24),
+                  _buildTodaySection(context, reminders),
+                  const SizedBox(height: 24),
+                  _buildUpcomingSection(context, reminders),
+                  const SizedBox(height: 24),
+                  _buildDoneSection(context, reminders),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+            if (showFullLoading)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: AppColors.background,
+                  child: Center(child: IBLoader(label: loadingLabel)),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -41,137 +95,184 @@ class RemindersPage extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickStats(BuildContext context) {
+  Widget _buildQuickStats(BuildContext context, List<ReminderOutput> reminders) {
+    final open = reminders.where((item) => !item.isDone).toList();
+    final done = reminders.where((item) => item.isDone).toList();
+    final today = _todayReminders(open);
+
     return IBOverviewCard(
       title: 'Resumo rápido',
-      subtitle: 'Você tem 4 lembretes hoje e 9 agendados na semana.',
-      chips: const [
-        IBChip(label: 'HOJE 4', color: AppColors.primary700),
-        IBChip(label: 'PRÓXIMOS 9', color: AppColors.ai600),
-        IBChip(label: 'CONCLUÍDOS 2', color: AppColors.success600),
+      subtitle: 'Você tem ${today.length} lembretes hoje e ${open.length} ativos.',
+      chips: [
+        IBChip(label: 'HOJE ${today.length}', color: AppColors.primary700),
+        IBChip(label: 'ATIVOS ${open.length}', color: AppColors.ai600),
+        IBChip(label: 'CONCLUÍDOS ${done.length}', color: AppColors.success600),
       ],
     );
   }
 
-  Widget _buildTodoSection(BuildContext context) {
-    return const IBTodoList(
+  Widget _buildTodoSection(BuildContext context, List<TaskOutput> tasks) {
+    if (tasks.isEmpty) {
+      return const IBEmptyState(
+        title: 'Nenhuma tarefa crítica',
+        subtitle: 'Quando surgirem tarefas, elas vão aparecer aqui.',
+      );
+    }
+
+    return IBTodoList(
       title: 'To-dos críticos',
       subtitle: 'Marque ao concluir para limpar seu foco.',
-      items: [
-        IBTodoItemData(
-          title: 'Revisar lembretes do trabalho',
-          subtitle: '2 precisam de confirmação',
-        ),
-        IBTodoItemData(
-          title: 'Enviar comprovante do pagamento',
-          subtitle: 'Até 15:00',
-        ),
-        IBTodoItemData(
-          title: 'Confirmar consulta médica',
-          subtitle: 'Hoje 11:00',
-          done: true,
-        ),
-      ],
+      items: tasks
+          .map(
+            (task) => IBTodoItemData(
+              title: task.title,
+              subtitle: _taskSubtitle(task),
+              done: task.isDone,
+            ),
+          )
+          .toList(),
+      onToggle: (index, done) => controller.toggleTask(tasks[index], done),
     );
   }
 
-  Widget _buildTodaySection(BuildContext context) {
+  Widget _buildTodaySection(BuildContext context, List<ReminderOutput> reminders) {
+    final items = _todayReminders(reminders.where((item) => !item.isDone).toList());
+    return _buildReminderSection(
+      context,
+      title: 'Hoje',
+      items: items,
+      fallback: 'Nenhum lembrete para hoje.',
+    );
+  }
+
+  Widget _buildUpcomingSection(BuildContext context, List<ReminderOutput> reminders) {
+    final items = _upcomingReminders(reminders.where((item) => !item.isDone).toList());
+    return _buildReminderSection(
+      context,
+      title: 'Próximos 7 dias',
+      items: items,
+      fallback: 'Sem lembretes programados.',
+    );
+  }
+
+  Widget _buildDoneSection(BuildContext context, List<ReminderOutput> reminders) {
+    final items = reminders.where((item) => item.isDone).toList();
+    return _buildReminderSection(
+      context,
+      title: 'Concluídos',
+      items: items,
+      fallback: 'Nada concluído ainda.',
+      muted: true,
+    );
+  }
+
+  Widget _buildReminderSection(
+    BuildContext context, {
+    required String title,
+    required List<ReminderOutput> items,
+    required String fallback,
+    bool muted = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(context, 'Hoje'),
+        IBText(title, context: context).subtitulo.build(),
         const SizedBox(height: 12),
-        IBCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              IBReminderRow(
-                title: 'Pagar fatura do cartão',
-                time: '09:00',
-                color: AppColors.warning500,
-              ),
-              Divider(height: 20, color: AppColors.border),
-              IBReminderRow(
-                title: 'Enviar documentos do TCC',
-                time: '18:00',
-                color: AppColors.primary700,
-              ),
-              Divider(height: 20, color: AppColors.border),
-              IBReminderRow(
-                title: 'Separar compras da semana',
-                time: '20:30',
-                color: AppColors.success600,
-              ),
-            ],
+        if (items.isEmpty)
+          IBText(fallback, context: context).muted.build()
+        else
+          IBCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < items.length; i++) ...[
+                  IBReminderRow(
+                    title: items[i].title,
+                    time: _formatReminderTime(items[i]),
+                    color: muted ? AppColors.textMuted : _reminderColor(title, i),
+                  ),
+                  if (i != items.length - 1)
+                    const Divider(height: 20, color: AppColors.border),
+                ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildUpcomingSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(context, 'Próximos 7 dias'),
-        const SizedBox(height: 12),
-        IBCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              IBReminderRow(
-                title: 'Reunião com cliente Alpha',
-                time: 'Amanhã 14:00',
-                color: AppColors.ai600,
-              ),
-              Divider(height: 20, color: AppColors.border),
-              IBReminderRow(
-                title: 'Renovar seguro do carro',
-                time: 'Quinta 10:00',
-                color: AppColors.warning500,
-              ),
-              Divider(height: 20, color: AppColors.border),
-              IBReminderRow(
-                title: 'Check-in da consulta',
-                time: 'Sexta 08:00',
-                color: AppColors.success600,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  List<TaskOutput> _sortedTasks(List<TaskOutput> tasks) {
+    final sorted = List<TaskOutput>.from(tasks);
+    sorted.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final dueA = a.dueAt ?? DateTime(2100);
+      final dueB = b.dueAt ?? DateTime(2100);
+      return dueA.compareTo(dueB);
+    });
+    return sorted;
   }
 
-  Widget _buildDoneSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(context, 'Concluídos'),
-        const SizedBox(height: 12),
-        IBCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              IBReminderRow(
-                title: 'Enviar feedback do sprint',
-                time: 'Ontem 16:00',
-                color: AppColors.textMuted,
-              ),
-              Divider(height: 20, color: AppColors.border),
-              IBReminderRow(
-                title: 'Pagar plano anual',
-                time: 'Ontem 09:00',
-                color: AppColors.textMuted,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  String _taskSubtitle(TaskOutput task) {
+    if (task.dueAt == null) return 'Sem data definida';
+    final date = task.dueAt!.toLocal();
+    return 'Vence ${_formatDate(date)}';
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return IBText(title, context: context).subtitulo.build();
+  List<ReminderOutput> _todayReminders(List<ReminderOutput> reminders) {
+    final now = DateTime.now();
+    return reminders
+        .where((item) => item.remindAt != null && _isSameDay(item.remindAt!, now))
+        .toList();
+  }
+
+  List<ReminderOutput> _upcomingReminders(List<ReminderOutput> reminders) {
+    final now = DateTime.now();
+    final limit = now.add(const Duration(days: 7));
+    return reminders
+        .where((item) =>
+            item.remindAt == null ||
+            (_isAfterDay(item.remindAt!, now) && item.remindAt!.isBefore(limit)))
+        .toList();
+  }
+
+  String _formatReminderTime(ReminderOutput reminder) {
+    final date = reminder.remindAt?.toLocal();
+    if (date == null) return 'Sem data';
+
+    final now = DateTime.now();
+    if (_isSameDay(date, now)) {
+      return 'Hoje ${_formatHour(date)}';
+    }
+    if (_isSameDay(date, now.add(const Duration(days: 1)))) {
+      return 'Amanhã ${_formatHour(date)}';
+    }
+    return '${_formatDate(date)} ${_formatHour(date)}';
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month';
+  }
+
+  String _formatHour(DateTime date) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _isAfterDay(DateTime a, DateTime b) {
+    if (_isSameDay(a, b)) return false;
+    return a.isAfter(DateTime(b.year, b.month, b.day, 23, 59, 59));
+  }
+
+  Color _reminderColor(String section, int index) {
+    if (section == 'Hoje') return AppColors.primary700;
+    if (section == 'Próximos 7 dias') return AppColors.ai600;
+    return index.isEven ? AppColors.warning500 : AppColors.success600;
   }
 }

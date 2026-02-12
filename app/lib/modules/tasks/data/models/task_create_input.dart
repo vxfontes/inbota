@@ -21,7 +21,7 @@ class TaskCreateInput {
     }
 
     if (dueAt != null) {
-      payload['dueAt'] = dueAt!.toIso8601String();
+      payload['dueAt'] = dueAt!.toUtc().toIso8601String();
     }
 
     if (status != null && status!.trim().isNotEmpty) {

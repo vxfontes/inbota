@@ -29,6 +29,7 @@ class IBIcon extends StatelessWidget {
   static const IconData checkRounded = Icons.check_rounded;
   static const IconData chevronRight = Icons.chevron_right;
   static const IconData creditCard = Icons.credit_card;
+  static const IconData closeRounded = Icons.close_rounded;
   static const IconData eventAvailableOutlined = Icons.event_available_outlined;
   static const IconData gridViewRounded = Icons.grid_view_rounded;
   static const IconData helpOutline = Icons.help_outline;

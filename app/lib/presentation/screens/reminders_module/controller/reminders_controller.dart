@@ -84,7 +84,7 @@ class RemindersController implements IBController {
     );
   }
 
-  Future<bool> createTask({required String title}) async {
+  Future<bool> createTask({required String title, DateTime? data}) async {
     if (loading.value) return false;
     final trimmed = title.trim();
     if (trimmed.isEmpty) {
@@ -96,7 +96,11 @@ class RemindersController implements IBController {
     error.value = null;
 
     final result = await _createTaskUsecase.call(
-      TaskCreateInput(title: trimmed, status: 'OPEN'),
+      TaskCreateInput(
+        title: trimmed,
+        status: 'OPEN',
+        dueAt: data,
+      ),
     );
 
     loading.value = false;

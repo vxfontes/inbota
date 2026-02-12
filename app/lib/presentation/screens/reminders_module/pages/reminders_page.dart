@@ -23,51 +23,6 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     controller.load();
   }
 
-  Future<void> _openCreateTodo() async {
-    final titleController = TextEditingController();
-    if (!mounted) return;
-
-    await IBBottomSheet.show<void>(
-      context: context,
-      child: AnimatedBuilder(
-        animation: controller.loading,
-        builder: (context, _) {
-          final loading = controller.loading.value;
-          return IBBottomSheet(
-            title: 'Nova tarefa',
-            primaryLabel: 'Adicionar',
-            primaryLoading: loading,
-            primaryEnabled: !loading,
-            onPrimaryPressed: () async {
-              final success = await controller.createTask(
-                title: titleController.text,
-              );
-              if (!mounted) return;
-              if (success) {
-                AppNavigation.pop();
-                return;
-              }
-              final message = controller.error.value ?? 'Nao foi possivel criar a tarefa.';
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            },
-            secondaryLabel: 'Cancelar',
-            secondaryEnabled: !loading,
-            onSecondaryPressed: () => AppNavigation.pop(),
-            child: IBTextField(
-              label: 'Titulo',
-              hint: 'Ex: Enviar proposta',
-              controller: titleController,
-            ),
-          );
-        },
-      ),
-    );
-
-    titleController.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -284,5 +239,181 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     if (section == 'Hoje') return AppColors.primary700;
     if (section == 'Próximos dias') return AppColors.ai600;
     return index.isEven ? AppColors.warning500 : AppColors.success600;
+  }
+
+  Widget _buildDateField(
+    BuildContext context, {
+    required String label,
+    required bool enabled,
+    required bool hasValue,
+    required VoidCallback? onTap,
+    VoidCallback? onClear,
+  }) {
+    final contentColor = enabled ? AppColors.text : AppColors.textMuted;
+    final iconColor = enabled ? AppColors.primary600 : AppColors.textMuted;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            IBIcon(
+              IBIcon.eventAvailableOutlined,
+              color: iconColor,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IBText('Data', context: context).caption.build(),
+                  const SizedBox(height: 2),
+                  IBText(label, context: context).body.color(contentColor).build(),
+                ],
+              ),
+            ),
+            if (hasValue && onClear != null)
+              IconButton(
+                tooltip: 'Limpar data',
+                onPressed: enabled ? onClear : null,
+                icon: const IBIcon(
+                  IBIcon.closeRounded,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+                splashRadius: 18,
+              )
+            else
+              const IBIcon(
+                IBIcon.chevronRight,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<DateTime?> _pickTaskDate(
+    BuildContext context,
+    DateTime? current,
+  ) async {
+    final now = DateTime.now();
+    final initial = current ?? now;
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 5, 12, 31),
+      helpText: 'Selecionar data',
+    );
+
+    if (pickedDate == null) return current;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+
+    final resolvedTime = pickedTime ?? const TimeOfDay(hour: 0, minute: 0);
+    return DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      resolvedTime.hour,
+      resolvedTime.minute,
+    );
+  }
+
+  String _formatTaskDate(DateTime? date) {
+    if (date == null) return 'Sem data definida';
+    final day = RemindersFormat.formatDate(date);
+    if (date.hour == 0 && date.minute == 0) return day;
+    final hour = RemindersFormat.formatHour(date);
+    return '$day às $hour';
+  }
+
+  Future<void> _openCreateTodo() async {
+    final titleController = TextEditingController();
+    final dateNotifier = ValueNotifier<DateTime?>(null);
+    if (!mounted) return;
+
+    await IBBottomSheet.show<void>(
+      context: context,
+      child: AnimatedBuilder(
+        animation: controller.loading,
+        builder: (context, _) {
+          final loading = controller.loading.value;
+          return IBBottomSheet(
+            title: 'Nova tarefa',
+            primaryLabel: 'Adicionar',
+            primaryLoading: loading,
+            primaryEnabled: !loading,
+            onPrimaryPressed: () async {
+              final success = await controller.createTask(
+                title: titleController.text,
+                data: dateNotifier.value,
+              );
+              if (!mounted) return;
+              if (success) {
+                AppNavigation.pop();
+                return;
+              }
+              final message = controller.error.value ?? 'Nao foi possivel criar a tarefa.';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+            },
+            secondaryLabel: 'Cancelar',
+            secondaryEnabled: !loading,
+            onSecondaryPressed: () => AppNavigation.pop(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                IBTextField(
+                  label: 'Titulo',
+                  hint: 'Ex: Enviar proposta',
+                  controller: titleController,
+                ),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<DateTime?>(
+                  valueListenable: dateNotifier,
+                  builder: (context, selectedDate, _) {
+                    return _buildDateField(
+                      context,
+                      label: _formatTaskDate(selectedDate),
+                      enabled: !loading,
+                      hasValue: selectedDate != null,
+                      onTap: loading
+                          ? null
+                          : () async {
+                              final next =
+                                  await _pickTaskDate(context, selectedDate);
+                              if (next != null) {
+                                dateNotifier.value = next;
+                              }
+                            },
+                      onClear: loading ? null : () => dateNotifier.value = null,
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    titleController.dispose();
+    dateNotifier.dispose();
   }
 }

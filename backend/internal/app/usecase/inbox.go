@@ -377,13 +377,13 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 		return ConfirmResult{}, ErrInvalidStatus
 	}
 
-	flagID := normalizeOptionalString(input.FlagID)
-	subflagID := normalizeOptionalString(input.SubflagID)
+	hintFlagID := normalizeOptionalString(input.FlagID)
+	hintSubflagID := normalizeOptionalString(input.SubflagID)
 	var ctxHint *service.AIContext
-	if flagID != nil || subflagID != nil {
+	if hintFlagID != nil || hintSubflagID != nil {
 		ctxHint = &service.AIContext{
-			FlagID:    flagID,
-			SubflagID: subflagID,
+			FlagID:    hintFlagID,
+			SubflagID: hintSubflagID,
 		}
 	}
 
@@ -408,6 +408,12 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	}
 
 	result := ConfirmResult{Type: typ}
+	var flagID *string
+	var subflagID *string
+	if validated.Output.Context != nil {
+		flagID = normalizeOptionalString(validated.Output.Context.FlagID)
+		subflagID = normalizeOptionalString(validated.Output.Context.SubflagID)
+	}
 	if uc.TxRunner != nil {
 		if err := uc.TxRunner.WithTx(ctx, func(tx repository.TxRepositories) error {
 			if tx.Inbox == nil {
@@ -426,6 +432,8 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 					UserID:            userID,
 					Title:             title,
 					DueAt:             taskPayload.DueAt,
+					FlagID:            flagID,
+					SubflagID:         subflagID,
 					SourceInboxItemID: &item.ID,
 				}
 				created, err := tx.Tasks.Create(ctx, task)
@@ -536,6 +544,8 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				UserID:            userID,
 				Title:             title,
 				DueAt:             taskPayload.DueAt,
+				FlagID:            flagID,
+				SubflagID:         subflagID,
 				SourceInboxItemID: &item.ID,
 			}
 			created, err := uc.Tasks.Create(ctx, task)

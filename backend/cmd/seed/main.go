@@ -820,10 +820,10 @@ func ensureTask(ctx context.Context, db *postgres.DB, task domain.Task) (domain.
 	if err := row.Scan(&task.ID, &task.CreatedAt, &task.UpdatedAt); err == nil {
 		row = db.QueryRowContext(ctx, `
 			UPDATE inbota.tasks
-			SET title = $1, description = $2, status = $3, due_at = $4, source_inbox_item_id = $5, updated_at = now()
-			WHERE id = $6 AND user_id = $7
+			SET title = $1, description = $2, status = $3, due_at = $4, flag_id = $5, subflag_id = $6, source_inbox_item_id = $7, updated_at = now()
+			WHERE id = $8 AND user_id = $9
 			RETURNING created_at, updated_at
-		`, task.Title, task.Description, string(task.Status), task.DueAt, task.SourceInboxItemID, task.ID, task.UserID)
+		`, task.Title, task.Description, string(task.Status), task.DueAt, task.FlagID, task.SubflagID, task.SourceInboxItemID, task.ID, task.UserID)
 		if err := row.Scan(&task.CreatedAt, &task.UpdatedAt); err != nil {
 			return domain.Task{}, false, err
 		}
@@ -833,10 +833,10 @@ func ensureTask(ctx context.Context, db *postgres.DB, task domain.Task) (domain.
 	}
 
 	row = db.QueryRowContext(ctx, `
-		INSERT INTO inbota.tasks (user_id, title, description, status, due_at, source_inbox_item_id)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO inbota.tasks (user_id, title, description, status, due_at, flag_id, subflag_id, source_inbox_item_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at
-	`, task.UserID, task.Title, task.Description, string(task.Status), task.DueAt, task.SourceInboxItemID)
+	`, task.UserID, task.Title, task.Description, string(task.Status), task.DueAt, task.FlagID, task.SubflagID, task.SourceInboxItemID)
 	if err := row.Scan(&task.ID, &task.CreatedAt, &task.UpdatedAt); err != nil {
 		return domain.Task{}, false, err
 	}

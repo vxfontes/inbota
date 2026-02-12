@@ -311,7 +311,7 @@ func (h *InboxHandler) Confirm(c *gin.Context) {
 
 	resp := dto.ConfirmInboxItemResponse{Type: string(result.Type)}
 	if result.Task != nil {
-		task := toTaskResponse(*result.Task, nil)
+		task := toTaskResponse(*result.Task, nil, nil, nil)
 		resp.Task = &task
 	}
 	if result.Reminder != nil {

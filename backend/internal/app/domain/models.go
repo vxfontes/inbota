@@ -130,6 +130,8 @@ type Task struct {
 	Description       *string
 	Status            TaskStatus
 	DueAt             *time.Time
+	FlagID            *string
+	SubflagID         *string
 	SourceInboxItemID *string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time

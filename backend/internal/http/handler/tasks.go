@@ -11,12 +11,14 @@ import (
 )
 
 type TasksHandler struct {
-	Usecase *usecase.TaskUsecase
-	Inbox   *usecase.InboxUsecase
+	Usecase  *usecase.TaskUsecase
+	Inbox    *usecase.InboxUsecase
+	Flags    *usecase.FlagUsecase
+	Subflags *usecase.SubflagUsecase
 }
 
-func NewTasksHandler(uc *usecase.TaskUsecase, inbox *usecase.InboxUsecase) *TasksHandler {
-	return &TasksHandler{Usecase: uc, Inbox: inbox}
+func NewTasksHandler(uc *usecase.TaskUsecase, inbox *usecase.InboxUsecase, flags *usecase.FlagUsecase, subflags *usecase.SubflagUsecase) *TasksHandler {
+	return &TasksHandler{Usecase: uc, Inbox: inbox, Flags: flags, Subflags: subflags}
 }
 
 // List tasks.
@@ -66,6 +68,49 @@ func (h *TasksHandler) List(c *gin.Context) {
 		}
 	}
 
+	subflagIDs := make([]string, 0)
+	for _, task := range tasks {
+		if task.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *task.SubflagID)
+		}
+	}
+
+	subflagsByID := make(map[string]domain.Subflag)
+	if h.Subflags != nil {
+		ids := uniqueStrings(subflagIDs)
+		if len(ids) > 0 {
+			subflags, err := h.Subflags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflagsByID = subflags
+		}
+	}
+
+	flagIDs := make([]string, 0)
+	for _, task := range tasks {
+		if task.FlagID != nil {
+			flagIDs = append(flagIDs, *task.FlagID)
+		}
+	}
+	for _, subflag := range subflagsByID {
+		flagIDs = append(flagIDs, subflag.FlagID)
+	}
+
+	flagsByID := make(map[string]domain.Flag)
+	if h.Flags != nil {
+		ids := uniqueStrings(flagIDs)
+		if len(ids) > 0 {
+			flags, err := h.Flags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flagsByID = flags
+		}
+	}
+
 	items := make([]dto.TaskResponse, 0, len(tasks))
 	for _, task := range tasks {
 		var source *domain.InboxItem
@@ -74,7 +119,24 @@ func (h *TasksHandler) List(c *gin.Context) {
 				source = &item
 			}
 		}
-		items = append(items, toTaskResponse(task, source))
+		var flag *domain.Flag
+		if task.FlagID != nil {
+			if f, ok := flagsByID[*task.FlagID]; ok {
+				flag = &f
+			}
+		}
+		var subflag *domain.Subflag
+		if task.SubflagID != nil {
+			if sf, ok := subflagsByID[*task.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		if flag == nil && subflag != nil {
+			if f, ok := flagsByID[subflag.FlagID]; ok {
+				flag = &f
+			}
+		}
+		items = append(items, toTaskResponse(task, source, flag, subflag))
 	}
 
 	c.JSON(http.StatusOK, dto.ListTasksResponse{Items: items, NextCursor: next})
@@ -103,13 +165,40 @@ func (h *TasksHandler) Create(c *gin.Context) {
 		return
 	}
 
-	task, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Description, req.Status, req.DueAt)
+	task, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Description, req.Status, req.DueAt, req.FlagID, req.SubflagID)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, toTaskResponse(task, nil))
+	var flag *domain.Flag
+	var subflag *domain.Subflag
+	if h.Flags != nil && task.FlagID != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, *task.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if h.Subflags != nil && task.SubflagID != nil {
+		if sf, err := h.Subflags.Get(c.Request.Context(), userID, *task.SubflagID); err == nil {
+			subflag = &sf
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if flag == nil && subflag != nil && h.Flags != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, toTaskResponse(task, nil, flag, subflag))
 }
 
 // Update task.
@@ -143,6 +232,8 @@ func (h *TasksHandler) Update(c *gin.Context) {
 		Description: req.Description,
 		Status:      req.Status,
 		DueAt:       req.DueAt,
+		FlagID:      req.FlagID,
+		SubflagID:   req.SubflagID,
 	})
 	if err != nil {
 		writeUsecaseError(c, err)
@@ -158,6 +249,32 @@ func (h *TasksHandler) Update(c *gin.Context) {
 		}
 		source = &res.Item
 	}
+	var flag *domain.Flag
+	var subflag *domain.Subflag
+	if h.Flags != nil && task.FlagID != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, *task.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if h.Subflags != nil && task.SubflagID != nil {
+		if sf, err := h.Subflags.Get(c.Request.Context(), userID, *task.SubflagID); err == nil {
+			subflag = &sf
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if flag == nil && subflag != nil && h.Flags != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
 
-	c.JSON(http.StatusOK, toTaskResponse(task, source))
+	c.JSON(http.StatusOK, toTaskResponse(task, source, flag, subflag))
 }

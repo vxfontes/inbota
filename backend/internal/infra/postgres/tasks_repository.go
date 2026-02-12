@@ -26,10 +26,10 @@ func (r *TaskRepository) Create(ctx context.Context, task domain.Task) (domain.T
 	}
 
 	row := r.db.QueryRowContext(ctx, `
-		INSERT INTO inbota.tasks (user_id, title, description, status, due_at, source_inbox_item_id)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO inbota.tasks (user_id, title, description, status, due_at, flag_id, subflag_id, source_inbox_item_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at
-	`, task.UserID, task.Title, task.Description, string(task.Status), task.DueAt, task.SourceInboxItemID)
+	`, task.UserID, task.Title, task.Description, string(task.Status), task.DueAt, task.FlagID, task.SubflagID, task.SourceInboxItemID)
 
 	if err := row.Scan(&task.ID, &task.CreatedAt, &task.UpdatedAt); err != nil {
 		return domain.Task{}, err
@@ -40,10 +40,10 @@ func (r *TaskRepository) Create(ctx context.Context, task domain.Task) (domain.T
 func (r *TaskRepository) Update(ctx context.Context, task domain.Task) (domain.Task, error) {
 	row := r.db.QueryRowContext(ctx, `
 		UPDATE inbota.tasks
-		SET title = $1, description = $2, status = $3, due_at = $4, updated_at = now()
-		WHERE id = $5 AND user_id = $6
+		SET title = $1, description = $2, status = $3, due_at = $4, flag_id = $5, subflag_id = $6, updated_at = now()
+		WHERE id = $7 AND user_id = $8
 		RETURNING created_at, updated_at
-	`, task.Title, task.Description, string(task.Status), task.DueAt, task.ID, task.UserID)
+	`, task.Title, task.Description, string(task.Status), task.DueAt, task.FlagID, task.SubflagID, task.ID, task.UserID)
 
 	if err := row.Scan(&task.CreatedAt, &task.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
@@ -75,7 +75,7 @@ func (r *TaskRepository) Delete(ctx context.Context, userID, id string) error {
 
 func (r *TaskRepository) Get(ctx context.Context, userID, id string) (domain.Task, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, user_id, title, description, status, due_at, source_inbox_item_id, created_at, updated_at
+		SELECT id, user_id, title, description, status, due_at, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.tasks
 		WHERE id = $1 AND user_id = $2
 		LIMIT 1
@@ -83,10 +83,12 @@ func (r *TaskRepository) Get(ctx context.Context, userID, id string) (domain.Tas
 
 	var description sql.NullString
 	var dueAt sql.NullTime
+	var flagID sql.NullString
+	var subflagID sql.NullString
 	var sourceInboxID sql.NullString
 	var status string
 	var task domain.Task
-	if err := row.Scan(&task.ID, &task.UserID, &task.Title, &description, &status, &dueAt, &sourceInboxID, &task.CreatedAt, &task.UpdatedAt); err != nil {
+	if err := row.Scan(&task.ID, &task.UserID, &task.Title, &description, &status, &dueAt, &flagID, &subflagID, &sourceInboxID, &task.CreatedAt, &task.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return domain.Task{}, ErrNotFound
 		}
@@ -95,6 +97,8 @@ func (r *TaskRepository) Get(ctx context.Context, userID, id string) (domain.Tas
 	task.Description = stringPtrFromNull(description)
 	task.Status = domain.TaskStatus(status)
 	task.DueAt = timePtrFromNull(dueAt)
+	task.FlagID = stringPtrFromNull(flagID)
+	task.SubflagID = stringPtrFromNull(subflagID)
 	task.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
 	return task, nil
 }
@@ -106,7 +110,7 @@ func (r *TaskRepository) List(ctx context.Context, userID string, opts repositor
 	}
 
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, user_id, title, description, status, due_at, source_inbox_item_id, created_at, updated_at
+		SELECT id, user_id, title, description, status, due_at, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.tasks
 		WHERE user_id = $1
 		ORDER BY due_at NULLS LAST, created_at DESC
@@ -121,15 +125,19 @@ func (r *TaskRepository) List(ctx context.Context, userID string, opts repositor
 	for rows.Next() {
 		var description sql.NullString
 		var dueAt sql.NullTime
+		var flagID sql.NullString
+		var subflagID sql.NullString
 		var sourceInboxID sql.NullString
 		var status string
 		var task domain.Task
-		if err := rows.Scan(&task.ID, &task.UserID, &task.Title, &description, &status, &dueAt, &sourceInboxID, &task.CreatedAt, &task.UpdatedAt); err != nil {
+		if err := rows.Scan(&task.ID, &task.UserID, &task.Title, &description, &status, &dueAt, &flagID, &subflagID, &sourceInboxID, &task.CreatedAt, &task.UpdatedAt); err != nil {
 			return nil, nil, err
 		}
 		task.Description = stringPtrFromNull(description)
 		task.Status = domain.TaskStatus(status)
 		task.DueAt = timePtrFromNull(dueAt)
+		task.FlagID = stringPtrFromNull(flagID)
+		task.SubflagID = stringPtrFromNull(subflagID)
 		task.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
 		items = append(items, task)
 	}

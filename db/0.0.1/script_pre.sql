@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS inbota.tasks (
   description text,
   status text NOT NULL DEFAULT 'OPEN',
   due_at timestamptz,
+  flag_id uuid REFERENCES inbota.flags(id) ON DELETE SET NULL,
+  subflag_id uuid REFERENCES inbota.subflags(id) ON DELETE SET NULL,
   source_inbox_item_id uuid REFERENCES inbota.inbox_items(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

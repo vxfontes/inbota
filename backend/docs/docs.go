@@ -2169,7 +2169,13 @@ const docTemplate = `{
                 "dueAt": {
                     "type": "string"
                 },
+                "flagId": {
+                    "type": "string"
+                },
                 "status": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {
@@ -2588,6 +2594,9 @@ const docTemplate = `{
                 "dueAt": {
                     "type": "string"
                 },
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2596,6 +2605,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "subflag": {
+                    "$ref": "#/definitions/dto.SubflagObject"
                 },
                 "title": {
                     "type": "string"
@@ -2715,7 +2727,13 @@ const docTemplate = `{
                 "dueAt": {
                     "type": "string"
                 },
+                "flagId": {
+                    "type": "string"
+                },
                 "status": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {

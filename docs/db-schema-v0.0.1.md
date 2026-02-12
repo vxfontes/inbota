@@ -121,11 +121,15 @@ Campos:
 - `description`: descricao (opcional).
 - `status`: `OPEN`, `DONE`.
 - `due_at`: data limite (opcional).
+- `flag_id`: referencia ao contexto principal (opcional).
+- `subflag_id`: referencia ao contexto secundario (opcional).
 - `source_inbox_item_id`: referencia ao inbox item de origem.
 - `created_at` / `updated_at`.
 
 Relacionamentos:
 - `tasks.user_id` -> `users.id`.
+- `tasks.flag_id` -> `flags.id` (opcional).
+- `tasks.subflag_id` -> `subflags.id` (opcional).
 - `tasks.source_inbox_item_id` -> `inbox_items.id` (opcional).
 
 ### `reminders`

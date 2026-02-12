@@ -129,11 +129,21 @@ func toInboxItemObject(item domain.InboxItem) dto.InboxItemObject {
 	}
 }
 
-func toTaskResponse(task domain.Task, source *domain.InboxItem) dto.TaskResponse {
+func toTaskResponse(task domain.Task, source *domain.InboxItem, flag *domain.Flag, subflag *domain.Subflag) dto.TaskResponse {
 	var sourceObj *dto.InboxItemObject
 	if source != nil {
 		obj := toInboxItemObject(*source)
 		sourceObj = &obj
+	}
+	var flagObj *dto.FlagObject
+	if flag != nil {
+		obj := toFlagObject(*flag)
+		flagObj = &obj
+	}
+	var subflagObj *dto.SubflagObject
+	if subflag != nil {
+		obj := toSubflagObject(*subflag, flag)
+		subflagObj = &obj
 	}
 	return dto.TaskResponse{
 		ID:              task.ID,
@@ -141,6 +151,8 @@ func toTaskResponse(task domain.Task, source *domain.InboxItem) dto.TaskResponse
 		Description:     task.Description,
 		Status:          string(task.Status),
 		DueAt:           task.DueAt,
+		Flag:            flagObj,
+		Subflag:         subflagObj,
 		SourceInboxItem: sourceObj,
 		CreatedAt:       task.CreatedAt,
 		UpdatedAt:       task.UpdatedAt,

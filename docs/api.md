@@ -56,6 +56,7 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   - `subflagId` -> `subflag` (com `id`, `name`, `color`)
   - `sourceInboxItemId` -> `sourceInboxItem` (objeto completo)
   - `listId` -> `list` (objeto com `id`, `title`, `status`)
+- Tasks: `POST/PATCH /v1/tasks` aceita `flagId`/`subflagId` e as respostas retornam `flag`/`subflag` quando definidos.
 - Se o app esperava apenas IDs, ajuste os mappers.
 
 **Limitacoes atuais**
@@ -152,6 +153,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   "description":"string|null",
   "status":"OPEN|DONE",
   "dueAt":"RFC3339|null",
+  "flag": { ...FlagObject },
+  "subflag": { ...SubflagObject },
   "sourceInboxItem": { ...InboxItemObject },
   "createdAt":"RFC3339",
   "updatedAt":"RFC3339"
@@ -423,6 +426,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
     "description":null,
     "status":"OPEN",
     "dueAt":"2026-03-05T12:00:00Z",
+    "flag":{"id":"3c36bb23-7dfb-4f01-9c65-8b80c4ee22e4","name":"Financas","color":"#4A90E2"},
+    "subflag":{"id":"c2a3e3b1-0f87-4c7e-b5e7-5a64ec0e4d8b","name":"Pix","color":"#4A90E2"},
     "sourceInboxItem":{
       "id":"1f6553c4-56c1-4aa7-8c8a-4e8f1b3e2af8",
       "source":"manual",
@@ -449,6 +454,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
       "description":null,
       "status":"OPEN",
       "dueAt":"2026-03-05T12:00:00Z",
+      "flag":{"id":"3c36bb23-7dfb-4f01-9c65-8b80c4ee22e4","name":"Financas","color":"#4A90E2"},
+      "subflag":{"id":"c2a3e3b1-0f87-4c7e-b5e7-5a64ec0e4d8b","name":"Pix","color":"#4A90E2"},
       "sourceInboxItem":{
         "id":"1f6553c4-56c1-4aa7-8c8a-4e8f1b3e2af8",
         "source":"manual",

@@ -83,7 +83,7 @@ func main() {
 		flagUC := &usecase.FlagUsecase{Flags: flagRepo}
 		subflagUC := &usecase.SubflagUsecase{Subflags: subflagRepo, Flags: flagRepo}
 		ruleUC := &usecase.ContextRuleUsecase{Rules: ruleRepo, Flags: flagRepo, Subflags: subflagRepo}
-		taskUC := &usecase.TaskUsecase{Tasks: taskRepo}
+		taskUC := &usecase.TaskUsecase{Tasks: taskRepo, Flags: flagRepo, Subflags: subflagRepo}
 		reminderUC := &usecase.ReminderUsecase{Reminders: reminderRepo}
 		eventUC := &usecase.EventUsecase{Events: eventRepo}
 		shoppingListUC := &usecase.ShoppingListUsecase{Lists: shoppingListRepo}
@@ -130,7 +130,7 @@ func main() {
 			Subflags:      handler.NewSubflagsHandler(subflagUC, flagUC),
 			ContextRules:  handler.NewContextRulesHandler(ruleUC, flagUC, subflagUC),
 			Inbox:         handler.NewInboxHandler(inboxUC, flagUC, subflagUC),
-			Tasks:         handler.NewTasksHandler(taskUC, inboxUC),
+			Tasks:         handler.NewTasksHandler(taskUC, inboxUC, flagUC, subflagUC),
 			Reminders:     handler.NewRemindersHandler(reminderUC, inboxUC),
 			Events:        handler.NewEventsHandler(eventUC, inboxUC),
 			ShoppingLists: handler.NewShoppingListsHandler(shoppingListUC, inboxUC),

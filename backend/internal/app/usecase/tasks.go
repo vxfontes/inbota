@@ -2,14 +2,18 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
+	"inbota/backend/internal/infra/postgres"
 )
 
 type TaskUsecase struct {
-	Tasks repository.TaskRepository
+	Tasks    repository.TaskRepository
+	Flags    repository.FlagRepository
+	Subflags repository.SubflagRepository
 }
 
 type TaskUpdateInput struct {
@@ -17,18 +21,27 @@ type TaskUpdateInput struct {
 	Description *string
 	Status      *string
 	DueAt       *time.Time
+	FlagID      *string
+	SubflagID   *string
 }
 
-func (uc *TaskUsecase) Create(ctx context.Context, userID, title string, description *string, status *string, dueAt *time.Time) (domain.Task, error) {
+func (uc *TaskUsecase) Create(ctx context.Context, userID, title string, description *string, status *string, dueAt *time.Time, flagID *string, subflagID *string) (domain.Task, error) {
 	title = normalizeString(title)
 	if userID == "" || title == "" {
 		return domain.Task{}, ErrMissingRequiredFields
+	}
+
+	resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, flagID, subflagID)
+	if err != nil {
+		return domain.Task{}, err
 	}
 
 	task := domain.Task{
 		UserID:      userID,
 		Title:       title,
 		Description: description,
+		FlagID:      resolvedFlagID,
+		SubflagID:   resolvedSubflagID,
 	}
 
 	if status != nil {
@@ -72,6 +85,22 @@ func (uc *TaskUsecase) Update(ctx context.Context, userID, id string, input Task
 	if input.DueAt != nil {
 		task.DueAt = input.DueAt
 	}
+	if input.FlagID != nil || input.SubflagID != nil {
+		nextFlagID := task.FlagID
+		nextSubflagID := task.SubflagID
+		if input.FlagID != nil {
+			nextFlagID = normalizeOptionalString(input.FlagID)
+		}
+		if input.SubflagID != nil {
+			nextSubflagID = normalizeOptionalString(input.SubflagID)
+		}
+		resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, nextFlagID, nextSubflagID)
+		if err != nil {
+			return domain.Task{}, err
+		}
+		task.FlagID = resolvedFlagID
+		task.SubflagID = resolvedSubflagID
+	}
 
 	return uc.Tasks.Update(ctx, task)
 }
@@ -95,4 +124,43 @@ func (uc *TaskUsecase) List(ctx context.Context, userID string, opts repository.
 		return nil, nil, ErrMissingRequiredFields
 	}
 	return uc.Tasks.List(ctx, userID, opts)
+}
+
+func (uc *TaskUsecase) resolveFlagAndSubflag(ctx context.Context, userID string, flagID *string, subflagID *string) (*string, *string, error) {
+	resolvedFlagID := normalizeOptionalString(flagID)
+	resolvedSubflagID := normalizeOptionalString(subflagID)
+
+	if resolvedFlagID != nil {
+		if uc.Flags == nil {
+			return nil, nil, ErrDependencyMissing
+		}
+		if _, err := uc.Flags.Get(ctx, userID, *resolvedFlagID); err != nil {
+			if errors.Is(err, postgres.ErrNotFound) {
+				return nil, nil, ErrInvalidPayload
+			}
+			return nil, nil, err
+		}
+	}
+
+	if resolvedSubflagID != nil {
+		if uc.Subflags == nil {
+			return nil, nil, ErrDependencyMissing
+		}
+		subflag, err := uc.Subflags.Get(ctx, userID, *resolvedSubflagID)
+		if err != nil {
+			if errors.Is(err, postgres.ErrNotFound) {
+				return nil, nil, ErrInvalidPayload
+			}
+			return nil, nil, err
+		}
+		if resolvedFlagID != nil && subflag.FlagID != *resolvedFlagID {
+			return nil, nil, ErrInvalidPayload
+		}
+		if resolvedFlagID == nil {
+			flag := subflag.FlagID
+			resolvedFlagID = &flag
+		}
+	}
+
+	return resolvedFlagID, resolvedSubflagID, nil
 }

@@ -194,6 +194,8 @@ type TaskResponse struct {
 	Description     *string          `json:"description,omitempty"`
 	Status          string           `json:"status"`
 	DueAt           *time.Time       `json:"dueAt,omitempty"`
+	Flag            *FlagObject      `json:"flag,omitempty"`
+	Subflag         *SubflagObject   `json:"subflag,omitempty"`
 	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
 	CreatedAt       time.Time        `json:"createdAt"`
 	UpdatedAt       time.Time        `json:"updatedAt"`
@@ -209,6 +211,8 @@ type CreateTaskRequest struct {
 	Description *string    `json:"description,omitempty"`
 	Status      *string    `json:"status,omitempty"`
 	DueAt       *time.Time `json:"dueAt,omitempty"`
+	FlagID      *string    `json:"flagId,omitempty"`
+	SubflagID   *string    `json:"subflagId,omitempty"`
 }
 
 type UpdateTaskRequest struct {
@@ -216,6 +220,8 @@ type UpdateTaskRequest struct {
 	Description *string    `json:"description,omitempty"`
 	Status      *string    `json:"status,omitempty"`
 	DueAt       *time.Time `json:"dueAt,omitempty"`
+	FlagID      *string    `json:"flagId,omitempty"`
+	SubflagID   *string    `json:"subflagId,omitempty"`
 }
 
 // Reminders

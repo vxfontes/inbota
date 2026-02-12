@@ -2162,7 +2162,13 @@
                 "dueAt": {
                     "type": "string"
                 },
+                "flagId": {
+                    "type": "string"
+                },
                 "status": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {
@@ -2581,6 +2587,9 @@
                 "dueAt": {
                     "type": "string"
                 },
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2589,6 +2598,9 @@
                 },
                 "status": {
                     "type": "string"
+                },
+                "subflag": {
+                    "$ref": "#/definitions/dto.SubflagObject"
                 },
                 "title": {
                     "type": "string"
@@ -2708,7 +2720,13 @@
                 "dueAt": {
                     "type": "string"
                 },
+                "flagId": {
+                    "type": "string"
+                },
                 "status": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {

@@ -164,7 +164,11 @@ definitions:
         type: string
       dueAt:
         type: string
+      flagId:
+        type: string
       status:
+        type: string
+      subflagId:
         type: string
       title:
         type: string
@@ -436,12 +440,16 @@ definitions:
         type: string
       dueAt:
         type: string
+      flag:
+        $ref: '#/definitions/dto.FlagObject'
       id:
         type: string
       sourceInboxItem:
         $ref: '#/definitions/dto.InboxItemObject'
       status:
         type: string
+      subflag:
+        $ref: '#/definitions/dto.SubflagObject'
       title:
         type: string
       updatedAt:
@@ -518,7 +526,11 @@ definitions:
         type: string
       dueAt:
         type: string
+      flagId:
+        type: string
       status:
+        type: string
+      subflagId:
         type: string
       title:
         type: string

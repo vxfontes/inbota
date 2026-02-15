@@ -49,7 +49,7 @@ class HomePage extends StatelessWidget {
   Widget _buildTodoSection(BuildContext context) {
     return const IBTodoList(
       title: 'Tarefas críticas',
-      subtitle: 'Resolva estas primeiro para liberar o restante do dia.',
+      subtitle: 'Resolva estas primeiro',
       items: [
         IBTodoItemData(
           title: 'Revisar sugestões da IA do inbox',

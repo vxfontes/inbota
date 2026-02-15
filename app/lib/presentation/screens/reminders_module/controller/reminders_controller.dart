@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/reminders/data/models/reminder_list_output.dart';
@@ -29,13 +31,21 @@ class RemindersController implements IBController {
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
   final ValueNotifier<List<TaskOutput>> tasks = ValueNotifier([]);
+  final ValueNotifier<List<TaskOutput>> visibleTasks = ValueNotifier([]);
   final ValueNotifier<List<ReminderOutput>> reminders = ValueNotifier([]);
+  final Set<String> _doneGraceVisibleTaskIds = <String>{};
+  final Map<String, Timer> _hideDoneTaskTimers = <String, Timer>{};
 
   @override
   void dispose() {
+    for (final timer in _hideDoneTaskTimers.values) {
+      timer.cancel();
+    }
+    _hideDoneTaskTimers.clear();
     loading.dispose();
     error.dispose();
     tasks.dispose();
+    visibleTasks.dispose();
     reminders.dispose();
   }
 
@@ -48,7 +58,7 @@ class RemindersController implements IBController {
     taskResult.fold(
       (failure) =>
           _setError(failure, fallback: 'Nao foi possivel carregar tarefas.'),
-      (data) => tasks.value = _safeTaskItems(data),
+      (data) => _setTasks(_safeTaskItems(data)),
     );
 
     final reminderResult = await _getRemindersUsecase.call(limit: 50);
@@ -61,27 +71,43 @@ class RemindersController implements IBController {
     loading.value = false;
   }
 
-  Future<void> toggleTask(TaskOutput task, bool done) async {
+  Future<bool> toggleTask(TaskOutput task, bool done) async {
     final nextStatus = done ? 'DONE' : 'OPEN';
+    if (!done) {
+      _cancelHideDoneTask(task.id, removeGraceVisibility: true);
+    }
 
     final result = await _updateTaskUsecase.call(
       TaskUpdateInput(id: task.id, status: nextStatus),
     );
 
-    result.fold(
+    return result.fold(
       (failure) {
         _setError(failure, fallback: 'Nao foi possivel atualizar a tarefa.');
         _refreshTasks();
+        return false;
       },
       (updated) {
         final list = List<TaskOutput>.from(tasks.value);
         final index = list.indexWhere((item) => item.id == updated.id);
         if (index != -1) {
           list[index] = updated;
-          tasks.value = list;
         }
+        _setTasks(list);
+        if (updated.isDone) {
+          _scheduleHideDoneTask(updated.id);
+        } else {
+          _cancelHideDoneTask(updated.id, removeGraceVisibility: true);
+        }
+        return true;
       },
     );
+  }
+
+  Future<void> toggleVisibleTaskAt(int index, bool done) async {
+    final list = visibleTasks.value;
+    if (index < 0 || index >= list.length) return;
+    await toggleTask(list[index], done);
   }
 
   Future<bool> createTask({required String title, DateTime? data}) async {
@@ -96,11 +122,7 @@ class RemindersController implements IBController {
     error.value = null;
 
     final result = await _createTaskUsecase.call(
-      TaskCreateInput(
-        title: trimmed,
-        status: 'OPEN',
-        dueAt: data,
-      ),
+      TaskCreateInput(title: trimmed, status: 'OPEN', dueAt: data),
     );
 
     loading.value = false;
@@ -113,7 +135,7 @@ class RemindersController implements IBController {
       (created) {
         final list = List<TaskOutput>.from(tasks.value);
         list.add(created);
-        tasks.value = list;
+        _setTasks(list);
         return true;
       },
     );
@@ -121,7 +143,56 @@ class RemindersController implements IBController {
 
   Future<void> _refreshTasks() async {
     final result = await _getTasksUsecase.call(limit: 50);
-    result.fold((_) {}, (data) => tasks.value = _safeTaskItems(data));
+    result.fold((_) {}, (data) => _setTasks(_safeTaskItems(data)));
+  }
+
+  void _setTasks(List<TaskOutput> items) {
+    tasks.value = items;
+    _rebuildVisibleTasks();
+  }
+
+  void _rebuildVisibleTasks() {
+    final sorted = _sortedTasks(tasks.value);
+    visibleTasks.value = sorted
+        .where(
+          (task) => !task.isDone || _doneGraceVisibleTaskIds.contains(task.id),
+        )
+        .toList();
+  }
+
+  void _scheduleHideDoneTask(String taskId) {
+    _cancelHideDoneTask(taskId, removeGraceVisibility: false);
+    _doneGraceVisibleTaskIds.add(taskId);
+    _rebuildVisibleTasks();
+
+    _hideDoneTaskTimers[taskId] = Timer(const Duration(seconds: 2), () {
+      _hideDoneTaskTimers.remove(taskId);
+      _doneGraceVisibleTaskIds.remove(taskId);
+      _rebuildVisibleTasks();
+    });
+  }
+
+  void _cancelHideDoneTask(
+    String taskId, {
+    required bool removeGraceVisibility,
+  }) {
+    final timer = _hideDoneTaskTimers.remove(taskId);
+    timer?.cancel();
+    if (removeGraceVisibility) {
+      _doneGraceVisibleTaskIds.remove(taskId);
+      _rebuildVisibleTasks();
+    }
+  }
+
+  List<TaskOutput> _sortedTasks(List<TaskOutput> items) {
+    final sorted = List<TaskOutput>.from(items);
+    sorted.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final dueA = a.dueAt ?? DateTime(2100);
+      final dueB = b.dueAt ?? DateTime(2100);
+      return dueA.compareTo(dueB);
+    });
+    return sorted;
   }
 
   List<TaskOutput> _safeTaskItems(TaskListOutput output) {

@@ -29,11 +29,11 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
       animation: Listenable.merge([
         controller.loading,
         controller.error,
-        controller.tasks,
+        controller.visibleTasks,
         controller.reminders,
       ]),
       builder: (context, _) {
-        final tasks = _sortedTasks(controller.tasks.value);
+        final tasks = controller.visibleTasks.value;
         final reminders = controller.reminders.value;
         final loading = controller.loading.value;
         final error = controller.error.value;
@@ -140,7 +140,9 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
             ),
           )
           .toList(),
-      onToggle: (index, done) => controller.toggleTask(tasks[index], done),
+      onToggle: (index, done) {
+        controller.toggleVisibleTaskAt(index, done);
+      },
     );
   }
 
@@ -223,17 +225,6 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
           ),
       ],
     );
-  }
-
-  List<TaskOutput> _sortedTasks(List<TaskOutput> tasks) {
-    final sorted = List<TaskOutput>.from(tasks);
-    sorted.sort((a, b) {
-      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-      final dueA = a.dueAt ?? DateTime(2100);
-      final dueB = b.dueAt ?? DateTime(2100);
-      return dueA.compareTo(dueB);
-    });
-    return sorted;
   }
 
   List<ReminderOutput> _todayReminders(List<ReminderOutput> reminders) {

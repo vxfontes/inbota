@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/shopping/data/models/shopping_item_output.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_list_output.dart';
+import 'package:inbota/presentation/screens/shopping_module/components/create_shopping_item_bottom_sheet.dart';
+import 'package:inbota/presentation/screens/shopping_module/components/create_shopping_list_bottom_sheet.dart';
 import 'package:inbota/presentation/screens/shopping_module/controller/shopping_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -27,13 +29,13 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
       animation: Listenable.merge([
         controller.loading,
         controller.error,
-        controller.shoppingLists,
+        controller.visibleShoppingLists,
         controller.itemsByList,
       ]),
       builder: (context, _) {
         final loading = controller.loading.value;
         final error = controller.error.value;
-        final shoppingLists = controller.shoppingLists.value;
+        final shoppingLists = controller.visibleShoppingLists.value;
         final itemsByList = controller.itemsByList.value;
 
         final showFullLoading = loading && shoppingLists.isEmpty;
@@ -94,15 +96,31 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IBText('Compras', context: context).titulo.build(),
-        const SizedBox(height: 6),
-        IBText(
-          'Todas as suas listas e itens para comprar em um só lugar.',
-          context: context,
-        ).muted.build(),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IBText('Compras', context: context).titulo.build(),
+              const SizedBox(height: 6),
+              IBText(
+                'Todas as suas listas e itens para comprar em um só lugar.',
+                context: context,
+              ).muted.build(),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Criar lista',
+          onPressed: _openCreateShoppingListSheet,
+          icon: const IBIcon(
+            IBIcon.addRounded,
+            color: AppColors.primary700,
+            size: 20,
+          ),
+        ),
       ],
     );
   }
@@ -114,10 +132,30 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
   }) {
     final doneCount = items.where((item) => item.isDone).length;
     final pendingCount = items.length - doneCount;
+    final canConclude = controller.canConcludeList(shoppingList.id);
 
     return IBTodoList(
       title: shoppingList.title,
       subtitle: '$pendingCount pendente(s) de ${items.length} item(ns)',
+      action: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Adicionar item',
+            onPressed: () => _openCreateShoppingItemSheet(shoppingList),
+            icon: const IBIcon(
+              IBIcon.addRounded,
+              color: AppColors.primary700,
+              size: 18,
+            ),
+          ),
+          if (canConclude)
+            TextButton(
+              onPressed: () => controller.concludeList(shoppingList.id),
+              child: IBText('Concluir', context: context).label.build(),
+            ),
+        ],
+      ),
       items: items
           .map(
             (item) => IBTodoItemData(
@@ -138,5 +176,40 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
     final quantity = item.quantity?.trim();
     if (quantity == null || quantity.isEmpty) return null;
     return 'Quantidade: $quantity';
+  }
+
+  Future<void> _openCreateShoppingListSheet() async {
+    if (!mounted) return;
+
+    await IBBottomSheet.show<void>(
+      context: context,
+      isFitWithContent: true,
+      child: CreateShoppingListBottomSheet(
+        loadingListenable: controller.loading,
+        errorListenable: controller.error,
+        onCreateList: controller.createShoppingList,
+      ),
+    );
+  }
+
+  Future<void> _openCreateShoppingItemSheet(ShoppingListOutput list) async {
+    if (!mounted) return;
+
+    await IBBottomSheet.show<void>(
+      context: context,
+      isFitWithContent: true,
+      child: CreateShoppingItemBottomSheet(
+        listTitle: list.title,
+        loadingListenable: controller.loading,
+        errorListenable: controller.error,
+        onCreateItem: ({required title, quantity}) {
+          return controller.createShoppingItem(
+            listId: list.id,
+            title: title,
+            quantity: quantity,
+          );
+        },
+      ),
+    );
   }
 }

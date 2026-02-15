@@ -1,9 +1,13 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:inbota/modules/shopping/data/models/shopping_item_create_input.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_item_list_output.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_item_output.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_item_update_input.dart';
+import 'package:inbota/modules/shopping/data/models/shopping_list_create_input.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_list_list_output.dart';
+import 'package:inbota/modules/shopping/data/models/shopping_list_output.dart';
+import 'package:inbota/modules/shopping/data/models/shopping_list_update_input.dart';
 import 'package:inbota/modules/shopping/domain/repositories/i_shopping_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
@@ -109,6 +113,90 @@ class ShoppingRepository implements IShoppingRepository {
       );
     } catch (err) {
       return Left(UpdateFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ShoppingListOutput>> createShoppingList(
+    ShoppingListCreateInput input,
+  ) async {
+    try {
+      final response = await _httpClient.post(
+        _shoppingListsPath,
+        data: input.toJson(),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(ShoppingListOutput.fromDynamic(response.data));
+      }
+
+      return Left(
+        SaveFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao criar lista de compra.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(SaveFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ShoppingListOutput>> updateShoppingList(
+    ShoppingListUpdateInput input,
+  ) async {
+    try {
+      final response = await _httpClient.patch(
+        '$_shoppingListsPath/${input.id}',
+        data: input.toJson(),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(ShoppingListOutput.fromDynamic(response.data));
+      }
+
+      return Left(
+        UpdateFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao atualizar lista de compra.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(UpdateFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ShoppingItemOutput>> createShoppingItem(
+    ShoppingItemCreateInput input,
+  ) async {
+    try {
+      final response = await _httpClient.post(
+        '$_shoppingListsPath/${input.listId}/items',
+        data: input.toJson(),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(ShoppingItemOutput.fromDynamic(response.data));
+      }
+
+      return Left(
+        SaveFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao criar item da lista.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(SaveFailure(message: err.toString()));
     }
   }
 

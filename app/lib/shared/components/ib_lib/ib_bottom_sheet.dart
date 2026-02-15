@@ -127,70 +127,55 @@ class IBBottomSheet extends StatelessWidget {
         secondaryLabel != null && secondaryLabel!.trim().isNotEmpty;
     final hasActions = hasPrimary || hasSecondary;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: resolvedPadding,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.hasBoundedHeight
-                  ? (constraints.maxHeight - bottomInset).clamp(
-                      0.0,
-                      double.infinity,
-                    )
-                  : 0,
+    return SingleChildScrollView(
+      padding: resolvedPadding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showHandle) ...[
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderStrong,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (showHandle) ...[
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.borderStrong,
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (hasTitle)
-                  IBText(title!, context: context).subtitulo.build(),
-                if (hasSubtitle) ...[
-                  if (hasTitle) const SizedBox(height: 6),
-                  IBText(subtitle!, context: context).muted.build(),
-                ],
-                if (child != null) ...[
-                  if (hasTitle || hasSubtitle) const SizedBox(height: 12),
-                  child!,
-                ],
-                if (hasActions) ...[
-                  const SizedBox(height: 16),
-                  if (hasPrimary)
-                    IBButton(
-                      label: primaryLabel!,
-                      loading: primaryLoading,
-                      onPressed: primaryEnabled ? onPrimaryPressed : null,
-                      variant: IBButtonVariant.primary,
-                    ),
-                  if (hasSecondary) ...[
-                    const SizedBox(height: 8),
-                    IBButton(
-                      label: secondaryLabel!,
-                      loading: secondaryLoading,
-                      onPressed: secondaryEnabled ? onSecondaryPressed : null,
-                      variant: IBButtonVariant.secondary,
-                    ),
-                  ],
-                ],
-              ],
-            ),
-          ),
-        );
-      },
+            const SizedBox(height: 12),
+          ],
+          if (hasTitle) IBText(title!, context: context).subtitulo.build(),
+          if (hasSubtitle) ...[
+            if (hasTitle) const SizedBox(height: 6),
+            IBText(subtitle!, context: context).muted.build(),
+          ],
+          if (child != null) ...[
+            if (hasTitle || hasSubtitle) const SizedBox(height: 12),
+            child!,
+          ],
+          if (hasActions) ...[
+            const SizedBox(height: 16),
+            if (hasPrimary)
+              IBButton(
+                label: primaryLabel!,
+                loading: primaryLoading,
+                onPressed: primaryEnabled ? onPrimaryPressed : null,
+                variant: IBButtonVariant.primary,
+              ),
+            if (hasSecondary) ...[
+              const SizedBox(height: 8),
+              IBButton(
+                label: secondaryLabel!,
+                loading: secondaryLoading,
+                onPressed: secondaryEnabled ? onSecondaryPressed : null,
+                variant: IBButtonVariant.secondary,
+              ),
+            ],
+          ],
+        ],
+      ),
     );
   }
 
@@ -235,7 +220,10 @@ class IBBottomSheet extends StatelessWidget {
     required bool isFitWithContent,
   }) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final fixedHeight = (screenHeight * 0.8 - paddingTop).clamp(220.0, screenHeight * 0.8);
+    final fixedHeight = (screenHeight * 0.8 - paddingTop).clamp(
+      220.0,
+      screenHeight * 0.8,
+    );
 
     return Padding(
       padding: EdgeInsets.only(

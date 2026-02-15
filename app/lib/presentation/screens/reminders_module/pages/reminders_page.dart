@@ -261,31 +261,10 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     BuildContext context,
     DateTime? current,
   ) async {
-    final now = DateTime.now();
-    final initial = current ?? now;
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(now.year + 5, 12, 31),
+    return IBDateField.pickDateTime(
+      context,
+      current: current,
       helpText: 'Selecionar data',
-    );
-
-    if (pickedDate == null) return current;
-    if (!context.mounted) return current;
-
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initial),
-    );
-
-    final resolvedTime = pickedTime ?? const TimeOfDay(hour: 0, minute: 0);
-    return DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      resolvedTime.hour,
-      resolvedTime.minute,
     );
   }
 

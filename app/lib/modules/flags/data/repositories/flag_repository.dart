@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:inbota/modules/flags/data/models/flag_list_output.dart';
 import 'package:inbota/modules/flags/domain/repositories/i_flag_repository.dart';
+import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
@@ -31,34 +32,18 @@ class FlagRepository implements IFlagRepository {
         return Right(FlagListOutput.fromDynamic(response.data));
       }
 
-      return Left(GetListFailure(message: _extractMessage(response.data)));
+      return Left(
+        GetListFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao carregar flags.',
+          ),
+        ),
+      );
     } catch (err) {
       return Left(GetListFailure(message: err.toString()));
     }
   }
 
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
-
-  String _extractMessage(dynamic data) {
-    if (data is Map) {
-      final map = data.map((key, value) => MapEntry(key.toString(), value));
-      final error = map['error']?.toString();
-      if (error != null && error.isNotEmpty) {
-        return _mapErrorCode(error);
-      }
-      return map['message']?.toString() ?? 'Erro ao carregar flags.';
-    }
-    return 'Erro ao carregar flags.';
-  }
-
-  String _mapErrorCode(String error) {
-    switch (error) {
-      case 'connection_refused':
-        return 'Sem conexao com o servidor.';
-      case 'timeout':
-        return 'Tempo de conexao esgotado.';
-      default:
-        return error;
-    }
-  }
 }

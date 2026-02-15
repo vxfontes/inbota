@@ -4,6 +4,7 @@ import 'package:inbota/modules/reminders/data/models/reminder_list_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_update_input.dart';
 import 'package:inbota/modules/reminders/domain/repositories/i_reminder_repository.dart';
+import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
@@ -14,7 +15,10 @@ class ReminderRepository implements IReminderRepository {
   final String _path = '/reminders';
 
   @override
-  Future<Either<Failure, ReminderListOutput>> fetchReminders({int? limit, String? cursor}) async {
+  Future<Either<Failure, ReminderListOutput>> fetchReminders({
+    int? limit,
+    String? cursor,
+  }) async {
     try {
       final query = <String, dynamic>{};
       if (limit != null) query['limit'] = limit;
@@ -31,26 +35,39 @@ class ReminderRepository implements IReminderRepository {
         return Right(ReminderListOutput.fromJson(data));
       }
 
-      return Left(GetListFailure(message: _extractMessage(response.data)));
+      return Left(
+        GetListFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao carregar lembretes.',
+          ),
+        ),
+      );
     } catch (err) {
       return Left(GetListFailure(message: err.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, ReminderOutput>> updateReminder(ReminderUpdateInput input) async {
+  Future<Either<Failure, ReminderOutput>> updateReminder(
+    ReminderUpdateInput input,
+  ) async {
     try {
-      final response = await _httpClient.patch(
-        _path,
-        data: input.toJson(),
-      );
+      final response = await _httpClient.patch(_path, data: input.toJson());
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {
         return Right(ReminderOutput.fromJson(_asMap(response.data)));
       }
 
-      return Left(UpdateFailure(message: _extractMessage(response.data)));
+      return Left(
+        UpdateFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao carregar lembretes.',
+          ),
+        ),
+      );
     } catch (err) {
       return Left(UpdateFailure(message: err.toString()));
     }
@@ -64,28 +81,5 @@ class ReminderRepository implements IReminderRepository {
       return data.map((key, value) => MapEntry(key.toString(), value));
     }
     return <String, dynamic>{};
-  }
-
-  String _extractMessage(dynamic data) {
-    if (data is Map) {
-      final map = data.map((key, value) => MapEntry(key.toString(), value));
-      final error = map['error']?.toString();
-      if (error != null && error.isNotEmpty) {
-        return _mapErrorCode(error);
-      }
-      return map['message']?.toString() ?? 'Erro ao carregar lembretes.';
-    }
-    return 'Erro ao carregar lembretes.';
-  }
-
-  String _mapErrorCode(String error) {
-    switch (error) {
-      case 'connection_refused':
-        return 'Sem conexao com o servidor.';
-      case 'timeout':
-        return 'Tempo de conexao esgotado.';
-      default:
-        return error;
-    }
   }
 }

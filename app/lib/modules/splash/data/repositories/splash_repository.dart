@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:inbota/modules/splash/data/models/health_status_output.dart';
 import 'package:inbota/modules/splash/domain/repositories/i_splash_repository.dart';
+import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
@@ -22,7 +23,18 @@ class SplashRepository implements ISplashRepository {
         return Right(HealthStatusOutput.fromJson(_asMap(response.data)));
       }
 
-      return Left(GetFailure(message: _extractMessage(response.data)));
+      return Left(
+        GetFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Servidor indisponivel.',
+            codeOverrides: const {
+              'connection_refused':
+                  'Servidor indisponivel. Verifique a rede local.',
+            },
+          ),
+        ),
+      );
     } catch (err) {
       return Left(GetFailure(message: err.toString()));
     }
@@ -36,28 +48,5 @@ class SplashRepository implements ISplashRepository {
       return data.map((key, value) => MapEntry(key.toString(), value));
     }
     return <String, dynamic>{};
-  }
-
-  String _extractMessage(dynamic data) {
-    if (data is Map) {
-      final map = data.map((key, value) => MapEntry(key.toString(), value));
-      final error = map['error']?.toString();
-      if (error != null && error.isNotEmpty) {
-        return _mapErrorCode(error);
-      }
-      return map['message']?.toString() ?? 'Servidor indisponivel.';
-    }
-    return 'Servidor indisponivel.';
-  }
-
-  String _mapErrorCode(String error) {
-    switch (error) {
-      case 'connection_refused':
-        return 'Servidor indisponivel. Verifique a rede local.';
-      case 'timeout':
-        return 'Tempo de conexao esgotado.';
-      default:
-        return error;
-    }
   }
 }

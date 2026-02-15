@@ -159,8 +159,16 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
     if (item.allDay) return 'Dia inteiro';
     if (!item.hasExplicitTime) return 'Sem horário';
 
-    final hour = item.date.hour.toString().padLeft(2, '0');
-    final minute = item.date.minute.toString().padLeft(2, '0');
+    final startLabel = _formatHourMinute(item.date);
+    if (item.hasExplicitEndTime && item.endDate != null) {
+      return '$startLabel - ${_formatHourMinute(item.endDate!)}';
+    }
+    return startLabel;
+  }
+
+  String _formatHourMinute(DateTime date) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
 }

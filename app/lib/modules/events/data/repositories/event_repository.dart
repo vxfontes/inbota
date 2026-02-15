@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import 'package:inbota/modules/events/data/models/agenda_output.dart';
 import 'package:inbota/modules/events/data/models/event_list_output.dart';
 import 'package:inbota/modules/events/domain/repositories/i_event_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
@@ -12,6 +13,7 @@ class EventRepository implements IEventRepository {
   final IHttpClient _httpClient;
 
   static const String _path = '/events';
+  static const String _agendaPath = '/agenda';
 
   @override
   Future<Either<Failure, EventListOutput>> fetchEvents({
@@ -47,4 +49,33 @@ class EventRepository implements IEventRepository {
   }
 
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
+
+  @override
+  Future<Either<Failure, AgendaOutput>> fetchAgenda({int? limit}) async {
+    try {
+      final query = <String, dynamic>{};
+      if (limit != null) query['limit'] = limit;
+
+      final response = await _httpClient.get(
+        _agendaPath,
+        queryParameters: query.isEmpty ? null : query,
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(AgendaOutput.fromDynamic(response.data));
+      }
+
+      return Left(
+        GetListFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao carregar agenda.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(GetListFailure(message: err.toString()));
+    }
+  }
 }

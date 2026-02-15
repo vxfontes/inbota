@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:inbota/modules/events/data/models/event_output.dart';
-import 'package:inbota/modules/events/domain/usecases/get_events_usecase.dart';
+import 'package:inbota/modules/events/domain/usecases/get_agenda_usecase.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
-import 'package:inbota/modules/reminders/domain/usecases/get_reminders_usecase.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
-import 'package:inbota/modules/tasks/domain/usecases/get_tasks_usecase.dart';
 import 'package:inbota/presentation/screens/events_module/components/event_feed_item.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 
 class EventsController implements IBController {
-  EventsController(
-    this._getEventsUsecase,
-    this._getTasksUsecase,
-    this._getRemindersUsecase,
-  );
+  EventsController(this._getAgendaUsecase);
 
-  final GetEventsUsecase _getEventsUsecase;
-  final GetTasksUsecase _getTasksUsecase;
-  final GetRemindersUsecase _getRemindersUsecase;
+  final GetAgendaUsecase _getAgendaUsecase;
 
   final weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
   final months = [
@@ -73,33 +65,15 @@ class EventsController implements IBController {
 
     final merged = <EventFeedItem>[];
 
-    final eventsResult = await _getEventsUsecase.call(limit: 200);
-    eventsResult.fold(
+    final agendaResult = await _getAgendaUsecase.call(limit: 200);
+    agendaResult.fold(
       (failure) {
-        _setError(failure, fallback: 'Nao foi possivel carregar eventos.');
+        _setError(failure, fallback: 'Nao foi possivel carregar agenda.');
       },
       (output) {
-        merged.addAll(_eventItems(output.items));
-      },
-    );
-
-    final tasksResult = await _getTasksUsecase.call(limit: 200);
-    tasksResult.fold(
-      (failure) {
-        _setError(failure, fallback: 'Nao foi possivel carregar tarefas.');
-      },
-      (output) {
-        merged.addAll(_taskItems(output.items));
-      },
-    );
-
-    final remindersResult = await _getRemindersUsecase.call(limit: 200);
-    remindersResult.fold(
-      (failure) {
-        _setError(failure, fallback: 'Nao foi possivel carregar lembretes.');
-      },
-      (output) {
-        merged.addAll(_reminderItems(output.items));
+        merged.addAll(_eventItems(output.events));
+        merged.addAll(_taskItems(output.tasks));
+        merged.addAll(_reminderItems(output.reminders));
       },
     );
 
@@ -159,6 +133,7 @@ class EventsController implements IBController {
             type: EventFeedItemType.event,
             title: event.title,
             date: event.startAt!.toLocal(),
+            endDate: event.endAt?.toLocal(),
             secondary: event.location,
             allDay: event.allDay,
           ),

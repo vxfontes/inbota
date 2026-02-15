@@ -1,3 +1,4 @@
+import 'package:inbota/modules/events/data/models/agenda_output.dart';
 import 'package:dartz/dartz.dart';
 
 import 'package:inbota/modules/events/data/models/event_list_output.dart';
@@ -8,4 +9,6 @@ abstract class IEventRepository {
     int? limit,
     String? cursor,
   });
+
+  Future<Either<Failure, AgendaOutput>> fetchAgenda({int? limit});
 }

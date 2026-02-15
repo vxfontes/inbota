@@ -2,6 +2,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:inbota/modules/tasks/data/repositories/task_repository.dart';
 import 'package:inbota/modules/tasks/domain/repositories/i_task_repository.dart';
 import 'package:inbota/modules/tasks/domain/usecases/create_task_usecase.dart';
+import 'package:inbota/modules/tasks/domain/usecases/delete_task_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/get_tasks_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/update_task_usecase.dart';
 
@@ -12,6 +13,7 @@ class TasksModule {
 
     // usecases
     i.addLazySingleton<CreateTaskUsecase>(CreateTaskUsecase.new);
+    i.addLazySingleton<DeleteTaskUsecase>(DeleteTaskUsecase.new);
     i.addLazySingleton<GetTasksUsecase>(GetTasksUsecase.new);
     i.addLazySingleton<UpdateTaskUsecase>(UpdateTaskUsecase.new);
   }

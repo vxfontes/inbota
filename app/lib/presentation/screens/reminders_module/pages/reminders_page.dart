@@ -134,6 +134,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
       items: tasks
           .map(
             (task) => IBTodoItemData(
+              id: task.id,
               title: task.title,
               subtitle: RemindersFormat.taskSubtitle(task),
               done: task.isDone,
@@ -143,6 +144,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
       onToggle: (index, done) {
         controller.toggleVisibleTaskAt(index, done);
       },
+      onDelete: controller.deleteVisibleTaskAt,
     );
   }
 

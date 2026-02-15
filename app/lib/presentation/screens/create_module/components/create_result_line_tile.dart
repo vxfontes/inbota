@@ -4,9 +4,10 @@ import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
 class CreateResultLineTile extends StatelessWidget {
-  const CreateResultLineTile({super.key, required this.result});
+  const CreateResultLineTile({super.key, required this.result, this.onDelete});
 
   final CreateLineResult result;
+  final Future<bool> Function(CreateLineResult result)? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +38,23 @@ class CreateResultLineTile extends StatelessWidget {
                   context: context,
                 ).label.color(color).build(),
               ),
+              if (result.canDelete && onDelete != null) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: result.deleting ? null : () => onDelete!(result),
+                  child: result.deleting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const IBIcon(
+                          IBIcon.deleteOutlineRounded,
+                          color: AppColors.danger600,
+                          size: 18,
+                        ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 6),

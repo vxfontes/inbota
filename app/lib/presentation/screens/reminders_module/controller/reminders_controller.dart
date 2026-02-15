@@ -12,6 +12,7 @@ import 'package:inbota/modules/tasks/data/models/task_list_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_update_input.dart';
 import 'package:inbota/modules/tasks/domain/usecases/create_task_usecase.dart';
+import 'package:inbota/modules/tasks/domain/usecases/delete_task_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/get_tasks_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/update_task_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
@@ -22,6 +23,7 @@ class RemindersController implements IBController {
     this._createTaskUsecase,
     this._getTasksUsecase,
     this._updateTaskUsecase,
+    this._deleteTaskUsecase,
     this._getFlagsUsecase,
     this._getRemindersUsecase,
   );
@@ -29,6 +31,7 @@ class RemindersController implements IBController {
   final CreateTaskUsecase _createTaskUsecase;
   final GetTasksUsecase _getTasksUsecase;
   final UpdateTaskUsecase _updateTaskUsecase;
+  final DeleteTaskUsecase _deleteTaskUsecase;
   final GetFlagsUsecase _getFlagsUsecase;
   final GetRemindersUsecase _getRemindersUsecase;
 
@@ -121,6 +124,29 @@ class RemindersController implements IBController {
     final list = visibleTasks.value;
     if (index < 0 || index >= list.length) return;
     await toggleTask(list[index], done);
+  }
+
+  Future<bool> deleteVisibleTaskAt(int index) async {
+    final list = visibleTasks.value;
+    if (index < 0 || index >= list.length) return false;
+    return deleteTaskById(list[index].id);
+  }
+
+  Future<bool> deleteTaskById(String id) async {
+    final result = await _deleteTaskUsecase.call(id);
+    return result.fold(
+      (failure) {
+        _setError(failure, fallback: 'Nao foi possivel excluir a tarefa.');
+        return false;
+      },
+      (_) {
+        _cancelHideDoneTask(id, removeGraceVisibility: true);
+        final next = List<TaskOutput>.from(tasks.value)
+          ..removeWhere((task) => task.id == id);
+        _setTasks(next);
+        return true;
+      },
+    );
   }
 
   Future<bool> createTask({

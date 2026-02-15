@@ -8,6 +8,8 @@ import 'package:inbota/modules/shopping/data/models/shopping_list_output.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_list_update_input.dart';
 import 'package:inbota/modules/shopping/domain/usecases/create_shopping_item_usecase.dart';
 import 'package:inbota/modules/shopping/domain/usecases/create_shopping_list_usecase.dart';
+import 'package:inbota/modules/shopping/domain/usecases/delete_shopping_item_usecase.dart';
+import 'package:inbota/modules/shopping/domain/usecases/delete_shopping_list_usecase.dart';
 import 'package:inbota/modules/shopping/domain/usecases/get_shopping_items_usecase.dart';
 import 'package:inbota/modules/shopping/domain/usecases/get_shopping_lists_usecase.dart';
 import 'package:inbota/modules/shopping/domain/usecases/update_shopping_item_usecase.dart';
@@ -23,6 +25,8 @@ class ShoppingController implements IBController {
     this._createShoppingListUsecase,
     this._updateShoppingListUsecase,
     this._createShoppingItemUsecase,
+    this._deleteShoppingListUsecase,
+    this._deleteShoppingItemUsecase,
   );
 
   final GetShoppingListsUsecase _getShoppingListsUsecase;
@@ -31,6 +35,8 @@ class ShoppingController implements IBController {
   final CreateShoppingListUsecase _createShoppingListUsecase;
   final UpdateShoppingListUsecase _updateShoppingListUsecase;
   final CreateShoppingItemUsecase _createShoppingItemUsecase;
+  final DeleteShoppingListUsecase _deleteShoppingListUsecase;
+  final DeleteShoppingItemUsecase _deleteShoppingItemUsecase;
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
@@ -161,6 +167,39 @@ class ShoppingController implements IBController {
     );
   }
 
+  Future<bool> deleteItemAt(String listId, int index) async {
+    final currentListItems = itemsByList.value[listId];
+    if (currentListItems == null) return false;
+    if (index < 0 || index >= currentListItems.length) return false;
+    return deleteItemById(listId, currentListItems[index].id);
+  }
+
+  Future<bool> deleteItemById(String listId, String itemId) async {
+    if (_updatingItemIds.contains(itemId)) return false;
+    _updatingItemIds.add(itemId);
+
+    final result = await _deleteShoppingItemUsecase.call(itemId);
+    _updatingItemIds.remove(itemId);
+
+    return result.fold(
+      (failure) {
+        _setError(failure, fallback: 'Nao foi possivel excluir o item.');
+        return false;
+      },
+      (_) {
+        final nextMap = Map<String, List<ShoppingItemOutput>>.from(
+          itemsByList.value,
+        );
+        final nextList = List<ShoppingItemOutput>.from(
+          nextMap[listId] ?? const [],
+        )..removeWhere((item) => item.id == itemId);
+        nextMap[listId] = nextList;
+        itemsByList.value = nextMap;
+        return true;
+      },
+    );
+  }
+
   bool canConcludeList(String listId) {
     final items = itemsByList.value[listId] ?? const [];
     if (items.isEmpty) return false;
@@ -199,6 +238,27 @@ class ShoppingController implements IBController {
         nextMap.remove(listId);
         itemsByList.value = nextMap;
 
+        return true;
+      },
+    );
+  }
+
+  Future<bool> deleteShoppingList(String listId) async {
+    final result = await _deleteShoppingListUsecase.call(listId);
+    return result.fold(
+      (failure) {
+        _setError(failure, fallback: 'Nao foi possivel excluir a lista.');
+        return false;
+      },
+      (_) {
+        final nextLists = List<ShoppingListOutput>.from(shoppingLists.value)
+          ..removeWhere((list) => list.id == listId);
+        _setShoppingLists(nextLists);
+
+        final nextMap = Map<String, List<ShoppingItemOutput>>.from(
+          itemsByList.value,
+        )..remove(listId);
+        itemsByList.value = nextMap;
         return true;
       },
     );

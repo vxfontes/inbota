@@ -15,7 +15,11 @@ class TaskListOutput {
         if (item is Map<String, dynamic>) {
           items.add(TaskOutput.fromJson(item));
         } else if (item is Map) {
-          items.add(TaskOutput.fromJson(item.map((key, value) => MapEntry(key.toString(), value))));
+          items.add(
+            TaskOutput.fromJson(
+              item.map((key, value) => MapEntry(key.toString(), value)),
+            ),
+          );
         }
       }
     }

@@ -70,10 +70,17 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
                       final items = itemsByList[shoppingList.id] ?? const [];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
-                        child: _buildShoppingListCard(
-                          context,
-                          shoppingList: shoppingList,
-                          items: items,
+                        child: Dismissible(
+                          key: ValueKey('shopping-list-${shoppingList.id}'),
+                          direction: DismissDirection.endToStart,
+                          background: _buildDeleteBackground(),
+                          confirmDismiss: (_) =>
+                              controller.deleteShoppingList(shoppingList.id),
+                          child: _buildShoppingListCard(
+                            context,
+                            shoppingList: shoppingList,
+                            items: items,
+                          ),
                         ),
                       );
                     }),
@@ -159,6 +166,7 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
       items: items
           .map(
             (item) => IBTodoItemData(
+              id: item.id,
               title: item.title,
               subtitle: _itemSubtitle(item),
               done: item.isDone,
@@ -169,6 +177,7 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
       onToggle: (index, done) {
         controller.toggleItemAt(shoppingList.id, index, done);
       },
+      onDelete: (index) => controller.deleteItemAt(shoppingList.id, index),
     );
   }
 
@@ -209,6 +218,22 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
             quantity: quantity,
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDeleteBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: AppColors.danger600,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const IBIcon(
+        IBIcon.deleteOutlineRounded,
+        color: AppColors.surface,
+        size: 22,
       ),
     );
   }

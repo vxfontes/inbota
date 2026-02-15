@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
+import 'package:inbota/modules/events/domain/usecases/delete_event_usecase.dart';
 import 'package:inbota/modules/inbox/data/models/inbox_confirm_input.dart';
 import 'package:inbota/modules/inbox/data/models/inbox_confirm_output.dart';
 import 'package:inbota/modules/inbox/data/models/inbox_create_input.dart';
@@ -7,21 +8,60 @@ import 'package:inbota/modules/inbox/data/models/inbox_item_output.dart';
 import 'package:inbota/modules/inbox/domain/usecases/confirm_inbox_item_usecase.dart';
 import 'package:inbota/modules/inbox/domain/usecases/create_inbox_item_usecase.dart';
 import 'package:inbota/modules/inbox/domain/usecases/reprocess_inbox_item_usecase.dart';
+import 'package:inbota/modules/reminders/domain/usecases/delete_reminder_usecase.dart';
+import 'package:inbota/modules/shopping/domain/usecases/delete_shopping_list_usecase.dart';
+import 'package:inbota/modules/tasks/domain/usecases/delete_task_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 
 enum CreateLineStatus { success, failed }
+
+enum CreateEntityType { task, reminder, event, shoppingList, unknown }
 
 class CreateLineResult {
   const CreateLineResult({
     required this.sourceText,
     required this.status,
     required this.message,
+    this.entityId,
+    this.entityType = CreateEntityType.unknown,
+    this.deleted = false,
+    this.deleting = false,
   });
 
   final String sourceText;
   final CreateLineStatus status;
   final String message;
+  final String? entityId;
+  final CreateEntityType entityType;
+  final bool deleted;
+  final bool deleting;
+
+  bool get canDelete =>
+      status == CreateLineStatus.success &&
+      !deleted &&
+      !deleting &&
+      entityId != null &&
+      entityId!.trim().isNotEmpty &&
+      entityType != CreateEntityType.unknown;
+
+  CreateLineResult copyWith({
+    String? message,
+    String? entityId,
+    CreateEntityType? entityType,
+    bool? deleted,
+    bool? deleting,
+  }) {
+    return CreateLineResult(
+      sourceText: sourceText,
+      status: status,
+      message: message ?? this.message,
+      entityId: entityId ?? this.entityId,
+      entityType: entityType ?? this.entityType,
+      deleted: deleted ?? this.deleted,
+      deleting: deleting ?? this.deleting,
+    );
+  }
 }
 
 class CreateBatchResult {
@@ -53,11 +93,19 @@ class CreateController implements IBController {
     this._createInboxItemUsecase,
     this._reprocessInboxItemUsecase,
     this._confirmInboxItemUsecase,
+    this._deleteTaskUsecase,
+    this._deleteReminderUsecase,
+    this._deleteEventUsecase,
+    this._deleteShoppingListUsecase,
   );
 
   final CreateInboxItemUsecase _createInboxItemUsecase;
   final ReprocessInboxItemUsecase _reprocessInboxItemUsecase;
   final ConfirmInboxItemUsecase _confirmInboxItemUsecase;
+  final DeleteTaskUsecase _deleteTaskUsecase;
+  final DeleteReminderUsecase _deleteReminderUsecase;
+  final DeleteEventUsecase _deleteEventUsecase;
+  final DeleteShoppingListUsecase _deleteShoppingListUsecase;
 
   final TextEditingController inputController = TextEditingController();
   final ValueNotifier<bool> loading = ValueNotifier(false);
@@ -137,11 +185,14 @@ class CreateController implements IBController {
           }
 
           final entityLabel = _entityLabel(type);
+          final entityRef = _resolveEntityRef(output);
           lineResults.add(
             CreateLineResult(
               sourceText: line,
               status: CreateLineStatus.success,
               message: '$entityLabel criado com sucesso.',
+              entityType: entityRef.$1,
+              entityId: entityRef.$2,
             ),
           );
         },
@@ -224,6 +275,108 @@ class CreateController implements IBController {
       ),
       Right.new,
     );
+  }
+
+  Future<bool> deleteLineResult(CreateLineResult line) async {
+    if (!line.canDelete || batchResult.value == null) return false;
+
+    _updateLine(line, (current) => current.copyWith(deleting: true));
+
+    final deleteResult = await _deleteByEntity(
+      line.entityType,
+      line.entityId ?? '',
+    );
+
+    return deleteResult.fold(
+      (failure) {
+        _updateLine(line, (current) => current.copyWith(deleting: false));
+        final message = failure.message?.trim();
+        error.value = (message != null && message.isNotEmpty)
+            ? message
+            : 'Nao foi possivel excluir item criado.';
+        return false;
+      },
+      (_) {
+        _updateLine(
+          line,
+          (current) => current.copyWith(
+            deleting: false,
+            deleted: true,
+            message: 'Item excluido com sucesso.',
+          ),
+        );
+        return true;
+      },
+    );
+  }
+
+  void _updateLine(
+    CreateLineResult line,
+    CreateLineResult Function(CreateLineResult current) updater,
+  ) {
+    final currentBatch = batchResult.value;
+    if (currentBatch == null) return;
+
+    final index = currentBatch.lines.indexWhere((entry) {
+      return entry.sourceText == line.sourceText &&
+          entry.entityId == line.entityId &&
+          entry.entityType == line.entityType;
+    });
+    if (index == -1) return;
+
+    final nextLines = List<CreateLineResult>.from(currentBatch.lines);
+    nextLines[index] = updater(nextLines[index]);
+
+    batchResult.value = CreateBatchResult(
+      totalInputs: currentBatch.totalInputs,
+      successCount: currentBatch.successCount,
+      failedCount: currentBatch.failedCount,
+      tasksCount: currentBatch.tasksCount,
+      remindersCount: currentBatch.remindersCount,
+      eventsCount: currentBatch.eventsCount,
+      shoppingListsCount: currentBatch.shoppingListsCount,
+      shoppingItemsCount: currentBatch.shoppingItemsCount,
+      lines: nextLines,
+    );
+  }
+
+  Future<Either<Failure, Unit>> _deleteByEntity(
+    CreateEntityType type,
+    String id,
+  ) {
+    switch (type) {
+      case CreateEntityType.task:
+        return _deleteTaskUsecase.call(id);
+      case CreateEntityType.reminder:
+        return _deleteReminderUsecase.call(id);
+      case CreateEntityType.event:
+        return _deleteEventUsecase.call(id);
+      case CreateEntityType.shoppingList:
+        return _deleteShoppingListUsecase.call(id);
+      case CreateEntityType.unknown:
+        return Future.value(
+          Left(
+            DeleteFailure(message: 'Tipo de item nao suportado para exclusao.'),
+          ),
+        );
+    }
+  }
+
+  (CreateEntityType, String?) _resolveEntityRef(InboxConfirmOutput output) {
+    final type = output.type.trim().toLowerCase();
+
+    switch (type) {
+      case 'task':
+        return (CreateEntityType.task, output.task?.id);
+      case 'reminder':
+        return (CreateEntityType.reminder, output.reminder?.id);
+      case 'event':
+        return (CreateEntityType.event, output.event?.id);
+      case 'shopping':
+        return (CreateEntityType.shoppingList, output.shoppingList?.id);
+      default:
+        return (CreateEntityType.unknown, null);
+    }
   }
 
   String _failureMessage(Either<Failure, dynamic> either) {

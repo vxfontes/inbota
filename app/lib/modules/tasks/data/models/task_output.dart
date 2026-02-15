@@ -31,9 +31,7 @@ class TaskOutput {
     );
   }
 
-  TaskOutput copyWith({
-    String? status,
-  }) {
+  TaskOutput copyWith({String? status}) {
     return TaskOutput(
       id: id,
       title: title,

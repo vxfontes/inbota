@@ -200,5 +200,51 @@ class ShoppingRepository implements IShoppingRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> deleteShoppingList(String id) async {
+    try {
+      final response = await _httpClient.delete('$_shoppingListsPath/$id');
+      final statusCode = response.statusCode ?? 0;
+
+      if (_isSuccess(statusCode)) {
+        return const Right(unit);
+      }
+
+      return Left(
+        DeleteFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao excluir lista de compras.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(DeleteFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteShoppingItem(String id) async {
+    try {
+      final response = await _httpClient.delete('$_shoppingItemsPath/$id');
+      final statusCode = response.statusCode ?? 0;
+
+      if (_isSuccess(statusCode)) {
+        return const Right(unit);
+      }
+
+      return Left(
+        DeleteFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao excluir item de compra.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(DeleteFailure(message: err.toString()));
+    }
+  }
+
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 }

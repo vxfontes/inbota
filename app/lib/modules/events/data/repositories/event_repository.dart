@@ -78,4 +78,27 @@ class EventRepository implements IEventRepository {
       return Left(GetListFailure(message: err.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> deleteEvent(String id) async {
+    try {
+      final response = await _httpClient.delete('$_path/$id');
+      final statusCode = response.statusCode ?? 0;
+
+      if (_isSuccess(statusCode)) {
+        return const Right(unit);
+      }
+
+      return Left(
+        DeleteFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao excluir evento.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(DeleteFailure(message: err.toString()));
+    }
+  }
 }

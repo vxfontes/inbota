@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:inbota/modules/events/data/models/event_output.dart';
+import 'package:inbota/modules/events/domain/usecases/delete_event_usecase.dart';
 import 'package:inbota/modules/events/domain/usecases/get_agenda_usecase.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
+import 'package:inbota/modules/reminders/domain/usecases/delete_reminder_usecase.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
+import 'package:inbota/modules/tasks/domain/usecases/delete_task_usecase.dart';
 import 'package:inbota/presentation/screens/events_module/components/event_feed_item.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 
 class EventsController implements IBController {
-  EventsController(this._getAgendaUsecase);
+  EventsController(
+    this._getAgendaUsecase,
+    this._deleteEventUsecase,
+    this._deleteTaskUsecase,
+    this._deleteReminderUsecase,
+  );
 
   final GetAgendaUsecase _getAgendaUsecase;
+  final DeleteEventUsecase _deleteEventUsecase;
+  final DeleteTaskUsecase _deleteTaskUsecase;
+  final DeleteReminderUsecase _deleteReminderUsecase;
 
   final weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
   final months = [
@@ -220,6 +231,34 @@ class EventsController implements IBController {
           ..sort((a, b) => a.date.compareTo(b.date));
 
     visibleItems.value = filtered;
+  }
+
+  Future<bool> deleteVisibleItem(EventFeedItem item) async {
+    final result = switch (item.type) {
+      EventFeedItemType.event => await _deleteEventUsecase.call(item.id),
+      EventFeedItemType.todo => await _deleteTaskUsecase.call(item.id),
+      EventFeedItemType.reminder => await _deleteReminderUsecase.call(item.id),
+    };
+
+    return result.fold(
+      (failure) {
+        _setError(
+          failure,
+          fallback: 'Nao foi possivel excluir item da agenda.',
+        );
+        return false;
+      },
+      (_) {
+        final next = List<EventFeedItem>.from(allItems.value)
+          ..removeWhere(
+            (entry) => entry.id == item.id && entry.type == item.type,
+          );
+        allItems.value = next;
+        _rebuildCalendarDays();
+        _rebuildVisibleItems();
+        return true;
+      },
+    );
   }
 
   void _setError(Failure failure, {required String fallback}) {

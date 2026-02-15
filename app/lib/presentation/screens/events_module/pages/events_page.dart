@@ -86,18 +86,24 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
                 ...items.map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: IBItemCard(
-                      title: item.title,
-                      secondary: item.secondary,
-                      done: item.done,
-                      doneLabel: 'Feito',
-                      typeLabel: _typeLabel(item.type),
-                      typeColor: _typeColor(item.type),
-                      typeIcon: _typeIcon(item.type),
-                      timeLabel: _timeLabel(item),
-                      timeIcon: item.allDay
-                          ? IBIcon.eventAvailableOutlined
-                          : IBIcon.alarmOutlined,
+                    child: Dismissible(
+                      key: ValueKey('event-item-${item.type.name}-${item.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: _buildDeleteBackground(),
+                      confirmDismiss: (_) => controller.deleteVisibleItem(item),
+                      child: IBItemCard(
+                        title: item.title,
+                        secondary: item.secondary,
+                        done: item.done,
+                        doneLabel: 'Feito',
+                        typeLabel: _typeLabel(item.type),
+                        typeColor: _typeColor(item.type),
+                        typeIcon: _typeIcon(item.type),
+                        timeLabel: _timeLabel(item),
+                        timeIcon: item.allDay
+                            ? IBIcon.eventAvailableOutlined
+                            : IBIcon.alarmOutlined,
+                      ),
                     ),
                   ),
                 ),
@@ -170,5 +176,21 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  Widget _buildDeleteBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: AppColors.danger600,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const IBIcon(
+        IBIcon.deleteOutlineRounded,
+        color: AppColors.surface,
+        size: 22,
+      ),
+    );
   }
 }

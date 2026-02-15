@@ -28,9 +28,7 @@ class ReminderOutput {
     );
   }
 
-  ReminderOutput copyWith({
-    String? status,
-  }) {
+  ReminderOutput copyWith({String? status}) {
     return ReminderOutput(
       id: id,
       title: title,

@@ -4,7 +4,5 @@ class TaskUpdateInput {
   final String id;
   final String status;
 
-  Map<String, dynamic> toJson() => {
-        'status': status,
-      };
+  Map<String, dynamic> toJson() => {'status': status};
 }

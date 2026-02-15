@@ -6,11 +6,13 @@ import 'package:inbota/shared/theme/app_colors.dart';
 
 class IBTodoItemData {
   const IBTodoItemData({
+    this.id,
     required this.title,
     this.subtitle,
     this.done = false,
   });
 
+  final String? id;
   final String title;
   final String? subtitle;
   final bool done;
@@ -23,6 +25,7 @@ class IBTodoList extends StatefulWidget {
     this.title,
     this.subtitle,
     this.onToggle,
+    this.onDelete,
     this.action,
     this.emptyLabel,
   });
@@ -31,6 +34,7 @@ class IBTodoList extends StatefulWidget {
   final String? subtitle;
   final List<IBTodoItemData> items;
   final void Function(int index, bool done)? onToggle;
+  final Future<bool> Function(int index)? onDelete;
   final Widget? action;
   final String? emptyLabel;
 
@@ -102,9 +106,7 @@ class _IBTodoListState extends State<IBTodoList> {
                     ],
                   ],
                 ),
-                if (widget.action != null) ...[
-                  widget.action!,
-                ],
+                if (widget.action != null) ...[widget.action!],
               ],
             ),
             const SizedBox(height: 12),
@@ -114,15 +116,50 @@ class _IBTodoListState extends State<IBTodoList> {
             const SizedBox(height: 8),
           ],
           for (var i = 0; i < widget.items.length; i++) ...[
-            _IBTodoRow(
-              item: widget.items[i],
-              done: _done[i],
-              onTap: () => _toggle(i),
-            ),
+            _buildRow(i),
             if (i != widget.items.length - 1)
               const Divider(height: 16, color: AppColors.border),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildRow(int index) {
+    final row = _IBTodoRow(
+      item: widget.items[index],
+      done: _done[index],
+      onTap: () => _toggle(index),
+    );
+
+    if (widget.onDelete == null) return row;
+
+    final item = widget.items[index];
+    final keyBase = item.id?.trim().isNotEmpty == true
+        ? item.id!.trim()
+        : '${item.title}-$index';
+
+    return Dismissible(
+      key: ValueKey('todo-item-$keyBase'),
+      direction: DismissDirection.endToStart,
+      background: _buildDeleteBackground(),
+      confirmDismiss: (_) => widget.onDelete!.call(index),
+      child: row,
+    );
+  }
+
+  Widget _buildDeleteBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: AppColors.danger600,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const IBIcon(
+        IBIcon.deleteOutlineRounded,
+        color: AppColors.surface,
+        size: 20,
       ),
     );
   }
@@ -142,16 +179,16 @@ class _IBTodoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: done ? AppColors.textMuted : AppColors.text,
-          decoration: done ? TextDecoration.lineThrough : TextDecoration.none,
-          decorationColor: AppColors.textMuted,
-        );
+      fontWeight: FontWeight.w600,
+      color: done ? AppColors.textMuted : AppColors.text,
+      decoration: done ? TextDecoration.lineThrough : TextDecoration.none,
+      decorationColor: AppColors.textMuted,
+    );
     final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: done ? AppColors.textMuted : AppColors.textMuted,
-          decoration: done ? TextDecoration.lineThrough : TextDecoration.none,
-          decorationColor: AppColors.textMuted,
-        );
+      color: done ? AppColors.textMuted : AppColors.textMuted,
+      decoration: done ? TextDecoration.lineThrough : TextDecoration.none,
+      decorationColor: AppColors.textMuted,
+    );
 
     return InkWell(
       onTap: onTap,
@@ -177,7 +214,9 @@ class _IBTodoRow extends StatelessWidget {
                 boxShadow: done
                     ? [
                         BoxShadow(
-                          color: AppColors.primary600.withAlpha((0.25 * 255).round()),
+                          color: AppColors.primary600.withAlpha(
+                            (0.25 * 255).round(),
+                          ),
                           blurRadius: 10,
                           offset: const Offset(0, 6),
                         ),

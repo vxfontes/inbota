@@ -29,14 +29,17 @@ class IBIcon extends StatelessWidget {
   static const IconData checkRounded = Icons.check_rounded;
   static const IconData chevronRight = Icons.chevron_right;
   static const IconData creditCard = Icons.credit_card;
+  static const IconData deleteOutlineRounded = Icons.delete_outline_rounded;
   static const IconData closeRounded = Icons.close_rounded;
   static const IconData eventAvailableOutlined = Icons.event_available_outlined;
   static const IconData gridViewRounded = Icons.grid_view_rounded;
   static const IconData helpOutline = Icons.help_outline;
   static const IconData lockOutline = Icons.lock_outline;
   static const IconData mailOutline = Icons.mail_outline;
-  static const IconData notificationsActiveRounded = Icons.notifications_active_rounded;
-  static const IconData notificationsNoneOutlined = Icons.notifications_none_outlined;
+  static const IconData notificationsActiveRounded =
+      Icons.notifications_active_rounded;
+  static const IconData notificationsNoneOutlined =
+      Icons.notifications_none_outlined;
   static const IconData personOutline = Icons.person_outline;
   static const IconData privacyTipOutlined = Icons.privacy_tip_outlined;
   static const IconData shoppingBagOutlined = Icons.shopping_bag_outlined;
@@ -52,7 +55,9 @@ class IBIcon extends StatelessWidget {
     final iconWidget = Icon(icon, size: size, color: resolvedColor);
 
     final needsContainer =
-        backgroundColor != null || padding != EdgeInsets.zero || borderColor != null;
+        backgroundColor != null ||
+        padding != EdgeInsets.zero ||
+        borderColor != null;
 
     if (!needsContainer) return iconWidget;
 

@@ -8,7 +8,10 @@ class GetRemindersUsecase extends IBUsecase {
 
   GetRemindersUsecase(this._repository);
 
-  UsecaseResponse<Failure, ReminderListOutput> call({int? limit, String? cursor}) {
+  UsecaseResponse<Failure, ReminderListOutput> call({
+    int? limit,
+    String? cursor,
+  }) {
     return _repository.fetchReminders(limit: limit, cursor: cursor);
   }
 }

@@ -4,8 +4,5 @@ class ReminderUpdateInput {
   final String id;
   final String status;
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'status': status,
-      };
+  Map<String, dynamic> toJson() => {'id': id, 'status': status};
 }

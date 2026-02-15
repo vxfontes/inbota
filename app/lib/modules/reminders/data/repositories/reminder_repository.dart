@@ -53,7 +53,10 @@ class ReminderRepository implements IReminderRepository {
     ReminderUpdateInput input,
   ) async {
     try {
-      final response = await _httpClient.patch(_path, data: input.toJson());
+      final response = await _httpClient.patch(
+        '$_path/${input.id}',
+        data: input.toJson(),
+      );
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {
@@ -70,6 +73,29 @@ class ReminderRepository implements IReminderRepository {
       );
     } catch (err) {
       return Left(UpdateFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteReminder(String id) async {
+    try {
+      final response = await _httpClient.delete('$_path/$id');
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return const Right(unit);
+      }
+
+      return Left(
+        DeleteFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao excluir lembrete.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(DeleteFailure(message: err.toString()));
     }
   }
 

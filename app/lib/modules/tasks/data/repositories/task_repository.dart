@@ -96,6 +96,29 @@ class TaskRepository implements ITaskRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> deleteTask(String id) async {
+    try {
+      final response = await _httpClient.delete('$_path/$id');
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return const Right(unit);
+      }
+
+      return Left(
+        DeleteFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao excluir tarefa.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(DeleteFailure(message: err.toString()));
+    }
+  }
+
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 
   Map<String, dynamic> _asMap(dynamic data) {

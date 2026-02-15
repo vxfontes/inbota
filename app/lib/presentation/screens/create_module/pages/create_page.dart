@@ -88,7 +88,10 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
                       ...batchResult.lines.map(
                         (line) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
-                          child: CreateResultLineTile(result: line),
+                          child: CreateResultLineTile(
+                            result: line,
+                            onDelete: controller.deleteLineResult,
+                          ),
                         ),
                       ),
                     ],

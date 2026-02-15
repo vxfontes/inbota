@@ -37,4 +37,7 @@ abstract class IShoppingRepository {
   Future<Either<Failure, ShoppingItemOutput>> createShoppingItem(
     ShoppingItemCreateInput input,
   );
+
+  Future<Either<Failure, Unit>> deleteShoppingList(String id);
+  Future<Either<Failure, Unit>> deleteShoppingItem(String id);
 }

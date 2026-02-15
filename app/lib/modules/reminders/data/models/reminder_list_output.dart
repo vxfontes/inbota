@@ -15,7 +15,11 @@ class ReminderListOutput {
         if (item is Map<String, dynamic>) {
           items.add(ReminderOutput.fromJson(item));
         } else if (item is Map) {
-          items.add(ReminderOutput.fromJson(item.map((key, value) => MapEntry(key.toString(), value))));
+          items.add(
+            ReminderOutput.fromJson(
+              item.map((key, value) => MapEntry(key.toString(), value)),
+            ),
+          );
         }
       }
     }

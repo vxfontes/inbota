@@ -11,4 +11,5 @@ abstract class IEventRepository {
   });
 
   Future<Either<Failure, AgendaOutput>> fetchAgenda({int? limit});
+  Future<Either<Failure, Unit>> deleteEvent(String id);
 }

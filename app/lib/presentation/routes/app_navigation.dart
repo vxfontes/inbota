@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 class AppNavigation {
@@ -17,13 +18,16 @@ class AppNavigation {
     return Modular.to.pushReplacementNamed(route, arguments: args);
   }
 
-  static void pop<T extends Object?>([T? result]) {
-    if (Modular.to.canPop()) {
-      Modular.to.pop(result);
+  static void pop<T>([T? result, BuildContext? context]) {
+    if (context != null) {
+      if (canPop(context: context)) return Navigator.of(context).pop();
     }
+
+    if (canPop()) Modular.to.pop(result);
   }
 
-  static bool canPop() {
+  static bool canPop({BuildContext? context}) {
+    if (context != null) return Navigator.of(context).canPop();
     return Modular.to.canPop();
   }
 

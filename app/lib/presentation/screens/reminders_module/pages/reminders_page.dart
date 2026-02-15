@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
-import 'package:inbota/presentation/routes/app_navigation.dart';
+import 'package:inbota/presentation/screens/reminders_module/components/create_todo_bottom_sheet.dart';
 import 'package:inbota/presentation/screens/reminders_module/controller/reminders_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -38,8 +38,9 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
         final loading = controller.loading.value;
         final error = controller.error.value;
         final showFullLoading = loading;
-        final loadingLabel =
-            tasks.isEmpty && reminders.isEmpty ? 'Carregando...' : 'Atualizando...';
+        final loadingLabel = tasks.isEmpty && reminders.isEmpty
+            ? 'Carregando...'
+            : 'Atualizando...';
 
         return Stack(
           children: [
@@ -51,10 +52,10 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
                   _buildHeader(context),
                   if (error != null && error.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    IBText(error, context: context)
-                        .caption
-                        .color(AppColors.danger600)
-                        .build(),
+                    IBText(
+                      error,
+                      context: context,
+                    ).caption.color(AppColors.danger600).build(),
                   ],
                   const SizedBox(height: 16),
                   _buildQuickStats(context, reminders),
@@ -97,14 +98,18 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     );
   }
 
-  Widget _buildQuickStats(BuildContext context, List<ReminderOutput> reminders) {
+  Widget _buildQuickStats(
+    BuildContext context,
+    List<ReminderOutput> reminders,
+  ) {
     final open = reminders.where((item) => !item.isDone).toList();
     final done = reminders.where((item) => item.isDone).toList();
     final today = _todayReminders(open);
 
     return IBOverviewCard(
       title: 'Resumo rápido',
-      subtitle: 'Você tem ${today.length} lembretes hoje e ${open.length} ativos.',
+      subtitle:
+          'Você tem ${today.length} lembretes hoje e ${open.length} ativos.',
       chips: [
         IBChip(label: 'HOJE ${today.length}', color: AppColors.primary700),
         IBChip(label: 'ATIVOS ${open.length}', color: AppColors.ai600),
@@ -139,8 +144,13 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     );
   }
 
-  Widget _buildTodaySection(BuildContext context, List<ReminderOutput> reminders) {
-    final items = _todayReminders(reminders.where((item) => !item.isDone).toList());
+  Widget _buildTodaySection(
+    BuildContext context,
+    List<ReminderOutput> reminders,
+  ) {
+    final items = _todayReminders(
+      reminders.where((item) => !item.isDone).toList(),
+    );
     return _buildReminderSection(
       context,
       title: 'Hoje',
@@ -149,8 +159,13 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     );
   }
 
-  Widget _buildUpcomingSection(BuildContext context, List<ReminderOutput> reminders) {
-    final items = _upcomingReminders(reminders.where((item) => !item.isDone).toList());
+  Widget _buildUpcomingSection(
+    BuildContext context,
+    List<ReminderOutput> reminders,
+  ) {
+    final items = _upcomingReminders(
+      reminders.where((item) => !item.isDone).toList(),
+    );
     return _buildReminderSection(
       context,
       title: 'Próximos dias',
@@ -159,7 +174,10 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     );
   }
 
-  Widget _buildDoneSection(BuildContext context, List<ReminderOutput> reminders) {
+  Widget _buildDoneSection(
+    BuildContext context,
+    List<ReminderOutput> reminders,
+  ) {
     final items = reminders.where((item) => item.isDone).toList();
     return _buildReminderSection(
       context,
@@ -193,7 +211,9 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
                   IBReminderRow(
                     title: items[i].title,
                     time: RemindersFormat.formatReminderTime(items[i]),
-                    color: muted ? AppColors.textMuted : _reminderColor(title, i),
+                    color: muted
+                        ? AppColors.textMuted
+                        : _reminderColor(title, i),
                   ),
                   if (i != items.length - 1)
                     const Divider(height: 20, color: AppColors.border),
@@ -219,8 +239,11 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
   List<ReminderOutput> _todayReminders(List<ReminderOutput> reminders) {
     final now = DateTime.now();
     return reminders
-        .where((item) =>
-            item.remindAt != null && RemindersFormat.isSameDay(item.remindAt!, now))
+        .where(
+          (item) =>
+              item.remindAt != null &&
+              RemindersFormat.isSameDay(item.remindAt!, now),
+        )
         .toList();
   }
 
@@ -228,10 +251,12 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     final now = DateTime.now();
     final limit = now.add(const Duration(days: 7));
     return reminders
-        .where((item) =>
-            item.remindAt == null ||
-            (RemindersFormat.isAfterDay(item.remindAt!, now) &&
-                item.remindAt!.isBefore(limit)))
+        .where(
+          (item) =>
+              item.remindAt == null ||
+              (RemindersFormat.isAfterDay(item.remindAt!, now) &&
+                  item.remindAt!.isBefore(limit)),
+        )
         .toList();
   }
 
@@ -239,68 +264,6 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     if (section == 'Hoje') return AppColors.primary700;
     if (section == 'Próximos dias') return AppColors.ai600;
     return index.isEven ? AppColors.warning500 : AppColors.success600;
-  }
-
-  Widget _buildDateField(
-    BuildContext context, {
-    required String label,
-    required bool enabled,
-    required bool hasValue,
-    required VoidCallback? onTap,
-    VoidCallback? onClear,
-  }) {
-    final contentColor = enabled ? AppColors.text : AppColors.textMuted;
-    final iconColor = enabled ? AppColors.primary600 : AppColors.textMuted;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            IBIcon(
-              IBIcon.eventAvailableOutlined,
-              color: iconColor,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IBText('Data', context: context).caption.build(),
-                  const SizedBox(height: 2),
-                  IBText(label, context: context).body.color(contentColor).build(),
-                ],
-              ),
-            ),
-            if (hasValue && onClear != null)
-              IconButton(
-                tooltip: 'Limpar data',
-                onPressed: enabled ? onClear : null,
-                icon: const IBIcon(
-                  IBIcon.closeRounded,
-                  size: 18,
-                  color: AppColors.textMuted,
-                ),
-                splashRadius: 18,
-              )
-            else
-              const IBIcon(
-                IBIcon.chevronRight,
-                color: AppColors.textMuted,
-                size: 20,
-              ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<DateTime?> _pickTaskDate(
@@ -318,6 +281,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     );
 
     if (pickedDate == null) return current;
+    if (!context.mounted) return current;
 
     final pickedTime = await showTimePicker(
       context: context,
@@ -343,77 +307,17 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
   }
 
   Future<void> _openCreateTodo() async {
-    final titleController = TextEditingController();
-    final dateNotifier = ValueNotifier<DateTime?>(null);
     if (!mounted) return;
 
     await IBBottomSheet.show<void>(
       context: context,
-      child: AnimatedBuilder(
-        animation: controller.loading,
-        builder: (context, _) {
-          final loading = controller.loading.value;
-          return IBBottomSheet(
-            title: 'Nova tarefa',
-            primaryLabel: 'Adicionar',
-            primaryLoading: loading,
-            primaryEnabled: !loading,
-            onPrimaryPressed: () async {
-              final success = await controller.createTask(
-                title: titleController.text,
-                data: dateNotifier.value,
-              );
-              if (!mounted) return;
-              if (success) {
-                AppNavigation.pop();
-                return;
-              }
-              final message = controller.error.value ?? 'Nao foi possivel criar a tarefa.';
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            },
-            secondaryLabel: 'Cancelar',
-            secondaryEnabled: !loading,
-            onSecondaryPressed: () => AppNavigation.pop(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                IBTextField(
-                  label: 'Titulo',
-                  hint: 'Ex: Enviar proposta',
-                  controller: titleController,
-                ),
-                const SizedBox(height: 12),
-                ValueListenableBuilder<DateTime?>(
-                  valueListenable: dateNotifier,
-                  builder: (context, selectedDate, _) {
-                    return _buildDateField(
-                      context,
-                      label: _formatTaskDate(selectedDate),
-                      enabled: !loading,
-                      hasValue: selectedDate != null,
-                      onTap: loading
-                          ? null
-                          : () async {
-                              final next =
-                                  await _pickTaskDate(context, selectedDate);
-                              if (next != null) {
-                                dateNotifier.value = next;
-                              }
-                            },
-                      onClear: loading ? null : () => dateNotifier.value = null,
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
-        },
+      child: CreateTodoSheet(
+        loadingListenable: controller.loading,
+        errorListenable: controller.error,
+        onCreateTask: controller.createTask,
+        pickTaskDate: _pickTaskDate,
+        formatTaskDate: _formatTaskDate,
       ),
     );
-
-    titleController.dispose();
-    dateNotifier.dispose();
   }
 }

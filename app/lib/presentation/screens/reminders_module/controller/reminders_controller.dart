@@ -152,8 +152,7 @@ class RemindersController implements IBController {
   }
 
   void _rebuildVisibleTasks() {
-    final sorted = _sortedTasks(tasks.value);
-    visibleTasks.value = sorted
+    visibleTasks.value = tasks.value
         .where(
           (task) => !task.isDone || _doneGraceVisibleTaskIds.contains(task.id),
         )
@@ -182,17 +181,6 @@ class RemindersController implements IBController {
       _doneGraceVisibleTaskIds.remove(taskId);
       _rebuildVisibleTasks();
     }
-  }
-
-  List<TaskOutput> _sortedTasks(List<TaskOutput> items) {
-    final sorted = List<TaskOutput>.from(items);
-    sorted.sort((a, b) {
-      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-      final dueA = a.dueAt ?? DateTime(2100);
-      final dueB = b.dueAt ?? DateTime(2100);
-      return dueA.compareTo(dueB);
-    });
-    return sorted;
   }
 
   List<TaskOutput> _safeTaskItems(TaskListOutput output) {

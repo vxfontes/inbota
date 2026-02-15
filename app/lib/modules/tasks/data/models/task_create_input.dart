@@ -4,17 +4,17 @@ class TaskCreateInput {
     this.description,
     this.dueAt,
     this.status,
+    this.flagId,
   });
 
   final String title;
   final String? description;
   final DateTime? dueAt;
   final String? status;
+  final String? flagId;
 
   Map<String, dynamic> toJson() {
-    final payload = <String, dynamic>{
-      'title': title,
-    };
+    final payload = <String, dynamic>{'title': title};
 
     if (description != null && description!.trim().isNotEmpty) {
       payload['description'] = description!.trim();
@@ -26,6 +26,10 @@ class TaskCreateInput {
 
     if (status != null && status!.trim().isNotEmpty) {
       payload['status'] = status!.trim();
+    }
+
+    if (flagId != null && flagId!.trim().isNotEmpty) {
+      payload['flagId'] = flagId!.trim();
     }
 
     return payload;

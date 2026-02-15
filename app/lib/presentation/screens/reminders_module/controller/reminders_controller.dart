@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:inbota/modules/flags/data/models/flag_output.dart';
+import 'package:inbota/modules/flags/domain/usecases/get_flags_usecase.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_list_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/reminders/domain/usecases/get_reminders_usecase.dart';
@@ -20,18 +22,21 @@ class RemindersController implements IBController {
     this._createTaskUsecase,
     this._getTasksUsecase,
     this._updateTaskUsecase,
+    this._getFlagsUsecase,
     this._getRemindersUsecase,
   );
 
   final CreateTaskUsecase _createTaskUsecase;
   final GetTasksUsecase _getTasksUsecase;
   final UpdateTaskUsecase _updateTaskUsecase;
+  final GetFlagsUsecase _getFlagsUsecase;
   final GetRemindersUsecase _getRemindersUsecase;
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
   final ValueNotifier<List<TaskOutput>> tasks = ValueNotifier([]);
   final ValueNotifier<List<TaskOutput>> visibleTasks = ValueNotifier([]);
+  final ValueNotifier<List<FlagOutput>> flags = ValueNotifier([]);
   final ValueNotifier<List<ReminderOutput>> reminders = ValueNotifier([]);
   final Set<String> _doneGraceVisibleTaskIds = <String>{};
   final Map<String, Timer> _hideDoneTaskTimers = <String, Timer>{};
@@ -46,6 +51,7 @@ class RemindersController implements IBController {
     error.dispose();
     tasks.dispose();
     visibleTasks.dispose();
+    flags.dispose();
     reminders.dispose();
   }
 
@@ -66,6 +72,13 @@ class RemindersController implements IBController {
       (failure) =>
           _setError(failure, fallback: 'Nao foi possivel carregar lembretes.'),
       (data) => reminders.value = _safeReminderItems(data),
+    );
+
+    final flagsResult = await _getFlagsUsecase.call(limit: 100);
+    flagsResult.fold(
+      (failure) =>
+          _setError(failure, fallback: 'Nao foi possivel carregar flags.'),
+      (data) => flags.value = _safeFlagItems(data.items),
     );
 
     loading.value = false;
@@ -110,7 +123,12 @@ class RemindersController implements IBController {
     await toggleTask(list[index], done);
   }
 
-  Future<bool> createTask({required String title, DateTime? data}) async {
+  Future<bool> createTask({
+    required String title,
+    String? description,
+    DateTime? data,
+    String? flagId,
+  }) async {
     if (loading.value) return false;
     final trimmed = title.trim();
     if (trimmed.isEmpty) {
@@ -122,7 +140,13 @@ class RemindersController implements IBController {
     error.value = null;
 
     final result = await _createTaskUsecase.call(
-      TaskCreateInput(title: trimmed, status: 'OPEN', dueAt: data),
+      TaskCreateInput(
+        title: trimmed,
+        description: description,
+        status: 'OPEN',
+        dueAt: data,
+        flagId: flagId,
+      ),
     );
 
     loading.value = false;
@@ -189,6 +213,12 @@ class RemindersController implements IBController {
 
   List<ReminderOutput> _safeReminderItems(ReminderListOutput output) {
     return output.items.where((item) => item.id.isNotEmpty).toList();
+  }
+
+  List<FlagOutput> _safeFlagItems(List<FlagOutput> items) {
+    final safe = items.where((item) => item.id.isNotEmpty).toList();
+    safe.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return safe;
   }
 
   void _setError(Failure failure, {required String fallback}) {

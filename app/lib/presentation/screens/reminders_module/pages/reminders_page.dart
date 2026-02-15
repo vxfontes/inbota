@@ -301,10 +301,12 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     if (!mounted) return;
 
     await IBBottomSheet.show<void>(
+      smallBottomSheet: false,
       context: context,
       child: CreateTodoSheet(
         loadingListenable: controller.loading,
         errorListenable: controller.error,
+        flagsListenable: controller.flags,
         onCreateTask: controller.createTask,
         pickTaskDate: _pickTaskDate,
         formatTaskDate: _formatTaskDate,

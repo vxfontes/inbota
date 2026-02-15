@@ -14,6 +14,8 @@ class IBTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onChanged,
+    this.minLines,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -25,6 +27,8 @@ class IBTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
+  final int? minLines;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +37,8 @@ class IBTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       onChanged: onChanged,
+      minLines: minLines,
+      maxLines: maxLines,
       style: const TextStyle(color: AppColors.text),
       decoration: InputDecoration(
         labelText: label,

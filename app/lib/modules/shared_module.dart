@@ -1,5 +1,6 @@
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:inbota/modules/auth/auth_module.dart';
+import 'package:inbota/modules/flags/flags_module.dart';
 import 'package:inbota/modules/inbox/inbox_module.dart';
 import 'package:inbota/modules/reminders/reminders_module.dart';
 import 'package:inbota/modules/splash/splash_module.dart';
@@ -13,13 +14,16 @@ class SharedModule extends Module {
   @override
   void exportedBinds(i) {
     i.addLazySingleton<TokenStorage>(TokenStorage.new);
-    i.addLazySingleton<AuthTokenStore>(() => AuthTokenStore(i.get<TokenStorage>()));
+    i.addLazySingleton<AuthTokenStore>(
+      () => AuthTokenStore(i.get<TokenStorage>()),
+    );
     i.addLazySingleton<IHttpClient>(
       () => DioHttpClient(Profile.DEV, tokenStore: i.get<AuthTokenStore>()),
     );
 
     // modules
     AuthModule.binds(i);
+    FlagsModule.binds(i);
     InboxModule.binds(i);
     RemindersModule.binds(i);
     SplashModule.binds(i);

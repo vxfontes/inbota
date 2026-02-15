@@ -28,6 +28,7 @@ class IBBottomSheet extends StatelessWidget {
     required Widget child,
     bool isScrollControlled = true,
     bool isDismissible = true,
+    bool smallBottomSheet = true,
     bool isAdaptive = false,
     double paddingTop = 160.0,
     bool isFitWithContent = false,
@@ -53,6 +54,7 @@ class IBBottomSheet extends StatelessWidget {
                 : _buildFixedHeightBody(
                     sheetContext,
                     child,
+                    smallBottomSheet: smallBottomSheet,
                     paddingTop: paddingTop,
                     isFitWithContent: isFitWithContent,
                   ),
@@ -83,6 +85,7 @@ class IBBottomSheet extends StatelessWidget {
       child: child,
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
+      smallBottomSheet: smallBottomSheet,
       isAdaptive: isAdaptive,
       paddingTop: paddingTop,
       isFitWithContent: isFitWithContent,
@@ -227,9 +230,13 @@ class IBBottomSheet extends StatelessWidget {
   static Widget _buildFixedHeightBody(
     BuildContext context,
     Widget child, {
+    required bool smallBottomSheet,
     required double paddingTop,
     required bool isFitWithContent,
   }) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final fixedHeight = (screenHeight * 0.8 - paddingTop).clamp(220.0, screenHeight * 0.8);
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -245,7 +252,7 @@ class IBBottomSheet extends StatelessWidget {
         child: isFitWithContent
             ? child
             : SizedBox(
-                height: 375,
+                height: smallBottomSheet ? screenHeight * 0.5 : fixedHeight,
                 child: child,
               ),
       ),

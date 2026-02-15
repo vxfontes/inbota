@@ -1,11 +1,11 @@
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:inbota/modules/shared_module.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
+import 'package:inbota/presentation/screens/create_module/create_module.dart';
 import 'package:inbota/presentation/screens/events_module/events_module.dart';
 import 'package:inbota/presentation/screens/home_module/home_module.dart';
 import 'package:inbota/presentation/screens/reminders_module/reminders_module.dart';
 import 'package:inbota/presentation/screens/root_module/pages/root_page.dart';
-import 'package:inbota/presentation/screens/root_module/pages/root_placeholder_page.dart';
 import 'package:inbota/presentation/screens/shopping_module/shopping_module.dart';
 
 class RootModule extends Module {
@@ -32,10 +32,9 @@ class RootModule extends Module {
           transition: TransitionType.noTransition,
           duration: Duration.zero,
         ),
-        // mock rotas ainda sem implementação
-        ChildRoute(
+        ModuleRoute(
           AppRoutes.create,
-          child: (_) => const RootPlaceholderPage(title: 'Criar'),
+          module: CreateModule(),
           transition: TransitionType.noTransition,
           duration: Duration.zero,
         ),

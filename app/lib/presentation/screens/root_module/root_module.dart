@@ -5,6 +5,7 @@ import 'package:inbota/presentation/screens/home_module/home_module.dart';
 import 'package:inbota/presentation/screens/reminders_module/reminders_module.dart';
 import 'package:inbota/presentation/screens/root_module/pages/root_page.dart';
 import 'package:inbota/presentation/screens/root_module/pages/root_placeholder_page.dart';
+import 'package:inbota/presentation/screens/shopping_module/shopping_module.dart';
 
 class RootModule extends Module {
   // core_modules
@@ -37,9 +38,9 @@ class RootModule extends Module {
           transition: TransitionType.noTransition,
           duration: Duration.zero,
         ),
-        ChildRoute(
+        ModuleRoute(
           AppRoutes.shopping,
-          child: (_) => const RootPlaceholderPage(title: 'Compras'),
+          module: ShoppingModule(),
           transition: TransitionType.noTransition,
           duration: Duration.zero,
         ),

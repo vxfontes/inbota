@@ -1,0 +1,18 @@
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:inbota/modules/shopping/data/repositories/shopping_repository.dart';
+import 'package:inbota/modules/shopping/domain/repositories/i_shopping_repository.dart';
+import 'package:inbota/modules/shopping/domain/usecases/get_shopping_items_usecase.dart';
+import 'package:inbota/modules/shopping/domain/usecases/get_shopping_lists_usecase.dart';
+import 'package:inbota/modules/shopping/domain/usecases/update_shopping_item_usecase.dart';
+
+class ShoppingModule {
+  static void binds(Injector i) {
+    i.addLazySingleton<IShoppingRepository>(ShoppingRepository.new);
+
+    i.addLazySingleton<GetShoppingListsUsecase>(GetShoppingListsUsecase.new);
+    i.addLazySingleton<GetShoppingItemsUsecase>(GetShoppingItemsUsecase.new);
+    i.addLazySingleton<UpdateShoppingItemUsecase>(
+      UpdateShoppingItemUsecase.new,
+    );
+  }
+}

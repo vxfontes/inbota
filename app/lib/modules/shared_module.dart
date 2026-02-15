@@ -3,6 +3,7 @@ import 'package:inbota/modules/auth/auth_module.dart';
 import 'package:inbota/modules/flags/flags_module.dart';
 import 'package:inbota/modules/inbox/inbox_module.dart';
 import 'package:inbota/modules/reminders/reminders_module.dart';
+import 'package:inbota/modules/shopping/shopping_module.dart';
 import 'package:inbota/modules/splash/splash_module.dart';
 import 'package:inbota/modules/tasks/tasks_module.dart';
 import 'package:inbota/shared/services/http/dio_http_client.dart';
@@ -26,6 +27,7 @@ class SharedModule extends Module {
     FlagsModule.binds(i);
     InboxModule.binds(i);
     RemindersModule.binds(i);
+    ShoppingModule.binds(i);
     SplashModule.binds(i);
     TasksModule.binds(i);
   }

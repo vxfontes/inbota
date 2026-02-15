@@ -120,7 +120,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
 
   Widget _buildTodoSection(BuildContext context, List<TaskOutput> tasks) {
     return IBTodoList(
-      title: 'To-dos',
+      title: 'Tarefas',
       action: IconButton(
         tooltip: 'Adicionar tarefa',
         onPressed: _openCreateTodo,

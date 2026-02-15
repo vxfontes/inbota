@@ -131,7 +131,7 @@ class EventsController implements IBController {
       case EventFeedFilter.events:
         return 'Eventos';
       case EventFeedFilter.todos:
-        return 'To-dos';
+        return 'Tarefas';
       case EventFeedFilter.reminders:
         return 'Lembretes';
     }

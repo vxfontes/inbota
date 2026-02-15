@@ -109,7 +109,7 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
         IBText('Criar com IA', context: context).titulo.build(),
         const SizedBox(height: 6),
         IBText(
-          'A IA vai interpretar seus textos e criar to-dos, lembretes, eventos e listas de compras automaticamente.',
+          'A IA vai interpretar seus textos e criar tarefas, lembretes, eventos e listas de compras automaticamente.',
           context: context,
         ).muted.build(),
       ],
@@ -123,27 +123,27 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
           '${batchResult.successCount} de ${batchResult.totalInputs} linha(s) processadas com sucesso.',
       chips: [
         IBChip(
-          label: 'TO-DOS ${batchResult.tasksCount}',
+          label: 'Tarefas ${batchResult.tasksCount}',
           color: AppColors.primary700,
         ),
         IBChip(
-          label: 'LEMBRETES ${batchResult.remindersCount}',
+          label: 'Lembretes ${batchResult.remindersCount}',
           color: AppColors.ai600,
         ),
         IBChip(
-          label: 'EVENTOS ${batchResult.eventsCount}',
+          label: 'Eventos ${batchResult.eventsCount}',
           color: AppColors.success600,
         ),
         IBChip(
-          label: 'COMPRAS ${batchResult.shoppingListsCount}',
+          label: 'Lista de compras ${batchResult.shoppingListsCount}',
           color: AppColors.warning500,
         ),
         IBChip(
-          label: 'ITENS COMPRA ${batchResult.shoppingItemsCount}',
+          label: 'Itens de compra ${batchResult.shoppingItemsCount}',
           color: AppColors.primary500,
         ),
         IBChip(
-          label: 'FALHAS ${batchResult.failedCount}',
+          label: 'Falhas ${batchResult.failedCount}',
           color: AppColors.danger600,
         ),
       ],

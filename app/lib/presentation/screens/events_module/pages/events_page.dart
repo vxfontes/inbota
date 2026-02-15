@@ -115,7 +115,7 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
         IBText('Agenda', context: context).titulo.build(),
         const SizedBox(height: 6),
         IBText(
-          'Eventos, to-dos e lembretes com data em um calendário único.',
+          'Eventos, tarefas e lembretes com data em um calendário único.',
           context: context,
         ).muted.build(),
       ],

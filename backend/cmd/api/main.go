@@ -130,6 +130,7 @@ func main() {
 			Subflags:      handler.NewSubflagsHandler(subflagUC, flagUC),
 			ContextRules:  handler.NewContextRulesHandler(ruleUC, flagUC, subflagUC),
 			Inbox:         handler.NewInboxHandler(inboxUC, flagUC, subflagUC),
+			Agenda:        handler.NewAgendaHandler(eventUC, taskUC, reminderUC),
 			Tasks:         handler.NewTasksHandler(taskUC, inboxUC, flagUC, subflagUC),
 			Reminders:     handler.NewRemindersHandler(reminderUC, inboxUC),
 			Events:        handler.NewEventsHandler(eventUC, inboxUC),

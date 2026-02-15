@@ -1,5 +1,20 @@
 basePath: /
 definitions:
+  dto.AgendaResponse:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/dto.EventResponse'
+        type: array
+      reminders:
+        items:
+          $ref: '#/definitions/dto.ReminderResponse'
+        type: array
+      tasks:
+        items:
+          $ref: '#/definitions/dto.TaskResponse'
+        type: array
+    type: object
   dto.AiSuggestionResponse:
     properties:
       confidence:
@@ -619,6 +634,33 @@ paths:
           schema:
             $ref: '#/definitions/handler.HealthResponse'
       summary: Readiness
+  /v1/agenda:
+    get:
+      parameters:
+      - description: Limite por tipo (events/tasks/reminders). Max 200.
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AgendaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar agenda consolidada
+      tags:
+      - Agenda
   /v1/auth/login:
     post:
       consumes:

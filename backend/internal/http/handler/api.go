@@ -7,6 +7,7 @@ type APIHandlers struct {
 	Subflags      *SubflagsHandler
 	ContextRules  *ContextRulesHandler
 	Inbox         *InboxHandler
+	Agenda        *AgendaHandler
 	Tasks         *TasksHandler
 	Reminders     *RemindersHandler
 	Events        *EventsHandler

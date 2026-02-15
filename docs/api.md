@@ -269,6 +269,9 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
 - `POST /v1/inbox-items/{id}/confirm`
 - `POST /v1/inbox-items/{id}/dismiss`
 
+**Agenda**
+- `GET /v1/agenda` (retorna `events`, `tasks` e `reminders` em uma chamada)
+
 **Entidades finais**
 - `GET/POST/PATCH /v1/tasks`
 - `GET/POST/PATCH /v1/reminders`

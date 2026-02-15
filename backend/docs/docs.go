@@ -53,6 +53,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/agenda": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agenda"
+                ],
+                "summary": "Listar agenda consolidada",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limite por tipo (events/tasks/reminders). Max 200.",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AgendaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/login": {
             "post": {
                 "consumes": [
@@ -1916,6 +1960,29 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.AgendaResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventResponse"
+                    }
+                },
+                "reminders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ReminderResponse"
+                    }
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TaskResponse"
+                    }
+                }
+            }
+        },
         "dto.AiSuggestionResponse": {
             "type": "object",
             "properties": {
@@ -2843,6 +2910,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "API do MVP Inbota.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

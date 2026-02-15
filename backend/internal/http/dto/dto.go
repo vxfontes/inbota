@@ -272,6 +272,12 @@ type ListEventsResponse struct {
 	NextCursor *string         `json:"nextCursor,omitempty"`
 }
 
+type AgendaResponse struct {
+	Events    []EventResponse    `json:"events"`
+	Tasks     []TaskResponse     `json:"tasks"`
+	Reminders []ReminderResponse `json:"reminders"`
+}
+
 type CreateEventRequest struct {
 	Title    string     `json:"title"`
 	StartAt  *time.Time `json:"startAt,omitempty"`

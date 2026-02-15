@@ -62,6 +62,9 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 			authGroup.POST("/inbox-items/:id/confirm", apiHandlers.Inbox.Confirm)
 			authGroup.POST("/inbox-items/:id/dismiss", apiHandlers.Inbox.Dismiss)
 		}
+		if apiHandlers.Agenda != nil {
+			authGroup.GET("/agenda", apiHandlers.Agenda.List)
+		}
 		if apiHandlers.Tasks != nil {
 			authGroup.GET("/tasks", apiHandlers.Tasks.List)
 			authGroup.POST("/tasks", apiHandlers.Tasks.Create)

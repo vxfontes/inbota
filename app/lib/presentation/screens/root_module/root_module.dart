@@ -1,6 +1,7 @@
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:inbota/modules/shared_module.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
+import 'package:inbota/presentation/screens/events_module/events_module.dart';
 import 'package:inbota/presentation/screens/home_module/home_module.dart';
 import 'package:inbota/presentation/screens/reminders_module/reminders_module.dart';
 import 'package:inbota/presentation/screens/root_module/pages/root_page.dart';
@@ -44,9 +45,9 @@ class RootModule extends Module {
           transition: TransitionType.noTransition,
           duration: Duration.zero,
         ),
-        ChildRoute(
+        ModuleRoute(
           AppRoutes.events,
-          child: (_) => const RootPlaceholderPage(title: 'Eventos'),
+          module: EventsModule(),
           transition: TransitionType.noTransition,
           duration: Duration.zero,
         ),

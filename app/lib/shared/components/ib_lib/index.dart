@@ -9,6 +9,7 @@ export 'ib_empty_state.dart';
 export 'ib_flags_field.dart';
 export 'ib_huge_icons.dart';
 export 'ib_icon.dart';
+export 'ib_item_card.dart';
 export 'ib_loader.dart';
 export 'ib_menu_card.dart';
 export 'ib_inbox_item_card.dart';

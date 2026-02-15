@@ -6,14 +6,13 @@ import 'package:inbota/modules/reminders/data/models/reminder_update_input.dart'
 import 'package:inbota/modules/reminders/domain/repositories/i_reminder_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
 class ReminderRepository implements IReminderRepository {
   ReminderRepository(this._httpClient);
 
   final IHttpClient _httpClient;
-  final String _path = '/reminders';
-
   @override
   Future<Either<Failure, ReminderListOutput>> fetchReminders({
     int? limit,
@@ -25,7 +24,7 @@ class ReminderRepository implements IReminderRepository {
       if (cursor != null) query['cursor'] = cursor;
 
       final response = await _httpClient.get(
-        _path,
+        AppPath.reminders,
         queryParameters: query.isEmpty ? null : query,
       );
 
@@ -54,7 +53,7 @@ class ReminderRepository implements IReminderRepository {
   ) async {
     try {
       final response = await _httpClient.patch(
-        '$_path/${input.id}',
+        AppPath.reminderById(input.id),
         data: input.toJson(),
       );
 
@@ -79,7 +78,7 @@ class ReminderRepository implements IReminderRepository {
   @override
   Future<Either<Failure, Unit>> deleteReminder(String id) async {
     try {
-      final response = await _httpClient.delete('$_path/$id');
+      final response = await _httpClient.delete(AppPath.reminderById(id));
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {

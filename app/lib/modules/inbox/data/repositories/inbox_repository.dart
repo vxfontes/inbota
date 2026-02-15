@@ -6,6 +6,7 @@ import 'package:inbota/modules/inbox/data/models/inbox_item_output.dart';
 import 'package:inbota/modules/inbox/domain/repositories/i_inbox_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
 class InboxRepository implements IInboxRepository {
@@ -13,14 +14,15 @@ class InboxRepository implements IInboxRepository {
 
   final IHttpClient _httpClient;
 
-  static const String _path = '/inbox-items';
-
   @override
   Future<Either<Failure, InboxItemOutput>> createInboxItem(
     InboxCreateInput input,
   ) async {
     try {
-      final response = await _httpClient.post(_path, data: input.toJson());
+      final response = await _httpClient.post(
+        AppPath.inboxItems,
+        data: input.toJson(),
+      );
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {
@@ -43,7 +45,7 @@ class InboxRepository implements IInboxRepository {
   @override
   Future<Either<Failure, InboxItemOutput>> reprocessInboxItem(String id) async {
     try {
-      final response = await _httpClient.post('$_path/$id/reprocess');
+      final response = await _httpClient.post(AppPath.inboxReprocess(id));
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {
@@ -69,7 +71,7 @@ class InboxRepository implements IInboxRepository {
   ) async {
     try {
       final response = await _httpClient.post(
-        '$_path/${input.id}/confirm',
+        AppPath.inboxConfirm(input.id),
         data: input.toJson(),
       );
 

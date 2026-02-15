@@ -1,0 +1,45 @@
+class AppPath {
+  AppPath._();
+
+  // API versioning
+  static const String apiVersion = 'v1';
+  static const String apiPrefix = '/$apiVersion';
+
+  // Infra
+  static const String healthz = '/healthz';
+
+  // Auth
+  static const String auth = '/auth';
+  static const String authLogin = '$auth/login';
+  static const String authSignup = '$auth/signup';
+
+  // Flags
+  static const String flags = '/flags';
+
+  // Inbox
+  static const String inboxItems = '/inbox-items';
+  static String inboxReprocess(String id) => '$inboxItems/$id/reprocess';
+  static String inboxConfirm(String id) => '$inboxItems/$id/confirm';
+  static String inboxDismiss(String id) => '$inboxItems/$id/dismiss';
+
+  // Tasks
+  static const String tasks = '/tasks';
+  static String taskById(String id) => '$tasks/$id';
+
+  // Reminders
+  static const String reminders = '/reminders';
+  static String reminderById(String id) => '$reminders/$id';
+
+  // Events / agenda
+  static const String events = '/events';
+  static String eventById(String id) => '$events/$id';
+  static const String agenda = '/agenda';
+
+  // Shopping
+  static const String shoppingLists = '/shopping-lists';
+  static String shoppingListById(String id) => '$shoppingLists/$id';
+  static String shoppingListItems(String listId) => '$shoppingLists/$listId/items';
+
+  static const String shoppingItems = '/shopping-items';
+  static String shoppingItemById(String id) => '$shoppingItems/$id';
+}

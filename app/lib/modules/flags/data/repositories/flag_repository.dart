@@ -4,14 +4,13 @@ import 'package:inbota/modules/flags/data/models/flag_list_output.dart';
 import 'package:inbota/modules/flags/domain/repositories/i_flag_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
 class FlagRepository implements IFlagRepository {
   FlagRepository(this._httpClient);
 
   final IHttpClient _httpClient;
-  final String _path = '/flags';
-
   @override
   Future<Either<Failure, FlagListOutput>> fetchFlags({
     int? limit,
@@ -23,7 +22,7 @@ class FlagRepository implements IFlagRepository {
       if (cursor != null) query['cursor'] = cursor;
 
       final response = await _httpClient.get(
-        _path,
+        AppPath.flags,
         queryParameters: query.isEmpty ? null : query,
       );
 

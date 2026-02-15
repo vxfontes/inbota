@@ -7,14 +7,13 @@ import 'package:inbota/modules/tasks/data/models/task_update_input.dart';
 import 'package:inbota/modules/tasks/domain/repositories/i_task_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
 class TaskRepository implements ITaskRepository {
   TaskRepository(this._httpClient);
 
   final IHttpClient _httpClient;
-  final String _path = '/tasks';
-
   @override
   Future<Either<Failure, TaskListOutput>> fetchTasks({
     int? limit,
@@ -26,7 +25,7 @@ class TaskRepository implements ITaskRepository {
       if (cursor != null) query['cursor'] = cursor;
 
       final response = await _httpClient.get(
-        _path,
+        AppPath.tasks,
         queryParameters: query.isEmpty ? null : query,
       );
 
@@ -52,7 +51,10 @@ class TaskRepository implements ITaskRepository {
   @override
   Future<Either<Failure, TaskOutput>> createTask(TaskCreateInput input) async {
     try {
-      final response = await _httpClient.post(_path, data: input.toJson());
+      final response = await _httpClient.post(
+        AppPath.tasks,
+        data: input.toJson(),
+      );
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {
@@ -75,8 +77,10 @@ class TaskRepository implements ITaskRepository {
   @override
   Future<Either<Failure, TaskOutput>> updateTask(TaskUpdateInput input) async {
     try {
-      final path = '$_path/${input.id}';
-      final response = await _httpClient.patch(path, data: input.toJson());
+      final response = await _httpClient.patch(
+        AppPath.taskById(input.id),
+        data: input.toJson(),
+      );
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {
@@ -99,7 +103,7 @@ class TaskRepository implements ITaskRepository {
   @override
   Future<Either<Failure, Unit>> deleteTask(String id) async {
     try {
-      final response = await _httpClient.delete('$_path/$id');
+      final response = await _httpClient.delete(AppPath.taskById(id));
 
       final statusCode = response.statusCode ?? 0;
       if (_isSuccess(statusCode)) {

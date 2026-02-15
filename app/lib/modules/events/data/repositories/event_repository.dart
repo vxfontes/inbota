@@ -5,15 +5,13 @@ import 'package:inbota/modules/events/data/models/event_list_output.dart';
 import 'package:inbota/modules/events/domain/repositories/i_event_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
 class EventRepository implements IEventRepository {
   EventRepository(this._httpClient);
 
   final IHttpClient _httpClient;
-
-  static const String _path = '/events';
-  static const String _agendaPath = '/agenda';
 
   @override
   Future<Either<Failure, EventListOutput>> fetchEvents({
@@ -26,7 +24,7 @@ class EventRepository implements IEventRepository {
       if (cursor != null) query['cursor'] = cursor;
 
       final response = await _httpClient.get(
-        _path,
+        AppPath.events,
         queryParameters: query.isEmpty ? null : query,
       );
 
@@ -57,7 +55,7 @@ class EventRepository implements IEventRepository {
       if (limit != null) query['limit'] = limit;
 
       final response = await _httpClient.get(
-        _agendaPath,
+        AppPath.agenda,
         queryParameters: query.isEmpty ? null : query,
       );
 
@@ -82,7 +80,7 @@ class EventRepository implements IEventRepository {
   @override
   Future<Either<Failure, Unit>> deleteEvent(String id) async {
     try {
-      final response = await _httpClient.delete('$_path/$id');
+      final response = await _httpClient.delete(AppPath.eventById(id));
       final statusCode = response.statusCode ?? 0;
 
       if (_isSuccess(statusCode)) {

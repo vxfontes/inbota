@@ -5,6 +5,7 @@ import 'package:inbota/modules/auth/data/models/auth_signup_input.dart';
 import 'package:inbota/modules/auth/domain/repositories/i_auth_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 import 'package:inbota/shared/storage/auth_token_store.dart';
 
@@ -12,15 +13,13 @@ class AuthRepository implements IAuthRepository {
   final IHttpClient _httpClient;
   final AuthTokenStore _tokenStore;
 
-  final _path = '/auth';
-
   AuthRepository(this._httpClient, this._tokenStore);
 
   @override
   Future<Either<Failure, AuthSessionOutput>> login(AuthLoginInput input) async {
     try {
       final response = await _httpClient.post(
-        '$_path/login',
+        AppPath.authLogin,
         data: input.toJson(),
         extra: const {'auth': false},
       );
@@ -54,7 +53,7 @@ class AuthRepository implements IAuthRepository {
   ) async {
     try {
       final response = await _httpClient.post(
-        '$_path/signup',
+        AppPath.authSignup,
         data: input.toJson(),
         extra: const {'auth': false},
       );

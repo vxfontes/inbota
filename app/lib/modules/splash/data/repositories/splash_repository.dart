@@ -3,6 +3,7 @@ import 'package:inbota/modules/splash/data/models/health_status_output.dart';
 import 'package:inbota/modules/splash/domain/repositories/i_splash_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
 
 class SplashRepository implements ISplashRepository {
@@ -14,7 +15,7 @@ class SplashRepository implements ISplashRepository {
   Future<Either<Failure, HealthStatusOutput>> checkHealth() async {
     try {
       final response = await _httpClient.get(
-        '/healthz',
+        AppPath.healthz,
         extra: const {'auth': false},
       );
       final statusCode = response.statusCode ?? 0;

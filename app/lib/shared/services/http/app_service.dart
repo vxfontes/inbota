@@ -1,5 +1,9 @@
+import 'package:inbota/shared/services/http/app_path.dart';
+
 class AppService {
+  static const String _host = 'http://192.168.0.122:8080';
+
   static String getBackEndBaseUrl() {
-    return "http://192.168.1.5:8080/v1";
+    return '$_host${AppPath.apiPrefix}';
   }
 }

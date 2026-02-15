@@ -88,8 +88,10 @@ func (v *AiSchemaValidator) Validate(raw []byte) (ValidatedOutput, error) {
 }
 
 func decodeStrictOutput(raw []byte) (AIOutput, error) {
+	normalized := normalizeJSONPayload(raw)
+
 	var rawMap map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &rawMap); err != nil {
+	if err := json.Unmarshal(normalized, &rawMap); err != nil {
 		return AIOutput{}, fmt.Errorf("%w: %s", ErrAISchemaInvalid, err.Error())
 	}
 	if _, ok := rawMap["type"]; !ok {
@@ -105,7 +107,7 @@ func decodeStrictOutput(raw []byte) (AIOutput, error) {
 		return AIOutput{}, fmt.Errorf("%w: payload_required", ErrAISchemaInvalid)
 	}
 
-	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec := json.NewDecoder(bytes.NewReader(normalized))
 	dec.DisallowUnknownFields()
 	var output AIOutput
 	if err := dec.Decode(&output); err != nil {
@@ -115,6 +117,104 @@ func decodeStrictOutput(raw []byte) (AIOutput, error) {
 		return AIOutput{}, fmt.Errorf("%w: type_required", ErrAISchemaInvalid)
 	}
 	return output, nil
+}
+
+func normalizeJSONPayload(raw []byte) []byte {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 {
+		return trimmed
+	}
+
+	// Fast path for already valid object bodies.
+	if trimmed[0] == '{' && trimmed[len(trimmed)-1] == '}' {
+		return trimmed
+	}
+
+	// LLMs can return prose/markdown around the JSON body.
+	if extracted, ok := extractFirstJSONObject(trimmed); ok {
+		return extracted
+	}
+
+	return trimmed
+}
+
+func extractFirstJSONObject(raw []byte) ([]byte, bool) {
+	start := -1
+	depth := 0
+	inString := false
+	escaped := false
+
+	for i, ch := range raw {
+		if inString {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if ch == '\\' {
+				escaped = true
+				continue
+			}
+			if ch == '"' {
+				inString = false
+			}
+			continue
+		}
+
+		switch ch {
+		case '"':
+			inString = true
+		case '{':
+			if depth == 0 {
+				start = i
+			}
+			depth++
+		case '}':
+			if depth == 0 {
+				continue
+			}
+			depth--
+			if depth == 0 && start >= 0 {
+				return raw[start : i+1], true
+			}
+		}
+	}
+
+	return nil, false
+}
+
+func BuildFallbackTaskOutput(rawText string, context *AIContext) ValidatedOutput {
+	payload := json.RawMessage(`{"dueAt":null}`)
+	return ValidatedOutput{
+		Output: AIOutput{
+			Type:        "task",
+			Title:       fallbackTaskTitle(rawText),
+			NeedsReview: true,
+			Context:     context,
+			Payload:     payload,
+		},
+		Payload: TaskPayload{DueAt: nil},
+	}
+}
+
+func fallbackTaskTitle(rawText string) string {
+	clean := strings.Join(strings.Fields(strings.TrimSpace(rawText)), " ")
+	if clean == "" {
+		return "Nova tarefa"
+	}
+
+	for _, sep := range []string{".", ";", ",", "\n"} {
+		if idx := strings.Index(clean, sep); idx > 0 {
+			clean = strings.TrimSpace(clean[:idx])
+			break
+		}
+	}
+
+	const maxLen = 120
+	runes := []rune(clean)
+	if len(runes) > maxLen {
+		return string(runes[:maxLen-3]) + "..."
+	}
+	return clean
 }
 
 func (v *AiSchemaValidator) validatePayload(typ string, payload json.RawMessage) (any, error) {

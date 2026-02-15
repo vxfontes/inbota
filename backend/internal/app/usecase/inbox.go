@@ -290,7 +290,33 @@ func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id strin
 
 	validated, err := uc.SchemaValidator.Validate([]byte(completion.Content))
 	if err != nil {
-		return uc.failInboxProcessing(ctx, item, err)
+		if !errors.Is(err, service.ErrAISchemaInvalid) {
+			return uc.failInboxProcessing(ctx, item, err)
+		}
+
+		var fallbackContext *service.AIContext
+		if hint != nil {
+			flagID := strings.TrimSpace(hint.FlagID)
+			var flagIDPtr *string
+			if flagID != "" {
+				flagIDCopy := flagID
+				flagIDPtr = &flagIDCopy
+			}
+			var subflagIDPtr *string
+			if hint.SubflagID != nil {
+				subflagID := strings.TrimSpace(*hint.SubflagID)
+				if subflagID != "" {
+					subflagIDCopy := subflagID
+					subflagIDPtr = &subflagIDCopy
+				}
+			}
+			fallbackContext = &service.AIContext{
+				FlagID:    flagIDPtr,
+				SubflagID: subflagIDPtr,
+			}
+		}
+
+		validated = service.BuildFallbackTaskOutput(item.RawText, fallbackContext)
 	}
 
 	suggestion := domain.AiSuggestion{

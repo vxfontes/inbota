@@ -75,7 +75,7 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   - `AI_PROVIDER=groq`
   - `AI_API_KEY=<sua_api_key>`
   - `AI_BASE_URL=https://api.groq.com/openai/v1/chat/completions`
-  - `AI_MODEL=meta-llama/llama-guard-4-12b` (exemplo)
+  - `AI_MODEL=llama-3.3-70b-versatile` (exemplo)
   - `AI_TIMEOUT=15s`
   - `AI_MAX_RETRIES=2`
 - O endpoint usado segue o formato OpenAI compat (chat completions).

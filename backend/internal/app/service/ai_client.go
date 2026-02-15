@@ -76,6 +76,11 @@ func (c *HTTPAIClient) Complete(ctx context.Context, prompt string) (AICompletio
 	payload := chatCompletionRequest{
 		Model: c.model,
 		Messages: []chatMessage{
+			{
+				Role: "system",
+				Content: "You are a strict JSON extractor. " +
+					"Reply with only one valid JSON object and no extra text.",
+			},
 			{Role: "user", Content: prompt},
 		},
 		Temperature: 0,

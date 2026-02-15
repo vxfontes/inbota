@@ -901,6 +901,33 @@ paths:
       tags:
       - Events
   /v1/events/{id}:
+    delete:
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir evento
+      tags:
+      - Events
     patch:
       consumes:
       - application/json
@@ -1416,6 +1443,33 @@ paths:
       tags:
       - Reminders
   /v1/reminders/{id}:
+    delete:
+      parameters:
+      - description: Reminder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir lembrete
+      tags:
+      - Reminders
     patch:
       consumes:
       - application/json
@@ -1456,6 +1510,33 @@ paths:
       tags:
       - Reminders
   /v1/shopping-items/{id}:
+    delete:
+      parameters:
+      - description: Shopping item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir item de compra
+      tags:
+      - ShoppingItems
     patch:
       consumes:
       - application/json
@@ -1557,6 +1638,33 @@ paths:
       tags:
       - ShoppingLists
   /v1/shopping-lists/{id}:
+    delete:
+      parameters:
+      - description: Shopping list ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir lista de compras
+      tags:
+      - ShoppingLists
     patch:
       consumes:
       - application/json
@@ -1792,6 +1900,33 @@ paths:
       tags:
       - Tasks
   /v1/tasks/{id}:
+    delete:
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir tarefa
+      tags:
+      - Tasks
     patch:
       consumes:
       - application/json

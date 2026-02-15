@@ -69,26 +69,31 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 			authGroup.GET("/tasks", apiHandlers.Tasks.List)
 			authGroup.POST("/tasks", apiHandlers.Tasks.Create)
 			authGroup.PATCH("/tasks/:id", apiHandlers.Tasks.Update)
+			authGroup.DELETE("/tasks/:id", apiHandlers.Tasks.Delete)
 		}
 		if apiHandlers.Reminders != nil {
 			authGroup.GET("/reminders", apiHandlers.Reminders.List)
 			authGroup.POST("/reminders", apiHandlers.Reminders.Create)
 			authGroup.PATCH("/reminders/:id", apiHandlers.Reminders.Update)
+			authGroup.DELETE("/reminders/:id", apiHandlers.Reminders.Delete)
 		}
 		if apiHandlers.Events != nil {
 			authGroup.GET("/events", apiHandlers.Events.List)
 			authGroup.POST("/events", apiHandlers.Events.Create)
 			authGroup.PATCH("/events/:id", apiHandlers.Events.Update)
+			authGroup.DELETE("/events/:id", apiHandlers.Events.Delete)
 		}
 		if apiHandlers.ShoppingLists != nil {
 			authGroup.GET("/shopping-lists", apiHandlers.ShoppingLists.List)
 			authGroup.POST("/shopping-lists", apiHandlers.ShoppingLists.Create)
 			authGroup.PATCH("/shopping-lists/:id", apiHandlers.ShoppingLists.Update)
+			authGroup.DELETE("/shopping-lists/:id", apiHandlers.ShoppingLists.Delete)
 		}
 		if apiHandlers.ShoppingItems != nil {
 			authGroup.GET("/shopping-lists/:id/items", apiHandlers.ShoppingItems.ListByList)
 			authGroup.POST("/shopping-lists/:id/items", apiHandlers.ShoppingItems.Create)
 			authGroup.PATCH("/shopping-items/:id", apiHandlers.ShoppingItems.Update)
+			authGroup.DELETE("/shopping-items/:id", apiHandlers.ShoppingItems.Delete)
 		}
 	}
 

@@ -273,12 +273,31 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
 - `GET /v1/agenda` (retorna `events`, `tasks` e `reminders` em uma chamada)
 
 **Entidades finais**
-- `GET/POST/PATCH /v1/tasks`
-- `GET/POST/PATCH /v1/reminders`
-- `GET/POST/PATCH /v1/events`
-- `GET/POST/PATCH /v1/shopping-lists`
-- `GET/POST /v1/shopping-lists/{id}/items`
-- `PATCH /v1/shopping-items/{id}`
+- Tasks:
+  - `GET /v1/tasks`
+  - `POST /v1/tasks`
+  - `PATCH /v1/tasks/{id}`
+  - `DELETE /v1/tasks/{id}`
+- Reminders:
+  - `GET /v1/reminders`
+  - `POST /v1/reminders`
+  - `PATCH /v1/reminders/{id}`
+  - `DELETE /v1/reminders/{id}`
+- Events:
+  - `GET /v1/events`
+  - `POST /v1/events`
+  - `PATCH /v1/events/{id}`
+  - `DELETE /v1/events/{id}`
+- Shopping lists:
+  - `GET /v1/shopping-lists`
+  - `POST /v1/shopping-lists`
+  - `PATCH /v1/shopping-lists/{id}`
+  - `DELETE /v1/shopping-lists/{id}`
+- Shopping items:
+  - `GET /v1/shopping-lists/{id}/items`
+  - `POST /v1/shopping-lists/{id}/items`
+  - `PATCH /v1/shopping-items/{id}`
+  - `DELETE /v1/shopping-items/{id}`
 
 ## Exemplos de resposta
 

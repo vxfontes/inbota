@@ -169,6 +169,31 @@ func (h *ShoppingListsHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, toShoppingListResponse(list, source))
 }
 
+// Delete shopping list.
+// @Summary Excluir lista de compras
+// @Tags ShoppingLists
+// @Security BearerAuth
+// @Param id path string true "Shopping list ID"
+// @Success 204
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Router /v1/shopping-lists/{id} [delete]
+func (h *ShoppingListsHandler) Delete(c *gin.Context) {
+	userID, ok := getUserID(c)
+	if !ok {
+		return
+	}
+	id := c.Param("id")
+
+	if err := h.Usecase.Delete(c.Request.Context(), userID, id); err != nil {
+		writeUsecaseError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // List shopping items by list.
 // @Summary Listar itens da lista
 // @Tags ShoppingItems
@@ -308,4 +333,29 @@ func (h *ShoppingItemsHandler) Update(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toShoppingItemResponse(item, list))
+}
+
+// Delete shopping item.
+// @Summary Excluir item de compra
+// @Tags ShoppingItems
+// @Security BearerAuth
+// @Param id path string true "Shopping item ID"
+// @Success 204
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Router /v1/shopping-items/{id} [delete]
+func (h *ShoppingItemsHandler) Delete(c *gin.Context) {
+	userID, ok := getUserID(c)
+	if !ok {
+		return
+	}
+	id := c.Param("id")
+
+	if err := h.Usecase.Delete(c.Request.Context(), userID, id); err != nil {
+		writeUsecaseError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

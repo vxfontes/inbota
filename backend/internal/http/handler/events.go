@@ -162,3 +162,28 @@ func (h *EventsHandler) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, toEventResponse(event, source))
 }
+
+// Delete event.
+// @Summary Excluir evento
+// @Tags Events
+// @Security BearerAuth
+// @Param id path string true "Event ID"
+// @Success 204
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Router /v1/events/{id} [delete]
+func (h *EventsHandler) Delete(c *gin.Context) {
+	userID, ok := getUserID(c)
+	if !ok {
+		return
+	}
+	id := c.Param("id")
+
+	if err := h.Usecase.Delete(c.Request.Context(), userID, id); err != nil {
+		writeUsecaseError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

@@ -160,3 +160,28 @@ func (h *RemindersHandler) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, toReminderResponse(reminder, source))
 }
+
+// Delete reminder.
+// @Summary Excluir lembrete
+// @Tags Reminders
+// @Security BearerAuth
+// @Param id path string true "Reminder ID"
+// @Success 204
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Router /v1/reminders/{id} [delete]
+func (h *RemindersHandler) Delete(c *gin.Context) {
+	userID, ok := getUserID(c)
+	if !ok {
+		return
+	}
+	id := c.Param("id")
+
+	if err := h.Usecase.Delete(c.Request.Context(), userID, id); err != nil {
+		writeUsecaseError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

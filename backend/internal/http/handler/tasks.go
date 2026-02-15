@@ -278,3 +278,28 @@ func (h *TasksHandler) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, toTaskResponse(task, source, flag, subflag))
 }
+
+// Delete task.
+// @Summary Excluir tarefa
+// @Tags Tasks
+// @Security BearerAuth
+// @Param id path string true "Task ID"
+// @Success 204
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Router /v1/tasks/{id} [delete]
+func (h *TasksHandler) Delete(c *gin.Context) {
+	userID, ok := getUserID(c)
+	if !ok {
+		return
+	}
+	id := c.Param("id")
+
+	if err := h.Usecase.Delete(c.Request.Context(), userID, id); err != nil {
+		writeUsecaseError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

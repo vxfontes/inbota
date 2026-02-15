@@ -86,23 +86,30 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
                 ...items.map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Dismissible(
-                      key: ValueKey('event-item-${item.type.name}-${item.id}'),
-                      direction: DismissDirection.endToStart,
-                      background: _buildDeleteBackground(),
-                      confirmDismiss: (_) => controller.deleteVisibleItem(item),
-                      child: IBItemCard(
-                        title: item.title,
-                        secondary: item.secondary,
-                        done: item.done,
-                        doneLabel: 'Feito',
-                        typeLabel: _typeLabel(item.type),
-                        typeColor: _typeColor(item.type),
-                        typeIcon: _typeIcon(item.type),
-                        timeLabel: _timeLabel(item),
-                        timeIcon: item.allDay
-                            ? IBIcon.eventAvailableOutlined
-                            : IBIcon.alarmOutlined,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Dismissible(
+                        key: ValueKey(
+                          'event-item-${item.type.name}-${item.id}',
+                        ),
+                        direction: DismissDirection.endToStart,
+                        background: const SizedBox.shrink(),
+                        secondaryBackground: _buildDeleteBackground(),
+                        confirmDismiss: (_) =>
+                            controller.deleteVisibleItem(item),
+                        child: IBItemCard(
+                          title: item.title,
+                          secondary: item.secondary,
+                          done: item.done,
+                          doneLabel: 'Feito',
+                          typeLabel: _typeLabel(item.type),
+                          typeColor: _typeColor(item.type),
+                          typeIcon: _typeIcon(item.type),
+                          timeLabel: _timeLabel(item),
+                          timeIcon: item.allDay
+                              ? IBIcon.eventAvailableOutlined
+                              : IBIcon.alarmOutlined,
+                        ),
                       ),
                     ),
                   ),
@@ -179,17 +186,25 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
   }
 
   Widget _buildDeleteBackground() {
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: AppColors.danger600,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const IBIcon(
-        IBIcon.deleteOutlineRounded,
-        color: AppColors.surface,
-        size: 22,
+    return ColoredBox(
+      color: AppColors.background,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          width: 84,
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.danger600,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Center(
+            child: IBIcon(
+              IBIcon.deleteOutlineRounded,
+              color: AppColors.surface,
+              size: 22,
+            ),
+          ),
+        ),
       ),
     );
   }

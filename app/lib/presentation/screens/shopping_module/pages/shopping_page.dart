@@ -175,7 +175,7 @@ class _ShoppingPageState extends IBState<ShoppingPage, ShoppingController> {
   String? _itemSubtitle(ShoppingItemOutput item) {
     final quantity = item.quantity?.trim();
     if (quantity == null || quantity.isEmpty) return null;
-    return 'Quantidade: $quantity';
+    return 'Adicional: $quantity';
   }
 
   Future<void> _openCreateShoppingListSheet() async {

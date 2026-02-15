@@ -91,7 +91,7 @@ class _CreateShoppingItemBottomSheetState
               ),
               const SizedBox(height: 12),
               IBTextField(
-                label: 'Quantidade (opcional)',
+                label: 'Informações adicionais (opcional)',
                 hint: 'Ex: 2 pacotes',
                 controller: _quantityController,
               ),

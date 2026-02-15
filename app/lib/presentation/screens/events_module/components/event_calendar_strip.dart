@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 
-class EventCalendarStrip extends StatelessWidget {
+class EventCalendarStrip extends StatefulWidget {
   const EventCalendarStrip({
     super.key,
     required this.days,
@@ -19,25 +19,87 @@ class EventCalendarStrip extends StatelessWidget {
   final ValueChanged<DateTime> onSelectDate;
 
   @override
+  State<EventCalendarStrip> createState() => _EventCalendarStripState();
+}
+
+class _EventCalendarStripState extends State<EventCalendarStrip> {
+  static const double _itemWidth = 88;
+  static const double _itemSpacing = 5;
+  static const double _previousPeekFraction = 0.10;
+
+  late final ScrollController _scrollController;
+  bool _didInitialPosition = false;
+  final DateTime _today = _startOfDay(DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scheduleInitialPosition();
+  }
+
+  @override
+  void didUpdateWidget(covariant EventCalendarStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_didInitialPosition && widget.days.isNotEmpty) {
+      _scheduleInitialPosition();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scheduleInitialPosition() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didInitialPosition || widget.days.isEmpty) return;
+      if (!_scrollController.hasClients) return;
+
+      var targetIndex = _indexOfDay(widget.days, _today);
+      if (targetIndex == -1) {
+        targetIndex = _indexOfDay(
+          widget.days,
+          _startOfDay(widget.selectedDate),
+        );
+      }
+      if (targetIndex == -1) return;
+
+      final baseOffset = targetIndex * (_itemWidth + _itemSpacing);
+      const peekOffset = (_itemWidth * _previousPeekFraction) + _itemSpacing;
+      final targetOffset = targetIndex > 0 ? (baseOffset - peekOffset) : 0.0;
+      final clampedOffset = targetOffset.clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
+
+      _scrollController.jumpTo(clampedOffset);
+      _didInitialPosition = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (days.isEmpty) return const SizedBox.shrink();
+    if (widget.days.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
       height: 100,
       child: ListView.separated(
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
-        itemCount: days.length,
+        itemCount: widget.days.length,
         separatorBuilder: (_, __) => const SizedBox(width: 5),
         itemBuilder: (context, index) {
-          final day = days[index];
+          final day = widget.days[index];
           final isSelected =
-              day.year == selectedDate.year &&
-              day.month == selectedDate.month &&
-              day.day == selectedDate.day;
+              day.year == widget.selectedDate.year &&
+              day.month == widget.selectedDate.month &&
+              day.day == widget.selectedDate.day;
 
           return InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () => onSelectDate(day),
+            onTap: () => widget.onSelectDate(day),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
@@ -49,20 +111,11 @@ class EventCalendarStrip extends StatelessWidget {
                 border: Border.all(
                   color: isSelected ? AppColors.primary700 : AppColors.border,
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary700.withValues(alpha: 0.28),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
-                        ),
-                      ]
-                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IBText(months[day.month - 1], context: context).caption
+                  IBText(widget.months[day.month - 1], context: context).caption
                       .color(
                         isSelected ? AppColors.surface : AppColors.textMuted,
                       )
@@ -88,6 +141,21 @@ class EventCalendarStrip extends StatelessWidget {
 
   String _weekdayLabel(DateTime date) {
     final adjusted = date.weekday == 7 ? 6 : date.weekday - 1;
-    return weekdays[adjusted];
+    return widget.weekdays[adjusted];
+  }
+
+  int _indexOfDay(List<DateTime> days, DateTime target) {
+    for (var i = 0; i < days.length; i++) {
+      if (_isSameDay(days[i], target)) return i;
+    }
+    return -1;
+  }
+
+  static bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  static DateTime _startOfDay(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 }

@@ -205,14 +205,11 @@ class EventsController implements IBController {
   void _rebuildCalendarDays() {
     final now = _startOfDay(DateTime.now());
 
-    DateTime start = now.subtract(const Duration(days: 4));
-    DateTime end = now.add(const Duration(days: 14));
+    DateTime start = now.subtract(const Duration(days: 5));
+    DateTime end = now.add(const Duration(days: 21));
 
     if (allItems.value.isNotEmpty) {
-      final minDate = _startOfDay(allItems.value.first.date);
       final maxDate = _startOfDay(allItems.value.last.date);
-
-      if (minDate.isBefore(start)) start = minDate;
       if (maxDate.isAfter(end)) end = maxDate;
     }
 

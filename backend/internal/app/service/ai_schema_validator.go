@@ -89,6 +89,7 @@ func (v *AiSchemaValidator) Validate(raw []byte) (ValidatedOutput, error) {
 
 func decodeStrictOutput(raw []byte) (AIOutput, error) {
 	normalized := normalizeJSONPayload(raw)
+	normalized = normalizeOutputAliases(normalized)
 
 	var rawMap map[string]json.RawMessage
 	if err := json.Unmarshal(normalized, &rawMap); err != nil {
@@ -117,6 +118,60 @@ func decodeStrictOutput(raw []byte) (AIOutput, error) {
 		return AIOutput{}, fmt.Errorf("%w: type_required", ErrAISchemaInvalid)
 	}
 	return output, nil
+}
+
+func normalizeOutputAliases(raw []byte) []byte {
+	var generic map[string]any
+	if err := json.Unmarshal(raw, &generic); err != nil {
+		return raw
+	}
+
+	renameKey(generic, "needsReview", "needs_review")
+	renameKey(generic, "needsreview", "needs_review")
+
+	if contextValue, ok := generic["context"]; ok {
+		if contextMap, ok := contextValue.(map[string]any); ok {
+			renameKey(contextMap, "flag_id", "flagId")
+			renameKey(contextMap, "subflag_id", "subflagId")
+		}
+	}
+
+	typ, _ := generic["type"].(string)
+	payloadMap, hasPayload := generic["payload"].(map[string]any)
+	if hasPayload {
+		switch strings.ToLower(strings.TrimSpace(typ)) {
+		case "task":
+			renameKey(payloadMap, "due_at", "dueAt")
+		case "reminder":
+			renameKey(payloadMap, "remindAt", "at")
+			renameKey(payloadMap, "reminderAt", "at")
+			renameKey(payloadMap, "when", "at")
+		case "event":
+			renameKey(payloadMap, "startAt", "start")
+			renameKey(payloadMap, "endAt", "end")
+		}
+	}
+
+	normalized, err := json.Marshal(generic)
+	if err != nil {
+		return raw
+	}
+	return normalized
+}
+
+func renameKey(target map[string]any, from, to string) {
+	if target == nil || from == "" || to == "" || from == to {
+		return
+	}
+	if _, exists := target[to]; exists {
+		return
+	}
+	value, ok := target[from]
+	if !ok {
+		return
+	}
+	target[to] = value
+	delete(target, from)
 }
 
 func normalizeJSONPayload(raw []byte) []byte {

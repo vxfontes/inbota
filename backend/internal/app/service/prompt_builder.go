@@ -45,6 +45,7 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	var sb strings.Builder
 	writeLine(&sb, "You are an information extraction engine.")
 	writeLine(&sb, "Return ONLY a valid JSON object. No markdown, no extra text.")
+	writeLine(&sb, "Each input must produce exactly ONE actionable item.")
 	writeLine(&sb, "Use RFC3339 timestamps.")
 	writeLine(&sb, fmt.Sprintf("Locale: %s", strings.TrimSpace(input.Locale)))
 	writeLine(&sb, fmt.Sprintf("Timezone: %s", strings.TrimSpace(input.Timezone)))
@@ -96,6 +97,8 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	writeLine(&sb, "- shopping: {\"items\": [{\"title\": \"string\", \"quantity\": \"string|null\"}]}")
 	writeLine(&sb, "- note: {\"content\": \"string\"}")
 	writeLine(&sb, "Rules:")
+	writeLine(&sb, "- Always return one item only. Never return arrays at root level.")
+	writeLine(&sb, "- If the text has multiple actions, select the single most actionable one and set needs_review=true.")
 	writeLine(&sb, "- Use needs_review=true when unsure.")
 	writeLine(&sb, "- If type=event then end must be >= start.")
 	writeLine(&sb, "- If type=shopping then items must be non-empty.")

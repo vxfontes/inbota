@@ -244,7 +244,7 @@ class CreateController implements IBController {
     for (final candidate in candidateLines) {
       final cleaned = _normalizeLine(candidate);
       if (cleaned.isNotEmpty) {
-        lines.add(cleaned);
+        lines.addAll(_splitIntoAtomicInputs(cleaned));
       }
     }
 
@@ -252,7 +252,7 @@ class CreateController implements IBController {
 
     final fallback = _normalizeLine(normalized);
     if (fallback.isEmpty) return const [];
-    return [fallback];
+    return _splitIntoAtomicInputs(fallback);
   }
 
   String _normalizeLine(String value) {
@@ -260,8 +260,65 @@ class CreateController implements IBController {
     if (trimmed.isEmpty) return '';
 
     final withoutBullet = trimmed.replaceFirst(RegExp(r'^[-*•\d\.)\s]+'), '');
+    final withoutConnector = withoutBullet.replaceFirst(
+      RegExp(r'^(e|tambem|também)\s+', caseSensitive: false),
+      '',
+    );
+    final withoutPunctuation = withoutConnector.replaceAll(
+      RegExp(r'^[,;:\s]+|[,;:\s]+$'),
+      '',
+    );
 
-    return withoutBullet.trim();
+    return withoutPunctuation.trim();
+  }
+
+  List<String> _splitIntoAtomicInputs(String text) {
+    if (text.trim().isEmpty) return const [];
+
+    final firstPass = text
+        .split(RegExp(r'[;\n]+'))
+        .expand(_splitCommaClauses)
+        .toList();
+
+    final secondPass = firstPass
+        .expand(_splitByActionConnector)
+        .map(_normalizeLine)
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    final unique = <String>{};
+    final ordered = <String>[];
+    for (final value in secondPass) {
+      final key = value.toLowerCase();
+      if (unique.add(key)) {
+        ordered.add(value);
+      }
+    }
+
+    return ordered;
+  }
+
+  List<String> _splitCommaClauses(String text) {
+    final parts = text.split(',');
+    final output = <String>[];
+    for (final part in parts) {
+      final cleaned = _normalizeLine(part);
+      if (cleaned.isNotEmpty) {
+        output.add(cleaned);
+      }
+    }
+    return output;
+  }
+
+  List<String> _splitByActionConnector(String text) {
+    final pieces = text.split(
+      RegExp(
+        r'\s+e\s+(?=(?:me\s+l[eê]mbre|preciso|tenho|quero|devo|comprar|pagar|agendar|marcar|fazer|ligar|enviar|trocar|resolver|buscar|ir|reuni[aã]o|consulta|evento)\b)',
+        caseSensitive: false,
+      ),
+    );
+    if (pieces.length <= 1) return [text];
+    return pieces;
   }
 
   String _entityLabel(String type) {

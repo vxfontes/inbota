@@ -38,7 +38,7 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     IBText(
-                      'Descreva tudo em texto livre. Você pode mandar uma linha por item.',
+                      'Descreva em texto livre. Se mandar tudo em uma frase, o app tenta quebrar em itens automaticamente.',
                       context: context,
                     ).muted.build(),
                     const SizedBox(height: 10),

@@ -1,9 +1,18 @@
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:inbota/modules/shared_module.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
+import 'package:inbota/presentation/screens/home_module/controller/home_controller.dart';
 import 'package:inbota/presentation/screens/home_module/pages/home_page.dart';
 
-
 class HomeModule extends Module {
+  @override
+  List<Module> get imports => [SharedModule()];
+
+  @override
+  void binds(Injector i) {
+    i.addSingleton<HomeController>(HomeController.new);
+  }
+
   @override
   void routes(RouteManager r) {
     r.child(

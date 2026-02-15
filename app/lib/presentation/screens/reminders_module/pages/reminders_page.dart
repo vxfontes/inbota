@@ -66,8 +66,6 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
                   const SizedBox(height: 24),
                   _buildUpcomingSection(context, reminders),
                   const SizedBox(height: 24),
-                  _buildDoneSection(context, reminders),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -175,20 +173,6 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
       title: 'Próximos dias',
       items: items,
       fallback: 'Sem lembretes programados.',
-    );
-  }
-
-  Widget _buildDoneSection(
-    BuildContext context,
-    List<ReminderOutput> reminders,
-  ) {
-    final items = reminders.where((item) => item.isDone).toList();
-    return _buildReminderSection(
-      context,
-      title: 'Concluídos',
-      items: items,
-      fallback: 'Nada concluído ainda.',
-      muted: true,
     );
   }
 

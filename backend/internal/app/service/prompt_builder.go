@@ -107,6 +107,8 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	writeLine(&sb, "- If the text has multiple actions, select the single most actionable one and set needs_review=true.")
 	writeLine(&sb, "- Use needs_review=true when unsure.")
 	writeLine(&sb, "- Interpret relative dates (today, tomorrow, next week) using the provided Timezone and Now (local). Never use UTC for relative dates.")
+	writeLine(&sb, "- For weekday phrases (e.g., \"next Tuesday\", \"terca que vem\", \"proxima terca\"), resolve to the next occurrence of that weekday after Now (same week if upcoming, otherwise next week). Do not shift to the day after the weekday.")
+	writeLine(&sb, "- If the user says \"next week <weekday>\" or \"<weekday> da semana que vem\", use that weekday in the next calendar week (not the immediate upcoming weekday in the current week).")
 	writeLine(&sb, "- Preserve explicit dates and times exactly as stated. Do not shift hours or dates; only format to RFC3339 with the correct timezone offset.")
 	writeLine(&sb, "- If a reminder time is not explicit, choose 09:00 in the user's local timezone and set needs_review=true.")
 	writeLine(&sb, "- Choose context from Available contexts and Context rules. Use Hinted context when relevant.")

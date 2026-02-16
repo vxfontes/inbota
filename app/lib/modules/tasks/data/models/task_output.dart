@@ -1,3 +1,9 @@
+import 'package:json_annotation/json_annotation.dart';
+import 'task_ref_output.dart';
+
+part 'task_output.g.dart';
+
+@JsonSerializable()
 class TaskOutput {
   const TaskOutput({
     required this.id,
@@ -5,10 +11,8 @@ class TaskOutput {
     required this.status,
     this.description,
     this.dueAt,
-    this.flagName,
-    this.subflagName,
-    this.flagColor,
-    this.subflagColor,
+    this.flag,
+    this.subflag,
     this.createdAt,
     this.updatedAt,
   });
@@ -18,37 +22,30 @@ class TaskOutput {
   final String status;
   final String? description;
   final DateTime? dueAt;
-  final String? flagName;
-  final String? subflagName;
-  final String? flagColor;
-  final String? subflagColor;
+  final TaskRefOutput? flag;
+  final TaskRefOutput? subflag;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  String? get flagName => flag?.name;
+  String? get subflagName => subflag?.name;
+  String? get flagColor => flag?.color;
+  String? get subflagColor => subflag?.color;
 
   bool get isDone => status.toUpperCase() == 'DONE';
 
   factory TaskOutput.fromJson(Map<String, dynamic> json) {
-    return TaskOutput(
-      id: json['id']?.toString() ?? '',
-      title: json['title']?.toString() ?? '',
-      status: json['status']?.toString() ?? 'OPEN',
-      description: json['description']?.toString(),
-      dueAt: _parseDate(json['dueAt']),
-      flagName: _parseNestedString(json['flag'], 'name'),
-      subflagName: _parseNestedString(json['subflag'], 'name'),
-      flagColor: _parseNestedString(json['flag'], 'color'),
-      subflagColor: _parseNestedString(json['subflag'], 'color'),
-      createdAt: _parseDate(json['createdAt']),
-      updatedAt: _parseDate(json['updatedAt']),
-    );
+    return _$TaskOutputFromJson(json);
+  }
+
+  factory TaskOutput.fromDynamic(dynamic value) {
+    return TaskOutput.fromJson(_asMap(value));
   }
 
   TaskOutput copyWith({
     String? status,
-    String? flagName,
-    String? subflagName,
-    String? flagColor,
-    String? subflagColor,
+    TaskRefOutput? flag,
+    TaskRefOutput? subflag,
   }) {
     return TaskOutput(
       id: id,
@@ -56,33 +53,20 @@ class TaskOutput {
       status: status ?? this.status,
       description: description,
       dueAt: dueAt,
-      flagName: flagName ?? this.flagName,
-      subflagName: subflagName ?? this.subflagName,
-      flagColor: flagColor ?? this.flagColor,
-      subflagColor: subflagColor ?? this.subflagColor,
+      flag: flag ?? this.flag,
+      subflag: subflag ?? this.subflag,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
   }
 
-  static DateTime? _parseDate(dynamic value) {
-    if (value is String && value.isNotEmpty) {
-      return DateTime.tryParse(value);
-    }
-    return null;
-  }
+  Map<String, dynamic> toJson() => _$TaskOutputToJson(this);
 
-  static String? _parseNestedString(dynamic source, String key) {
-    if (source is Map<String, dynamic>) {
-      final value = source[key];
-      if (value is String && value.trim().isNotEmpty) return value.trim();
-      return null;
+  static Map<String, dynamic> _asMap(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) {
+      return data.map((key, value) => MapEntry(key.toString(), value));
     }
-    if (source is Map) {
-      final value = source[key];
-      if (value is String && value.trim().isNotEmpty) return value.trim();
-      return null;
-    }
-    return null;
+    return <String, dynamic>{};
   }
 }

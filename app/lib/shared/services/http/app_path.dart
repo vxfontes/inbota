@@ -15,6 +15,10 @@ class AppPath {
 
   // Flags
   static const String flags = '/flags';
+  static String flagById(String id) => '$flags/$id';
+  static String flagSubflags(String flagId) => '$flags/$flagId/subflags';
+  static const String subflags = '/subflags';
+  static String subflagById(String id) => '$subflags/$id';
 
   // Inbox
   static const String inboxItems = '/inbox-items';
@@ -38,7 +42,8 @@ class AppPath {
   // Shopping
   static const String shoppingLists = '/shopping-lists';
   static String shoppingListById(String id) => '$shoppingLists/$id';
-  static String shoppingListItems(String listId) => '$shoppingLists/$listId/items';
+  static String shoppingListItems(String listId) =>
+      '$shoppingLists/$listId/items';
 
   static const String shoppingItems = '/shopping-items';
   static String shoppingItemById(String id) => '$shoppingItems/$id';

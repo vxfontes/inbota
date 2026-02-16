@@ -1,0 +1,15 @@
+import 'package:inbota/modules/flags/data/models/subflag_output.dart';
+import 'package:inbota/modules/flags/data/models/subflag_update_input.dart';
+import 'package:inbota/modules/flags/domain/repositories/i_flag_repository.dart';
+import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/templates/ib_usecase.dart';
+
+class UpdateSubflagUsecase extends IBUsecase {
+  UpdateSubflagUsecase(this._repository);
+
+  final IFlagRepository _repository;
+
+  UsecaseResponse<Failure, SubflagOutput> call(SubflagUpdateInput input) {
+    return _repository.updateSubflag(input);
+  }
+}

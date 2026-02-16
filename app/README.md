@@ -10,11 +10,18 @@ App Flutter do Inbota. Esta pasta contem apenas o app (o backend fica em `../bac
 ```bash
 cd app
 flutter pub get
-flutter run
+cp .env.example .env
+# edite API_HOST no .env
+set -a
+source .env
+set +a
+flutter run --dart-define=API_HOST="$API_HOST"
 ```
 
 ## Configuracao
-- A base URL da API fica em `lib/shared/config` (ajuste para `http://localhost:8080` ou IP local).
+- A base URL da API usa `API_HOST` via `--dart-define` (arquivo: `lib/shared/config/app_env.dart`).
+- Nao commite `.env` com valores reais. O repositório inclui apenas `.env.example`.
+- Em CI/CD (GitHub Actions, Render etc), defina `API_HOST` como secret/env e rode build com `--dart-define=API_HOST=$API_HOST`.
 - Todas as rotas protegidas usam `Authorization: Bearer <token>`.
 
 ## Qualidade

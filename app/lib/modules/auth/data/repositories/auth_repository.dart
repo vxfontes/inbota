@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:inbota/modules/auth/data/models/auth_login_input.dart';
 import 'package:inbota/modules/auth/data/models/auth_session_output.dart';
 import 'package:inbota/modules/auth/data/models/auth_signup_input.dart';
+import 'package:inbota/modules/auth/data/models/auth_user_model.dart';
 import 'package:inbota/modules/auth/domain/repositories/i_auth_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
@@ -78,6 +79,30 @@ class AuthRepository implements IAuthRepository {
       );
     } catch (err) {
       return Left(SaveFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AuthUserModel>> me() async {
+    try {
+      final response = await _httpClient.get(AppPath.me);
+      final statusCode = response.statusCode ?? 0;
+
+      if (_isSuccess(statusCode)) {
+        final session = AuthSessionOutput.fromJson(_asMap(response.data));
+        return Right(session.user);
+      }
+
+      return Left(
+        GetFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro inesperado',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(GetFailure(message: err.toString()));
     }
   }
 

@@ -51,16 +51,16 @@ class _LoginPageState extends IBState<LoginPage, LoginController> {
           controller: controller.passwordController,
         ),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () {},
-            child: IBText('Esqueci minha senha', context: context)
-                .label
-                .color(AppColors.primary700)
-                .build(),
-          ),
-        ),
+        // Align(
+        //   alignment: Alignment.centerRight,
+        //   child: TextButton(
+        //     onPressed: () {},
+        //     child: IBText('Esqueci minha senha', context: context)
+        //         .label
+        //         .color(AppColors.primary700)
+        //         .build(),
+        //   ),
+        // ),
         ValueListenableBuilder<String?>(
           valueListenable: controller.error,
           builder: (context, error, _) {

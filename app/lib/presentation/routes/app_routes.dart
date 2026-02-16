@@ -9,8 +9,10 @@ class AppRoutes {
   static const settings = '/settings/';
   static const components = '/components';
   static const contexts = '/contexts';
+  static const account = '/account';
   static const settingsComponents = '/settings/components';
   static const settingsContexts = '/settings/contexts';
+  static const settingsAccount = '/settings/account';
 
   // root children (full paths)
   static const rootHome = '/root/home/';

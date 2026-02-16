@@ -36,57 +36,57 @@ class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
                     title: 'Conta',
                     subtitle: 'Dados pessoais e segurança',
                     icon: IBIcon.personOutline,
-                    onTap: () {},
+                    onTap: () => AppNavigation.push(AppRoutes.settingsAccount),
                   ),
-                  IBMenuItem(
-                    title: 'Notificações',
-                    subtitle: 'Lembretes e alertas',
-                    icon: IBIcon.notificationsNoneOutlined,
-                    onTap: () {},
-                  ),
-                  IBMenuItem(
-                    title: 'Preferências',
-                    subtitle: 'Idioma e aparência',
-                    icon: IBIcon.tune,
-                    onTap: () {},
-                  ),
+                  // IBMenuItem(
+                  //   title: 'Notificações',
+                  //   subtitle: 'Lembretes e alertas',
+                  //   icon: IBIcon.notificationsNoneOutlined,
+                  //   onTap: () {},
+                  // ),
+                  // IBMenuItem(
+                  //   title: 'Preferências',
+                  //   subtitle: 'Idioma e aparência',
+                  //   icon: IBIcon.tune,
+                  //   onTap: () {},
+                  // ),
                   IBMenuItem(
                     title: 'Contextos',
                     subtitle: 'Gerenciar flags e subflags',
                     icon: IBIcon.gridViewRounded,
                     onTap: () => AppNavigation.push(AppRoutes.settingsContexts),
                   ),
-                  IBMenuItem(
-                    title: 'Componentes',
-                    subtitle: 'Biblioteca visual',
-                    icon: IBIcon.starRounded,
-                    onTap: () =>
-                        AppNavigation.push(AppRoutes.settingsComponents),
-                  ),
+                  // IBMenuItem(
+                  //   title: 'Componentes',
+                  //   subtitle: 'Biblioteca visual',
+                  //   icon: IBIcon.starRounded,
+                  //   onTap: () =>
+                  //       AppNavigation.push(AppRoutes.settingsComponents),
+                  // ),
                 ],
               ),
               const SizedBox(height: 20),
-              IBText('Suporte', context: context).subtitulo.build(),
-              const SizedBox(height: 12),
-              IBMenuCard(
-                items: [
-                  IBMenuItem(
-                    title: 'Central de ajuda',
-                    subtitle: 'Perguntas frequentes',
-                    icon: IBIcon.helpOutline,
-                    onTap: () {},
-                    iconColor: AppColors.ai600,
-                  ),
-                  IBMenuItem(
-                    title: 'Privacidade',
-                    subtitle: 'Termos e políticas',
-                    icon: IBIcon.privacyTipOutlined,
-                    onTap: () {},
-                    iconColor: AppColors.ai600,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              // IBText('Suporte', context: context).subtitulo.build(),
+              // const SizedBox(height: 12),
+              // IBMenuCard(
+              //   items: [
+              //     IBMenuItem(
+              //       title: 'Central de ajuda',
+              //       subtitle: 'Perguntas frequentes',
+              //       icon: IBIcon.helpOutline,
+              //       onTap: () {},
+              //       iconColor: AppColors.ai600,
+              //     ),
+              //     IBMenuItem(
+              //       title: 'Privacidade',
+              //       subtitle: 'Termos e políticas',
+              //       icon: IBIcon.privacyTipOutlined,
+              //       onTap: () {},
+              //       iconColor: AppColors.ai600,
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(height: 24),
               ValueListenableBuilder<bool>(
                 valueListenable: controller.loading,
                 builder: (context, loading, _) {

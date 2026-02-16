@@ -12,6 +12,7 @@ class AppPath {
   static const String auth = '/auth';
   static const String authLogin = '$auth/login';
   static const String authSignup = '$auth/signup';
+  static const String me = '/me';
 
   // Flags
   static const String flags = '/flags';

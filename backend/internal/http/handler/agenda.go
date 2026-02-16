@@ -85,20 +85,20 @@ func (h *AgendaHandler) List(c *gin.Context) {
 		return
 	}
 
-	eventItems := make([]dto.EventResponse, 0, len(events))
-	for _, event := range events {
-		if event.StartAt == nil {
-			continue
-		}
-		eventItems = append(eventItems, toEventResponse(event, nil))
-	}
-
-	taskItems := make([]dto.TaskResponse, 0, len(tasks))
-
 	subflagIDs := make([]string, 0)
 	for _, task := range tasks {
 		if task.SubflagID != nil {
 			subflagIDs = append(subflagIDs, *task.SubflagID)
+		}
+	}
+	for _, event := range events {
+		if event.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *event.SubflagID)
+		}
+	}
+	for _, reminder := range reminders {
+		if reminder.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *reminder.SubflagID)
 		}
 	}
 
@@ -121,6 +121,16 @@ func (h *AgendaHandler) List(c *gin.Context) {
 			flagIDs = append(flagIDs, *task.FlagID)
 		}
 	}
+	for _, event := range events {
+		if event.FlagID != nil {
+			flagIDs = append(flagIDs, *event.FlagID)
+		}
+	}
+	for _, reminder := range reminders {
+		if reminder.FlagID != nil {
+			flagIDs = append(flagIDs, *reminder.FlagID)
+		}
+	}
 	for _, subflag := range subflagsByID {
 		flagIDs = append(flagIDs, subflag.FlagID)
 	}
@@ -137,6 +147,33 @@ func (h *AgendaHandler) List(c *gin.Context) {
 			flagsByID = flags
 		}
 	}
+
+	eventItems := make([]dto.EventResponse, 0, len(events))
+	for _, event := range events {
+		if event.StartAt == nil {
+			continue
+		}
+		var flag *domain.Flag
+		if event.FlagID != nil {
+			if f, ok := flagsByID[*event.FlagID]; ok {
+				flag = &f
+			}
+		}
+		var subflag *domain.Subflag
+		if event.SubflagID != nil {
+			if sf, ok := subflagsByID[*event.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		if flag == nil && subflag != nil {
+			if f, ok := flagsByID[subflag.FlagID]; ok {
+				flag = &f
+			}
+		}
+		eventItems = append(eventItems, toEventResponse(event, nil, flag, subflag))
+	}
+
+	taskItems := make([]dto.TaskResponse, 0, len(tasks))
 
 	for _, task := range tasks {
 		if task.DueAt == nil {
@@ -167,7 +204,24 @@ func (h *AgendaHandler) List(c *gin.Context) {
 		if reminder.RemindAt == nil {
 			continue
 		}
-		reminderItems = append(reminderItems, toReminderResponse(reminder, nil))
+		var flag *domain.Flag
+		if reminder.FlagID != nil {
+			if f, ok := flagsByID[*reminder.FlagID]; ok {
+				flag = &f
+			}
+		}
+		var subflag *domain.Subflag
+		if reminder.SubflagID != nil {
+			if sf, ok := subflagsByID[*reminder.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		if flag == nil && subflag != nil {
+			if f, ok := flagsByID[subflag.FlagID]; ok {
+				flag = &f
+			}
+		}
+		reminderItems = append(reminderItems, toReminderResponse(reminder, nil, flag, subflag))
 	}
 
 	c.JSON(http.StatusOK, dto.AgendaResponse{

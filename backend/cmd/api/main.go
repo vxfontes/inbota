@@ -84,8 +84,16 @@ func main() {
 		subflagUC := &usecase.SubflagUsecase{Subflags: subflagRepo, Flags: flagRepo}
 		ruleUC := &usecase.ContextRuleUsecase{Rules: ruleRepo, Flags: flagRepo, Subflags: subflagRepo}
 		taskUC := &usecase.TaskUsecase{Tasks: taskRepo, Flags: flagRepo, Subflags: subflagRepo}
-		reminderUC := &usecase.ReminderUsecase{Reminders: reminderRepo}
-		eventUC := &usecase.EventUsecase{Events: eventRepo}
+		reminderUC := &usecase.ReminderUsecase{
+			Reminders: reminderRepo,
+			Flags:     flagRepo,
+			Subflags:  subflagRepo,
+		}
+		eventUC := &usecase.EventUsecase{
+			Events:   eventRepo,
+			Flags:    flagRepo,
+			Subflags: subflagRepo,
+		}
 		shoppingListUC := &usecase.ShoppingListUsecase{Lists: shoppingListRepo}
 		shoppingItemUC := &usecase.ShoppingItemUsecase{Items: shoppingItemRepo}
 		txRunner := postgres.NewTxRunner(db)
@@ -132,8 +140,8 @@ func main() {
 			Inbox:         handler.NewInboxHandler(inboxUC, flagUC, subflagUC),
 			Agenda:        handler.NewAgendaHandler(eventUC, taskUC, reminderUC, flagUC, subflagUC),
 			Tasks:         handler.NewTasksHandler(taskUC, inboxUC, flagUC, subflagUC),
-			Reminders:     handler.NewRemindersHandler(reminderUC, inboxUC),
-			Events:        handler.NewEventsHandler(eventUC, inboxUC),
+			Reminders:     handler.NewRemindersHandler(reminderUC, inboxUC, flagUC, subflagUC),
+			Events:        handler.NewEventsHandler(eventUC, inboxUC, flagUC, subflagUC),
 			ShoppingLists: handler.NewShoppingListsHandler(shoppingListUC, inboxUC),
 			ShoppingItems: handler.NewShoppingItemsHandler(shoppingItemUC, shoppingListUC),
 		}

@@ -168,6 +168,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   "title":"string",
   "status":"OPEN|DONE",
   "remindAt":"RFC3339|null",
+  "flag": { ...FlagObject },
+  "subflag": { ...SubflagObject },
   "sourceInboxItem": { ...InboxItemObject },
   "createdAt":"RFC3339",
   "updatedAt":"RFC3339"
@@ -183,6 +185,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
   "endAt":"RFC3339|null",
   "allDay":false,
   "location":"string|null",
+  "flag": { ...FlagObject },
+  "subflag": { ...SubflagObject },
   "sourceInboxItem": { ...InboxItemObject },
   "createdAt":"RFC3339",
   "updatedAt":"RFC3339"

@@ -11,18 +11,20 @@ import (
 
 // Config holds application configuration loaded from environment variables.
 type Config struct {
-	Env             string
-	Port            int
-	RequestIDHeader string
-	LogLevel        string
-	DatabaseURL     string
-	JWTSecret       string
-	AIProvider      string
-	AIAPIKey        string
-	AIBaseURL       string
-	AIModel         string
-	AITimeout       time.Duration
-	AIMaxRetries    int
+	Env                     string
+	Port                    int
+	RequestIDHeader         string
+	LogLevel                string
+	DatabaseURL             string
+	JWTSecret               string
+	AIProvider              string
+	AIAPIKey                string
+	AIBaseURL               string
+	AIModel                 string
+	AIFallbackModel         string
+	AIFallbackOnNeedsReview bool
+	AITimeout               time.Duration
+	AIMaxRetries            int
 
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -32,21 +34,23 @@ type Config struct {
 // Load reads environment variables and applies defaults.
 func Load() (Config, error) {
 	cfg := Config{
-		Env:             getEnv("APP_ENV", "dev"),
-		Port:            getEnvInt("PORT", 8080),
-		RequestIDHeader: getEnv("REQUEST_ID_HEADER", "X-Request-Id"),
-		LogLevel:        strings.ToLower(getEnv("LOG_LEVEL", "info")),
-		DatabaseURL:     getEnv("DATABASE_URL", ""),
-		JWTSecret:       getEnv("JWT_SECRET", ""),
-		AIProvider:      getEnv("AI_PROVIDER", ""),
-		AIAPIKey:        getEnv("AI_API_KEY", ""),
-		AIBaseURL:       getEnv("AI_BASE_URL", ""),
-		AIModel:         getEnv("AI_MODEL", ""),
-		AITimeout:       getEnvDuration("AI_TIMEOUT", 15*time.Second),
-		AIMaxRetries:    getEnvInt("AI_MAX_RETRIES", 2),
-		ReadTimeout:     getEnvDuration("READ_TIMEOUT", 5*time.Second),
-		WriteTimeout:    getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
-		IdleTimeout:     getEnvDuration("IDLE_TIMEOUT", 60*time.Second),
+		Env:                     getEnv("APP_ENV", "dev"),
+		Port:                    getEnvInt("PORT", 8080),
+		RequestIDHeader:         getEnv("REQUEST_ID_HEADER", "X-Request-Id"),
+		LogLevel:                strings.ToLower(getEnv("LOG_LEVEL", "info")),
+		DatabaseURL:             getEnv("DATABASE_URL", ""),
+		JWTSecret:               getEnv("JWT_SECRET", ""),
+		AIProvider:              getEnv("AI_PROVIDER", ""),
+		AIAPIKey:                getEnv("AI_API_KEY", ""),
+		AIBaseURL:               getEnv("AI_BASE_URL", ""),
+		AIModel:                 getEnv("AI_MODEL", ""),
+		AIFallbackModel:         getEnv("AI_FALLBACK_MODEL", ""),
+		AIFallbackOnNeedsReview: getEnvBool("AI_FALLBACK_ON_NEEDS_REVIEW", false),
+		AITimeout:               getEnvDuration("AI_TIMEOUT", 15*time.Second),
+		AIMaxRetries:            getEnvInt("AI_MAX_RETRIES", 2),
+		ReadTimeout:             getEnvDuration("READ_TIMEOUT", 5*time.Second),
+		WriteTimeout:            getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
+		IdleTimeout:             getEnvDuration("IDLE_TIMEOUT", 60*time.Second),
 	}
 
 	if cfg.Port <= 0 {
@@ -85,6 +89,18 @@ func getEnvDuration(key string, def time.Duration) time.Duration {
 		return def
 	}
 	return d
+}
+
+func getEnvBool(key string, def bool) bool {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return def
+	}
+	parsed, err := strconv.ParseBool(v)
+	if err != nil {
+		return def
+	}
+	return parsed
 }
 
 // Addr returns server address based on Port.

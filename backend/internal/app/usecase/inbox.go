@@ -288,10 +288,29 @@ func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id strin
 		return uc.failInboxProcessing(ctx, item, err)
 	}
 
+	usedHardFallback := false
 	validated, err := uc.SchemaValidator.Validate([]byte(completion.Content))
 	if err != nil {
 		if !errors.Is(err, service.ErrAISchemaInvalid) {
 			return uc.failInboxProcessing(ctx, item, err)
+		}
+
+		if fallbackClient, ok := uc.AIClient.(service.AIClientWithFallback); ok {
+			fallbackModel := strings.TrimSpace(fallbackClient.FallbackModel())
+			if fallbackModel != "" && !strings.EqualFold(strings.TrimSpace(completion.Model), fallbackModel) {
+				fallbackCompletion, fallbackErr := fallbackClient.CompleteWithModel(ctx, prompt, fallbackModel)
+				if fallbackErr == nil {
+					if fallbackValidated, fallbackValErr := uc.SchemaValidator.Validate([]byte(fallbackCompletion.Content)); fallbackValErr == nil {
+						completion = fallbackCompletion
+						validated = fallbackValidated
+						err = nil
+					}
+				}
+			}
+		}
+
+		if err == nil {
+			goto validatedOutputReady
 		}
 
 		var fallbackContext *service.AIContext
@@ -317,6 +336,23 @@ func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id strin
 		}
 
 		validated = service.BuildFallbackTaskOutput(item.RawText, fallbackContext)
+		usedHardFallback = true
+	}
+
+validatedOutputReady:
+	if !usedHardFallback && validated.Output.NeedsReview {
+		if fallbackClient, ok := uc.AIClient.(service.AIClientWithFallback); ok && fallbackClient.FallbackOnNeedsReview() {
+			fallbackModel := strings.TrimSpace(fallbackClient.FallbackModel())
+			if fallbackModel != "" && !strings.EqualFold(strings.TrimSpace(completion.Model), fallbackModel) {
+				fallbackCompletion, fallbackErr := fallbackClient.CompleteWithModel(ctx, prompt, fallbackModel)
+				if fallbackErr == nil {
+					if fallbackValidated, fallbackValErr := uc.SchemaValidator.Validate([]byte(fallbackCompletion.Content)); fallbackValErr == nil {
+						completion = fallbackCompletion
+						validated = fallbackValidated
+					}
+				}
+			}
+		}
 	}
 
 	suggestion := domain.AiSuggestion{
@@ -479,6 +515,8 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 					UserID:            userID,
 					Title:             title,
 					RemindAt:          &reminderPayload.At,
+					FlagID:            flagID,
+					SubflagID:         subflagID,
 					SourceInboxItemID: &item.ID,
 				}
 				created, err := tx.Reminders.Create(ctx, reminder)
@@ -500,6 +538,8 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 					StartAt:           &eventPayload.Start,
 					EndAt:             eventPayload.End,
 					AllDay:            eventPayload.AllDay,
+					FlagID:            flagID,
+					SubflagID:         subflagID,
 					SourceInboxItemID: &item.ID,
 				}
 				created, err := tx.Events.Create(ctx, event)
@@ -591,6 +631,8 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				UserID:            userID,
 				Title:             title,
 				RemindAt:          &reminderPayload.At,
+				FlagID:            flagID,
+				SubflagID:         subflagID,
 				SourceInboxItemID: &item.ID,
 			}
 			created, err := uc.Reminders.Create(ctx, reminder)
@@ -612,6 +654,8 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				StartAt:           &eventPayload.Start,
 				EndAt:             eventPayload.End,
 				AllDay:            eventPayload.AllDay,
+				FlagID:            flagID,
+				SubflagID:         subflagID,
 				SourceInboxItemID: &item.ID,
 			}
 			created, err := uc.Events.Create(ctx, event)

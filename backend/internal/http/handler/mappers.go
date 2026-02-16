@@ -159,28 +159,50 @@ func toTaskResponse(task domain.Task, source *domain.InboxItem, flag *domain.Fla
 	}
 }
 
-func toReminderResponse(reminder domain.Reminder, source *domain.InboxItem) dto.ReminderResponse {
+func toReminderResponse(reminder domain.Reminder, source *domain.InboxItem, flag *domain.Flag, subflag *domain.Subflag) dto.ReminderResponse {
 	var sourceObj *dto.InboxItemObject
 	if source != nil {
 		obj := toInboxItemObject(*source)
 		sourceObj = &obj
+	}
+	var flagObj *dto.FlagObject
+	if flag != nil {
+		obj := toFlagObject(*flag)
+		flagObj = &obj
+	}
+	var subflagObj *dto.SubflagObject
+	if subflag != nil {
+		obj := toSubflagObject(*subflag, flag)
+		subflagObj = &obj
 	}
 	return dto.ReminderResponse{
 		ID:              reminder.ID,
 		Title:           reminder.Title,
 		Status:          string(reminder.Status),
 		RemindAt:        reminder.RemindAt,
+		Flag:            flagObj,
+		Subflag:         subflagObj,
 		SourceInboxItem: sourceObj,
 		CreatedAt:       reminder.CreatedAt,
 		UpdatedAt:       reminder.UpdatedAt,
 	}
 }
 
-func toEventResponse(event domain.Event, source *domain.InboxItem) dto.EventResponse {
+func toEventResponse(event domain.Event, source *domain.InboxItem, flag *domain.Flag, subflag *domain.Subflag) dto.EventResponse {
 	var sourceObj *dto.InboxItemObject
 	if source != nil {
 		obj := toInboxItemObject(*source)
 		sourceObj = &obj
+	}
+	var flagObj *dto.FlagObject
+	if flag != nil {
+		obj := toFlagObject(*flag)
+		flagObj = &obj
+	}
+	var subflagObj *dto.SubflagObject
+	if subflag != nil {
+		obj := toSubflagObject(*subflag, flag)
+		subflagObj = &obj
 	}
 	return dto.EventResponse{
 		ID:              event.ID,
@@ -189,6 +211,8 @@ func toEventResponse(event domain.Event, source *domain.InboxItem) dto.EventResp
 		EndAt:           event.EndAt,
 		AllDay:          event.AllDay,
 		Location:        event.Location,
+		Flag:            flagObj,
+		Subflag:         subflagObj,
 		SourceInboxItem: sourceObj,
 		CreatedAt:       event.CreatedAt,
 		UpdatedAt:       event.UpdatedAt,

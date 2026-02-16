@@ -141,6 +141,8 @@ Campos:
 - `title`: titulo.
 - `status`: `OPEN`, `DONE`.
 - `remind_at`: data/hora do aviso.
+- `flag_id`: contexto principal (opcional).
+- `subflag_id`: contexto secundario (opcional).
 - `source_inbox_item_id`: referencia ao inbox item de origem.
 - `created_at` / `updated_at`.
 
@@ -159,6 +161,8 @@ Campos:
 - `end_at`: fim.
 - `all_day`: evento dia inteiro.
 - `location`: local (opcional).
+- `flag_id`: contexto principal (opcional).
+- `subflag_id`: contexto secundario (opcional).
 - `source_inbox_item_id`: referencia ao inbox item de origem.
 - `created_at` / `updated_at`.
 

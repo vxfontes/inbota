@@ -315,11 +315,65 @@ func (h *InboxHandler) Confirm(c *gin.Context) {
 		resp.Task = &task
 	}
 	if result.Reminder != nil {
-		reminder := toReminderResponse(*result.Reminder, nil)
+		var flag *domain.Flag
+		var subflag *domain.Subflag
+		if h.Flags != nil && result.Reminder.FlagID != nil {
+			if f, err := h.Flags.Get(c.Request.Context(), userID, *result.Reminder.FlagID); err == nil {
+				flag = &f
+			} else {
+				writeUsecaseError(c, err)
+				return
+			}
+		}
+		if h.Subflags != nil && result.Reminder.SubflagID != nil {
+			if sf, err := h.Subflags.Get(c.Request.Context(), userID, *result.Reminder.SubflagID); err == nil {
+				subflag = &sf
+			} else {
+				writeUsecaseError(c, err)
+				return
+			}
+		}
+		if flag == nil && subflag != nil && h.Flags != nil {
+			if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+				flag = &f
+			} else {
+				writeUsecaseError(c, err)
+				return
+			}
+		}
+
+		reminder := toReminderResponse(*result.Reminder, nil, flag, subflag)
 		resp.Reminder = &reminder
 	}
 	if result.Event != nil {
-		event := toEventResponse(*result.Event, nil)
+		var flag *domain.Flag
+		var subflag *domain.Subflag
+		if h.Flags != nil && result.Event.FlagID != nil {
+			if f, err := h.Flags.Get(c.Request.Context(), userID, *result.Event.FlagID); err == nil {
+				flag = &f
+			} else {
+				writeUsecaseError(c, err)
+				return
+			}
+		}
+		if h.Subflags != nil && result.Event.SubflagID != nil {
+			if sf, err := h.Subflags.Get(c.Request.Context(), userID, *result.Event.SubflagID); err == nil {
+				subflag = &sf
+			} else {
+				writeUsecaseError(c, err)
+				return
+			}
+		}
+		if flag == nil && subflag != nil && h.Flags != nil {
+			if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+				flag = &f
+			} else {
+				writeUsecaseError(c, err)
+				return
+			}
+		}
+
+		event := toEventResponse(*result.Event, nil, flag, subflag)
 		resp.Event = &event
 	}
 	if result.ShoppingList != nil {

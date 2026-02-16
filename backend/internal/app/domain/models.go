@@ -143,6 +143,8 @@ type Reminder struct {
 	Title             string
 	Status            ReminderStatus
 	RemindAt          *time.Time
+	FlagID            *string
+	SubflagID         *string
 	SourceInboxItemID *string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
@@ -156,6 +158,8 @@ type Event struct {
 	EndAt             *time.Time
 	AllDay            bool
 	Location          *string
+	FlagID            *string
+	SubflagID         *string
 	SourceInboxItemID *string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time

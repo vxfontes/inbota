@@ -2350,10 +2350,16 @@ const docTemplate = `{
                 "endAt": {
                     "type": "string"
                 },
+                "flagId": {
+                    "type": "string"
+                },
                 "location": {
                     "type": "string"
                 },
                 "startAt": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {
@@ -2392,10 +2398,16 @@ const docTemplate = `{
         "dto.CreateReminderRequest": {
             "type": "object",
             "properties": {
+                "flagId": {
+                    "type": "string"
+                },
                 "remindAt": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {
@@ -2488,6 +2500,9 @@ const docTemplate = `{
                 "endAt": {
                     "type": "string"
                 },
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2499,6 +2514,9 @@ const docTemplate = `{
                 },
                 "startAt": {
                     "type": "string"
+                },
+                "subflag": {
+                    "$ref": "#/definitions/dto.SubflagObject"
                 },
                 "title": {
                     "type": "string"
@@ -2738,6 +2756,9 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
+                "flag": {
+                    "$ref": "#/definitions/dto.FlagObject"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2749,6 +2770,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "subflag": {
+                    "$ref": "#/definitions/dto.SubflagObject"
                 },
                 "title": {
                     "type": "string"
@@ -2922,10 +2946,16 @@ const docTemplate = `{
                 "endAt": {
                     "type": "string"
                 },
+                "flagId": {
+                    "type": "string"
+                },
                 "location": {
                     "type": "string"
                 },
                 "startAt": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {
@@ -2950,10 +2980,16 @@ const docTemplate = `{
         "dto.UpdateReminderRequest": {
             "type": "object",
             "properties": {
+                "flagId": {
+                    "type": "string"
+                },
                 "remindAt": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "subflagId": {
                     "type": "string"
                 },
                 "title": {

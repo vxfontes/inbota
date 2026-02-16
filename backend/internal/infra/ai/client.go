@@ -29,12 +29,14 @@ func NewClient(cfg config.Config) (service.AIClient, error) {
 			baseURL = defaultGroqBaseURL
 		}
 		return service.NewHTTPAIClient(service.AIClientConfig{
-			Provider:   provider,
-			BaseURL:    baseURL,
-			APIKey:     cfg.AIAPIKey,
-			Model:      cfg.AIModel,
-			Timeout:    cfg.AITimeout,
-			MaxRetries: cfg.AIMaxRetries,
+			Provider:              provider,
+			BaseURL:               baseURL,
+			APIKey:                cfg.AIAPIKey,
+			Model:                 cfg.AIModel,
+			FallbackModel:         cfg.AIFallbackModel,
+			FallbackOnNeedsReview: cfg.AIFallbackOnNeedsReview,
+			Timeout:               cfg.AITimeout,
+			MaxRetries:            cfg.AIMaxRetries,
 		})
 	default:
 		return nil, ErrUnsupportedProvider

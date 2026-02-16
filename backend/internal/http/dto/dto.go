@@ -231,6 +231,8 @@ type ReminderResponse struct {
 	Title           string           `json:"title"`
 	Status          string           `json:"status"`
 	RemindAt        *time.Time       `json:"remindAt,omitempty"`
+	Flag            *FlagObject      `json:"flag,omitempty"`
+	Subflag         *SubflagObject   `json:"subflag,omitempty"`
 	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
 	CreatedAt       time.Time        `json:"createdAt"`
 	UpdatedAt       time.Time        `json:"updatedAt"`
@@ -242,15 +244,19 @@ type ListRemindersResponse struct {
 }
 
 type CreateReminderRequest struct {
-	Title    string     `json:"title"`
-	Status   *string    `json:"status,omitempty"`
-	RemindAt *time.Time `json:"remindAt,omitempty"`
+	Title     string     `json:"title"`
+	Status    *string    `json:"status,omitempty"`
+	RemindAt  *time.Time `json:"remindAt,omitempty"`
+	FlagID    *string    `json:"flagId,omitempty"`
+	SubflagID *string    `json:"subflagId,omitempty"`
 }
 
 type UpdateReminderRequest struct {
-	Title    *string    `json:"title,omitempty"`
-	Status   *string    `json:"status,omitempty"`
-	RemindAt *time.Time `json:"remindAt,omitempty"`
+	Title     *string    `json:"title,omitempty"`
+	Status    *string    `json:"status,omitempty"`
+	RemindAt  *time.Time `json:"remindAt,omitempty"`
+	FlagID    *string    `json:"flagId,omitempty"`
+	SubflagID *string    `json:"subflagId,omitempty"`
 }
 
 // Events
@@ -262,6 +268,8 @@ type EventResponse struct {
 	EndAt           *time.Time       `json:"endAt,omitempty"`
 	AllDay          bool             `json:"allDay"`
 	Location        *string          `json:"location,omitempty"`
+	Flag            *FlagObject      `json:"flag,omitempty"`
+	Subflag         *SubflagObject   `json:"subflag,omitempty"`
 	SourceInboxItem *InboxItemObject `json:"sourceInboxItem,omitempty"`
 	CreatedAt       time.Time        `json:"createdAt"`
 	UpdatedAt       time.Time        `json:"updatedAt"`
@@ -279,19 +287,23 @@ type AgendaResponse struct {
 }
 
 type CreateEventRequest struct {
-	Title    string     `json:"title"`
-	StartAt  *time.Time `json:"startAt,omitempty"`
-	EndAt    *time.Time `json:"endAt,omitempty"`
-	AllDay   *bool      `json:"allDay,omitempty"`
-	Location *string    `json:"location,omitempty"`
+	Title     string     `json:"title"`
+	StartAt   *time.Time `json:"startAt,omitempty"`
+	EndAt     *time.Time `json:"endAt,omitempty"`
+	AllDay    *bool      `json:"allDay,omitempty"`
+	Location  *string    `json:"location,omitempty"`
+	FlagID    *string    `json:"flagId,omitempty"`
+	SubflagID *string    `json:"subflagId,omitempty"`
 }
 
 type UpdateEventRequest struct {
-	Title    *string    `json:"title,omitempty"`
-	StartAt  *time.Time `json:"startAt,omitempty"`
-	EndAt    *time.Time `json:"endAt,omitempty"`
-	AllDay   *bool      `json:"allDay,omitempty"`
-	Location *string    `json:"location,omitempty"`
+	Title     *string    `json:"title,omitempty"`
+	StartAt   *time.Time `json:"startAt,omitempty"`
+	EndAt     *time.Time `json:"endAt,omitempty"`
+	AllDay    *bool      `json:"allDay,omitempty"`
+	Location  *string    `json:"location,omitempty"`
+	FlagID    *string    `json:"flagId,omitempty"`
+	SubflagID *string    `json:"subflagId,omitempty"`
 }
 
 // Shopping

@@ -11,12 +11,14 @@ import (
 )
 
 type EventsHandler struct {
-	Usecase *usecase.EventUsecase
-	Inbox   *usecase.InboxUsecase
+	Usecase  *usecase.EventUsecase
+	Inbox    *usecase.InboxUsecase
+	Flags    *usecase.FlagUsecase
+	Subflags *usecase.SubflagUsecase
 }
 
-func NewEventsHandler(uc *usecase.EventUsecase, inbox *usecase.InboxUsecase) *EventsHandler {
-	return &EventsHandler{Usecase: uc, Inbox: inbox}
+func NewEventsHandler(uc *usecase.EventUsecase, inbox *usecase.InboxUsecase, flags *usecase.FlagUsecase, subflags *usecase.SubflagUsecase) *EventsHandler {
+	return &EventsHandler{Usecase: uc, Inbox: inbox, Flags: flags, Subflags: subflags}
 }
 
 // List events.
@@ -66,6 +68,49 @@ func (h *EventsHandler) List(c *gin.Context) {
 		}
 	}
 
+	subflagIDs := make([]string, 0)
+	for _, event := range events {
+		if event.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *event.SubflagID)
+		}
+	}
+
+	subflagsByID := make(map[string]domain.Subflag)
+	if h.Subflags != nil {
+		ids := uniqueStrings(subflagIDs)
+		if len(ids) > 0 {
+			subflags, err := h.Subflags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflagsByID = subflags
+		}
+	}
+
+	flagIDs := make([]string, 0)
+	for _, event := range events {
+		if event.FlagID != nil {
+			flagIDs = append(flagIDs, *event.FlagID)
+		}
+	}
+	for _, subflag := range subflagsByID {
+		flagIDs = append(flagIDs, subflag.FlagID)
+	}
+
+	flagsByID := make(map[string]domain.Flag)
+	if h.Flags != nil {
+		ids := uniqueStrings(flagIDs)
+		if len(ids) > 0 {
+			flags, err := h.Flags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flagsByID = flags
+		}
+	}
+
 	items := make([]dto.EventResponse, 0, len(events))
 	for _, event := range events {
 		var source *domain.InboxItem
@@ -74,7 +119,24 @@ func (h *EventsHandler) List(c *gin.Context) {
 				source = &item
 			}
 		}
-		items = append(items, toEventResponse(event, source))
+		var flag *domain.Flag
+		if event.FlagID != nil {
+			if f, ok := flagsByID[*event.FlagID]; ok {
+				flag = &f
+			}
+		}
+		var subflag *domain.Subflag
+		if event.SubflagID != nil {
+			if sf, ok := subflagsByID[*event.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		if flag == nil && subflag != nil {
+			if f, ok := flagsByID[subflag.FlagID]; ok {
+				flag = &f
+			}
+		}
+		items = append(items, toEventResponse(event, source, flag, subflag))
 	}
 
 	c.JSON(http.StatusOK, dto.ListEventsResponse{Items: items, NextCursor: next})
@@ -103,13 +165,40 @@ func (h *EventsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	event, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.StartAt, req.EndAt, req.AllDay, req.Location)
+	event, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.StartAt, req.EndAt, req.AllDay, req.Location, req.FlagID, req.SubflagID)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, toEventResponse(event, nil))
+	var flag *domain.Flag
+	var subflag *domain.Subflag
+	if h.Flags != nil && event.FlagID != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, *event.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if h.Subflags != nil && event.SubflagID != nil {
+		if sf, err := h.Subflags.Get(c.Request.Context(), userID, *event.SubflagID); err == nil {
+			subflag = &sf
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if flag == nil && subflag != nil && h.Flags != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, toEventResponse(event, nil, flag, subflag))
 }
 
 // Update event.
@@ -139,11 +228,13 @@ func (h *EventsHandler) Update(c *gin.Context) {
 	}
 
 	event, err := h.Usecase.Update(c.Request.Context(), userID, id, usecase.EventUpdateInput{
-		Title:    req.Title,
-		StartAt:  req.StartAt,
-		EndAt:    req.EndAt,
-		AllDay:   req.AllDay,
-		Location: req.Location,
+		Title:     req.Title,
+		StartAt:   req.StartAt,
+		EndAt:     req.EndAt,
+		AllDay:    req.AllDay,
+		Location:  req.Location,
+		FlagID:    req.FlagID,
+		SubflagID: req.SubflagID,
 	})
 	if err != nil {
 		writeUsecaseError(c, err)
@@ -160,7 +251,34 @@ func (h *EventsHandler) Update(c *gin.Context) {
 		source = &res.Item
 	}
 
-	c.JSON(http.StatusOK, toEventResponse(event, source))
+	var flag *domain.Flag
+	var subflag *domain.Subflag
+	if h.Flags != nil && event.FlagID != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, *event.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if h.Subflags != nil && event.SubflagID != nil {
+		if sf, err := h.Subflags.Get(c.Request.Context(), userID, *event.SubflagID); err == nil {
+			subflag = &sf
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if flag == nil && subflag != nil && h.Flags != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, toEventResponse(event, source, flag, subflag))
 }
 
 // Delete event.

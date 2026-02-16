@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,13 @@ type AIClient interface {
 	Complete(ctx context.Context, prompt string) (AICompletion, error)
 }
 
+type AIClientWithFallback interface {
+	AIClient
+	CompleteWithModel(ctx context.Context, prompt, model string) (AICompletion, error)
+	FallbackModel() string
+	FallbackOnNeedsReview() bool
+}
+
 // AICompletion holds the raw text returned by the provider.
 type AICompletion struct {
 	Content string
@@ -27,21 +35,25 @@ type AICompletion struct {
 }
 
 type AIClientConfig struct {
-	Provider   string
-	BaseURL    string
-	APIKey     string
-	Model      string
-	Timeout    time.Duration
-	MaxRetries int
+	Provider              string
+	BaseURL               string
+	APIKey                string
+	Model                 string
+	FallbackModel         string
+	FallbackOnNeedsReview bool
+	Timeout               time.Duration
+	MaxRetries            int
 }
 
 type HTTPAIClient struct {
-	provider   string
-	baseURL    string
-	apiKey     string
-	model      string
-	maxRetries int
-	client     *http.Client
+	provider              string
+	baseURL               string
+	apiKey                string
+	model                 string
+	fallbackModel         string
+	fallbackOnNeedsReview bool
+	maxRetries            int
+	client                *http.Client
 }
 
 func NewHTTPAIClient(cfg AIClientConfig) (*HTTPAIClient, error) {
@@ -63,18 +75,40 @@ func NewHTTPAIClient(cfg AIClientConfig) (*HTTPAIClient, error) {
 		maxRetries = 0
 	}
 	return &HTTPAIClient{
-		provider:   cfg.Provider,
-		baseURL:    cfg.BaseURL,
-		apiKey:     cfg.APIKey,
-		model:      cfg.Model,
-		maxRetries: maxRetries,
-		client:     &http.Client{Timeout: timeout},
+		provider:              cfg.Provider,
+		baseURL:               cfg.BaseURL,
+		apiKey:                cfg.APIKey,
+		model:                 cfg.Model,
+		fallbackModel:         strings.TrimSpace(cfg.FallbackModel),
+		fallbackOnNeedsReview: cfg.FallbackOnNeedsReview,
+		maxRetries:            maxRetries,
+		client:                &http.Client{Timeout: timeout},
 	}, nil
 }
 
 func (c *HTTPAIClient) Complete(ctx context.Context, prompt string) (AICompletion, error) {
+	return c.complete(ctx, prompt, c.model)
+}
+
+func (c *HTTPAIClient) CompleteWithModel(ctx context.Context, prompt, model string) (AICompletion, error) {
+	model = strings.TrimSpace(model)
+	if model == "" {
+		model = c.model
+	}
+	return c.complete(ctx, prompt, model)
+}
+
+func (c *HTTPAIClient) FallbackModel() string {
+	return c.fallbackModel
+}
+
+func (c *HTTPAIClient) FallbackOnNeedsReview() bool {
+	return c.fallbackOnNeedsReview
+}
+
+func (c *HTTPAIClient) complete(ctx context.Context, prompt, model string) (AICompletion, error) {
 	payload := chatCompletionRequest{
-		Model: c.model,
+		Model: model,
 		Messages: []chatMessage{
 			{
 				Role: "system",

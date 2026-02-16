@@ -96,6 +96,8 @@ CREATE TABLE IF NOT EXISTS inbota.reminders (
   title text NOT NULL,
   status text NOT NULL DEFAULT 'OPEN',
   remind_at timestamptz,
+  flag_id uuid REFERENCES inbota.flags(id) ON DELETE SET NULL,
+  subflag_id uuid REFERENCES inbota.subflags(id) ON DELETE SET NULL,
   source_inbox_item_id uuid REFERENCES inbota.inbox_items(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -109,6 +111,8 @@ CREATE TABLE IF NOT EXISTS inbota.events (
   end_at timestamptz,
   all_day boolean NOT NULL DEFAULT false,
   location text,
+  flag_id uuid REFERENCES inbota.flags(id) ON DELETE SET NULL,
+  subflag_id uuid REFERENCES inbota.subflags(id) ON DELETE SET NULL,
   source_inbox_item_id uuid REFERENCES inbota.inbox_items(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

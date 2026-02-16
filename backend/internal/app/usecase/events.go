@@ -2,25 +2,31 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
+	"inbota/backend/internal/infra/postgres"
 )
 
 type EventUsecase struct {
-	Events repository.EventRepository
+	Events   repository.EventRepository
+	Flags    repository.FlagRepository
+	Subflags repository.SubflagRepository
 }
 
 type EventUpdateInput struct {
-	Title    *string
-	StartAt  *time.Time
-	EndAt    *time.Time
-	AllDay   *bool
-	Location *string
+	Title     *string
+	StartAt   *time.Time
+	EndAt     *time.Time
+	AllDay    *bool
+	Location  *string
+	FlagID    *string
+	SubflagID *string
 }
 
-func (uc *EventUsecase) Create(ctx context.Context, userID, title string, startAt, endAt *time.Time, allDay *bool, location *string) (domain.Event, error) {
+func (uc *EventUsecase) Create(ctx context.Context, userID, title string, startAt, endAt *time.Time, allDay *bool, location *string, flagID *string, subflagID *string) (domain.Event, error) {
 	title = normalizeString(title)
 	if userID == "" || title == "" {
 		return domain.Event{}, ErrMissingRequiredFields
@@ -29,13 +35,20 @@ func (uc *EventUsecase) Create(ctx context.Context, userID, title string, startA
 		return domain.Event{}, ErrInvalidTimeRange
 	}
 
+	resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, flagID, subflagID)
+	if err != nil {
+		return domain.Event{}, err
+	}
+
 	event := domain.Event{
-		UserID:   userID,
-		Title:    title,
-		StartAt:  startAt,
-		EndAt:    endAt,
-		AllDay:   false,
-		Location: normalizeOptionalString(location),
+		UserID:    userID,
+		Title:     title,
+		StartAt:   startAt,
+		EndAt:     endAt,
+		AllDay:    false,
+		Location:  normalizeOptionalString(location),
+		FlagID:    resolvedFlagID,
+		SubflagID: resolvedSubflagID,
 	}
 	if allDay != nil {
 		event.AllDay = *allDay
@@ -75,6 +88,22 @@ func (uc *EventUsecase) Update(ctx context.Context, userID, id string, input Eve
 	if input.Location != nil {
 		event.Location = normalizeOptionalString(input.Location)
 	}
+	if input.FlagID != nil || input.SubflagID != nil {
+		nextFlagID := event.FlagID
+		nextSubflagID := event.SubflagID
+		if input.FlagID != nil {
+			nextFlagID = normalizeOptionalString(input.FlagID)
+		}
+		if input.SubflagID != nil {
+			nextSubflagID = normalizeOptionalString(input.SubflagID)
+		}
+		resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, nextFlagID, nextSubflagID)
+		if err != nil {
+			return domain.Event{}, err
+		}
+		event.FlagID = resolvedFlagID
+		event.SubflagID = resolvedSubflagID
+	}
 
 	return uc.Events.Update(ctx, event)
 }
@@ -98,4 +127,43 @@ func (uc *EventUsecase) List(ctx context.Context, userID string, opts repository
 		return nil, nil, ErrMissingRequiredFields
 	}
 	return uc.Events.List(ctx, userID, opts)
+}
+
+func (uc *EventUsecase) resolveFlagAndSubflag(ctx context.Context, userID string, flagID *string, subflagID *string) (*string, *string, error) {
+	resolvedFlagID := normalizeOptionalString(flagID)
+	resolvedSubflagID := normalizeOptionalString(subflagID)
+
+	if resolvedFlagID != nil {
+		if uc.Flags == nil {
+			return nil, nil, ErrDependencyMissing
+		}
+		if _, err := uc.Flags.Get(ctx, userID, *resolvedFlagID); err != nil {
+			if errors.Is(err, postgres.ErrNotFound) {
+				return nil, nil, ErrInvalidPayload
+			}
+			return nil, nil, err
+		}
+	}
+
+	if resolvedSubflagID != nil {
+		if uc.Subflags == nil {
+			return nil, nil, ErrDependencyMissing
+		}
+		subflag, err := uc.Subflags.Get(ctx, userID, *resolvedSubflagID)
+		if err != nil {
+			if errors.Is(err, postgres.ErrNotFound) {
+				return nil, nil, ErrInvalidPayload
+			}
+			return nil, nil, err
+		}
+		if resolvedFlagID != nil && subflag.FlagID != *resolvedFlagID {
+			return nil, nil, ErrInvalidPayload
+		}
+		if resolvedFlagID == nil {
+			flag := subflag.FlagID
+			resolvedFlagID = &flag
+		}
+	}
+
+	return resolvedFlagID, resolvedSubflagID, nil
 }

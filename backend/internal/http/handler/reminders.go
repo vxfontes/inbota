@@ -11,12 +11,14 @@ import (
 )
 
 type RemindersHandler struct {
-	Usecase *usecase.ReminderUsecase
-	Inbox   *usecase.InboxUsecase
+	Usecase  *usecase.ReminderUsecase
+	Inbox    *usecase.InboxUsecase
+	Flags    *usecase.FlagUsecase
+	Subflags *usecase.SubflagUsecase
 }
 
-func NewRemindersHandler(uc *usecase.ReminderUsecase, inbox *usecase.InboxUsecase) *RemindersHandler {
-	return &RemindersHandler{Usecase: uc, Inbox: inbox}
+func NewRemindersHandler(uc *usecase.ReminderUsecase, inbox *usecase.InboxUsecase, flags *usecase.FlagUsecase, subflags *usecase.SubflagUsecase) *RemindersHandler {
+	return &RemindersHandler{Usecase: uc, Inbox: inbox, Flags: flags, Subflags: subflags}
 }
 
 // List reminders.
@@ -66,6 +68,49 @@ func (h *RemindersHandler) List(c *gin.Context) {
 		}
 	}
 
+	subflagIDs := make([]string, 0)
+	for _, reminder := range reminders {
+		if reminder.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *reminder.SubflagID)
+		}
+	}
+
+	subflagsByID := make(map[string]domain.Subflag)
+	if h.Subflags != nil {
+		ids := uniqueStrings(subflagIDs)
+		if len(ids) > 0 {
+			subflags, err := h.Subflags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflagsByID = subflags
+		}
+	}
+
+	flagIDs := make([]string, 0)
+	for _, reminder := range reminders {
+		if reminder.FlagID != nil {
+			flagIDs = append(flagIDs, *reminder.FlagID)
+		}
+	}
+	for _, subflag := range subflagsByID {
+		flagIDs = append(flagIDs, subflag.FlagID)
+	}
+
+	flagsByID := make(map[string]domain.Flag)
+	if h.Flags != nil {
+		ids := uniqueStrings(flagIDs)
+		if len(ids) > 0 {
+			flags, err := h.Flags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flagsByID = flags
+		}
+	}
+
 	items := make([]dto.ReminderResponse, 0, len(reminders))
 	for _, reminder := range reminders {
 		var source *domain.InboxItem
@@ -74,7 +119,24 @@ func (h *RemindersHandler) List(c *gin.Context) {
 				source = &item
 			}
 		}
-		items = append(items, toReminderResponse(reminder, source))
+		var flag *domain.Flag
+		if reminder.FlagID != nil {
+			if f, ok := flagsByID[*reminder.FlagID]; ok {
+				flag = &f
+			}
+		}
+		var subflag *domain.Subflag
+		if reminder.SubflagID != nil {
+			if sf, ok := subflagsByID[*reminder.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		if flag == nil && subflag != nil {
+			if f, ok := flagsByID[subflag.FlagID]; ok {
+				flag = &f
+			}
+		}
+		items = append(items, toReminderResponse(reminder, source, flag, subflag))
 	}
 
 	c.JSON(http.StatusOK, dto.ListRemindersResponse{Items: items, NextCursor: next})
@@ -103,13 +165,40 @@ func (h *RemindersHandler) Create(c *gin.Context) {
 		return
 	}
 
-	reminder, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Status, req.RemindAt)
+	reminder, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Status, req.RemindAt, req.FlagID, req.SubflagID)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, toReminderResponse(reminder, nil))
+	var flag *domain.Flag
+	var subflag *domain.Subflag
+	if h.Flags != nil && reminder.FlagID != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, *reminder.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if h.Subflags != nil && reminder.SubflagID != nil {
+		if sf, err := h.Subflags.Get(c.Request.Context(), userID, *reminder.SubflagID); err == nil {
+			subflag = &sf
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if flag == nil && subflag != nil && h.Flags != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, toReminderResponse(reminder, nil, flag, subflag))
 }
 
 // Update reminder.
@@ -139,9 +228,11 @@ func (h *RemindersHandler) Update(c *gin.Context) {
 	}
 
 	reminder, err := h.Usecase.Update(c.Request.Context(), userID, id, usecase.ReminderUpdateInput{
-		Title:    req.Title,
-		Status:   req.Status,
-		RemindAt: req.RemindAt,
+		Title:     req.Title,
+		Status:    req.Status,
+		RemindAt:  req.RemindAt,
+		FlagID:    req.FlagID,
+		SubflagID: req.SubflagID,
 	})
 	if err != nil {
 		writeUsecaseError(c, err)
@@ -158,7 +249,34 @@ func (h *RemindersHandler) Update(c *gin.Context) {
 		source = &res.Item
 	}
 
-	c.JSON(http.StatusOK, toReminderResponse(reminder, source))
+	var flag *domain.Flag
+	var subflag *domain.Subflag
+	if h.Flags != nil && reminder.FlagID != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, *reminder.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if h.Subflags != nil && reminder.SubflagID != nil {
+		if sf, err := h.Subflags.Get(c.Request.Context(), userID, *reminder.SubflagID); err == nil {
+			subflag = &sf
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+	if flag == nil && subflag != nil && h.Flags != nil {
+		if f, err := h.Flags.Get(c.Request.Context(), userID, subflag.FlagID); err == nil {
+			flag = &f
+		} else {
+			writeUsecaseError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, toReminderResponse(reminder, source, flag, subflag))
 }
 
 // Delete reminder.

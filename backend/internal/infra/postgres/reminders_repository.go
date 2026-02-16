@@ -26,10 +26,10 @@ func (r *ReminderRepository) Create(ctx context.Context, reminder domain.Reminde
 	}
 
 	row := r.db.QueryRowContext(ctx, `
-		INSERT INTO inbota.reminders (user_id, title, status, remind_at, source_inbox_item_id)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO inbota.reminders (user_id, title, status, remind_at, flag_id, subflag_id, source_inbox_item_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, updated_at
-	`, reminder.UserID, reminder.Title, string(reminder.Status), reminder.RemindAt, reminder.SourceInboxItemID)
+	`, reminder.UserID, reminder.Title, string(reminder.Status), reminder.RemindAt, reminder.FlagID, reminder.SubflagID, reminder.SourceInboxItemID)
 
 	if err := row.Scan(&reminder.ID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
 		return domain.Reminder{}, err
@@ -40,10 +40,10 @@ func (r *ReminderRepository) Create(ctx context.Context, reminder domain.Reminde
 func (r *ReminderRepository) Update(ctx context.Context, reminder domain.Reminder) (domain.Reminder, error) {
 	row := r.db.QueryRowContext(ctx, `
 		UPDATE inbota.reminders
-		SET title = $1, status = $2, remind_at = $3, updated_at = now()
-		WHERE id = $4 AND user_id = $5
+		SET title = $1, status = $2, remind_at = $3, flag_id = $4, subflag_id = $5, updated_at = now()
+		WHERE id = $6 AND user_id = $7
 		RETURNING created_at, updated_at
-	`, reminder.Title, string(reminder.Status), reminder.RemindAt, reminder.ID, reminder.UserID)
+	`, reminder.Title, string(reminder.Status), reminder.RemindAt, reminder.FlagID, reminder.SubflagID, reminder.ID, reminder.UserID)
 
 	if err := row.Scan(&reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
@@ -75,17 +75,19 @@ func (r *ReminderRepository) Delete(ctx context.Context, userID, id string) erro
 
 func (r *ReminderRepository) Get(ctx context.Context, userID, id string) (domain.Reminder, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, user_id, title, status, remind_at, source_inbox_item_id, created_at, updated_at
+		SELECT id, user_id, title, status, remind_at, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.reminders
 		WHERE id = $1 AND user_id = $2
 		LIMIT 1
 	`, id, userID)
 
 	var remindAt sql.NullTime
+	var flagID sql.NullString
+	var subflagID sql.NullString
 	var sourceInboxID sql.NullString
 	var status string
 	var reminder domain.Reminder
-	if err := row.Scan(&reminder.ID, &reminder.UserID, &reminder.Title, &status, &remindAt, &sourceInboxID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
+	if err := row.Scan(&reminder.ID, &reminder.UserID, &reminder.Title, &status, &remindAt, &flagID, &subflagID, &sourceInboxID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return domain.Reminder{}, ErrNotFound
 		}
@@ -93,6 +95,8 @@ func (r *ReminderRepository) Get(ctx context.Context, userID, id string) (domain
 	}
 	reminder.Status = domain.ReminderStatus(status)
 	reminder.RemindAt = timePtrFromNull(remindAt)
+	reminder.FlagID = stringPtrFromNull(flagID)
+	reminder.SubflagID = stringPtrFromNull(subflagID)
 	reminder.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
 	return reminder, nil
 }
@@ -104,7 +108,7 @@ func (r *ReminderRepository) List(ctx context.Context, userID string, opts repos
 	}
 
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, user_id, title, status, remind_at, source_inbox_item_id, created_at, updated_at
+		SELECT id, user_id, title, status, remind_at, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.reminders
 		WHERE user_id = $1
 		ORDER BY remind_at NULLS LAST, created_at DESC
@@ -118,14 +122,18 @@ func (r *ReminderRepository) List(ctx context.Context, userID string, opts repos
 	items := make([]domain.Reminder, 0)
 	for rows.Next() {
 		var remindAt sql.NullTime
+		var flagID sql.NullString
+		var subflagID sql.NullString
 		var sourceInboxID sql.NullString
 		var status string
 		var reminder domain.Reminder
-		if err := rows.Scan(&reminder.ID, &reminder.UserID, &reminder.Title, &status, &remindAt, &sourceInboxID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
+		if err := rows.Scan(&reminder.ID, &reminder.UserID, &reminder.Title, &status, &remindAt, &flagID, &subflagID, &sourceInboxID, &reminder.CreatedAt, &reminder.UpdatedAt); err != nil {
 			return nil, nil, err
 		}
 		reminder.Status = domain.ReminderStatus(status)
 		reminder.RemindAt = timePtrFromNull(remindAt)
+		reminder.FlagID = stringPtrFromNull(flagID)
+		reminder.SubflagID = stringPtrFromNull(subflagID)
 		reminder.SourceInboxItemID = stringPtrFromNull(sourceInboxID)
 		items = append(items, reminder)
 	}

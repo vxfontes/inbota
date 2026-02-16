@@ -21,10 +21,7 @@ class SettingsComponentsPage extends StatelessWidget {
             context: context,
           ).body.build(),
           const SizedBox(height: 20),
-          const IBTextField(
-            label: 'Texto rápido',
-            hint: 'Escreva aqui...',
-          ),
+          const IBTextField(label: 'Texto rápido', hint: 'Escreva aqui...'),
           const SizedBox(height: 16),
           IBText('Buttons', context: context).subtitulo.build(),
           const SizedBox(height: 12),
@@ -43,11 +40,7 @@ class SettingsComponentsPage extends StatelessWidget {
                 variant: IBButtonVariant.ghost,
                 onPressed: () {},
               ),
-              const IBButton(
-                label: 'Loading',
-                loading: true,
-                onPressed: null,
-              ),
+              const IBButton(label: 'Loading', loading: true, onPressed: null),
             ],
           ),
           const SizedBox(height: 24),
@@ -63,9 +56,10 @@ class SettingsComponentsPage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           IBCard(
-            child: IBText('IBCard com padding padrão.', context: context)
-                .body
-                .build(),
+            child: IBText(
+              'IBCard com padding padrão.',
+              context: context,
+            ).body.build(),
           ),
           const SizedBox(height: 24),
           const IBEmptyState(
@@ -99,7 +93,10 @@ class SettingsComponentsPage extends StatelessWidget {
             runSpacing: 12,
             children: [
               IBIcon(IBIcon.alarmOutlined, color: AppColors.primary700),
-              IBIcon(IBIcon.eventAvailableOutlined, color: AppColors.success600),
+              IBIcon(
+                IBIcon.eventAvailableOutlined,
+                color: AppColors.success600,
+              ),
               IBIcon(IBIcon.shoppingBagOutlined, color: AppColors.warning500),
               IBIcon(IBIcon.stickyNote2Outlined, color: AppColors.ai600),
               IBIcon(
@@ -225,10 +222,10 @@ class SettingsComponentsPage extends StatelessWidget {
           const SizedBox(height: 6),
           IBText('Label', context: context).label.build(),
           const SizedBox(height: 12),
-          IBText('Centralizado', context: context)
-              .body
-              .align(TextAlign.center)
-              .build(),
+          IBText(
+            'Centralizado',
+            context: context,
+          ).body.align(TextAlign.center).build(),
           const SizedBox(height: 24),
           IBText('App Bar', context: context).subtitulo.build(),
           const SizedBox(height: 12),
@@ -255,17 +252,12 @@ class SettingsComponentsPage extends StatelessWidget {
           const SizedBox(height: 12),
           const SizedBox(
             height: kToolbarHeight + 16,
-            child: IBLightAppBar(
-              title: 'blabla',
-            ),
+            child: IBLightAppBar(title: 'blabla'),
           ),
           const SizedBox(height: 24),
           IBText('Bottom Bar', context: context).subtitulo.build(),
           const SizedBox(height: 12),
-          IBBottomNav(
-            currentIndex: 0,
-            onTap: (_) {},
-          ),
+          IBBottomNav(currentIndex: 0, onTap: (_) {}),
           const SizedBox(height: 24),
         ],
       ),

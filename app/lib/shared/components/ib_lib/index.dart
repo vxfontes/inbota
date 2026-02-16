@@ -4,6 +4,7 @@ export 'ib_bottom_nav.dart';
 export 'ib_button.dart';
 export 'ib_card.dart';
 export 'ib_chip.dart';
+export 'ib_color_picker.dart';
 export 'ib_date_field.dart';
 export 'ib_empty_state.dart';
 export 'ib_flags_field.dart';

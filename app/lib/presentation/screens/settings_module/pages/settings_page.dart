@@ -51,10 +51,17 @@ class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
                     onTap: () {},
                   ),
                   IBMenuItem(
+                    title: 'Contextos',
+                    subtitle: 'Gerenciar flags e subflags',
+                    icon: IBIcon.gridViewRounded,
+                    onTap: () => AppNavigation.push(AppRoutes.settingsContexts),
+                  ),
+                  IBMenuItem(
                     title: 'Componentes',
                     subtitle: 'Biblioteca visual',
-                    icon: IBIcon.gridViewRounded,
-                    onTap: () => AppNavigation.push(AppRoutes.settingsComponents),
+                    icon: IBIcon.starRounded,
+                    onTap: () =>
+                        AppNavigation.push(AppRoutes.settingsComponents),
                   ),
                 ],
               ),
@@ -99,10 +106,10 @@ class _SettingsPageState extends IBState<SettingsPage, SettingsController> {
                   }
                   return Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: IBText(error, context: context)
-                        .caption
-                        .color(AppColors.danger600)
-                        .build(),
+                    child: IBText(
+                      error,
+                      context: context,
+                    ).caption.color(AppColors.danger600).build(),
                   );
                 },
               ),

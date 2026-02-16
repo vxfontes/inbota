@@ -22,7 +22,10 @@ class SettingsController implements IBController {
     loading.value = false;
 
     return result.fold((failure) {
-      error.value = _failureMessage(failure, fallback: 'Nao foi possivel sair agora.');
+      error.value = _failureMessage(
+        failure,
+        fallback: 'Nao foi possivel sair agora.',
+      );
       return false;
     }, (_) => true);
   }
@@ -40,6 +43,8 @@ class SettingsController implements IBController {
   }
 
   String _failureMessage(Failure failure, {required String fallback}) {
-    return failure.message?.trim().isNotEmpty == true ? failure.message! : fallback;
+    return failure.message?.trim().isNotEmpty == true
+        ? failure.message!
+        : fallback;
   }
 }

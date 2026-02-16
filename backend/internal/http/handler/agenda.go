@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"
@@ -15,13 +16,23 @@ type AgendaHandler struct {
 	Events    *usecase.EventUsecase
 	Tasks     *usecase.TaskUsecase
 	Reminders *usecase.ReminderUsecase
+	Flags     *usecase.FlagUsecase
+	Subflags  *usecase.SubflagUsecase
 }
 
-func NewAgendaHandler(events *usecase.EventUsecase, tasks *usecase.TaskUsecase, reminders *usecase.ReminderUsecase) *AgendaHandler {
+func NewAgendaHandler(
+	events *usecase.EventUsecase,
+	tasks *usecase.TaskUsecase,
+	reminders *usecase.ReminderUsecase,
+	flags *usecase.FlagUsecase,
+	subflags *usecase.SubflagUsecase,
+) *AgendaHandler {
 	return &AgendaHandler{
 		Events:    events,
 		Tasks:     tasks,
 		Reminders: reminders,
+		Flags:     flags,
+		Subflags:  subflags,
 	}
 }
 
@@ -83,11 +94,72 @@ func (h *AgendaHandler) List(c *gin.Context) {
 	}
 
 	taskItems := make([]dto.TaskResponse, 0, len(tasks))
+
+	subflagIDs := make([]string, 0)
+	for _, task := range tasks {
+		if task.SubflagID != nil {
+			subflagIDs = append(subflagIDs, *task.SubflagID)
+		}
+	}
+
+	subflagsByID := make(map[string]domain.Subflag)
+	if h.Subflags != nil {
+		ids := uniqueStrings(subflagIDs)
+		if len(ids) > 0 {
+			subflags, err := h.Subflags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflagsByID = subflags
+		}
+	}
+
+	flagIDs := make([]string, 0)
+	for _, task := range tasks {
+		if task.FlagID != nil {
+			flagIDs = append(flagIDs, *task.FlagID)
+		}
+	}
+	for _, subflag := range subflagsByID {
+		flagIDs = append(flagIDs, subflag.FlagID)
+	}
+
+	flagsByID := make(map[string]domain.Flag)
+	if h.Flags != nil {
+		ids := uniqueStrings(flagIDs)
+		if len(ids) > 0 {
+			flags, err := h.Flags.GetByIDs(c.Request.Context(), userID, ids)
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			flagsByID = flags
+		}
+	}
+
 	for _, task := range tasks {
 		if task.DueAt == nil {
 			continue
 		}
-		taskItems = append(taskItems, toTaskResponse(task, nil, nil, nil))
+		var flag *domain.Flag
+		if task.FlagID != nil {
+			if f, ok := flagsByID[*task.FlagID]; ok {
+				flag = &f
+			}
+		}
+		var subflag *domain.Subflag
+		if task.SubflagID != nil {
+			if sf, ok := subflagsByID[*task.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		if flag == nil && subflag != nil {
+			if f, ok := flagsByID[subflag.FlagID]; ok {
+				flag = &f
+			}
+		}
+		taskItems = append(taskItems, toTaskResponse(task, nil, flag, subflag))
 	}
 
 	reminderItems := make([]dto.ReminderResponse, 0, len(reminders))

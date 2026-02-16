@@ -65,7 +65,7 @@ class PreLoginPage extends StatelessWidget {
                                   .build(),
                               const SizedBox(height: 12),
                               IBText(
-                                'Organize tarefas, lembretes e projetos em um só lugar com a ajuda da IA.',
+                                'Organize tarefas, lembretes, listas de compras e projetos em um só lugar.',
                                 context: context,
                               ).muted.align(TextAlign.center).build(),
                             ],

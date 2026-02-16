@@ -50,7 +50,13 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	writeLine(&sb, fmt.Sprintf("Locale: %s", strings.TrimSpace(input.Locale)))
 	writeLine(&sb, fmt.Sprintf("Timezone: %s", strings.TrimSpace(input.Timezone)))
 	if !input.Now.IsZero() {
-		writeLine(&sb, fmt.Sprintf("Now: %s", input.Now.UTC().Format(time.RFC3339)))
+		now := input.Now
+		if tz := strings.TrimSpace(input.Timezone); tz != "" {
+			if loc, err := time.LoadLocation(tz); err == nil {
+				now = input.Now.In(loc)
+			}
+		}
+		writeLine(&sb, fmt.Sprintf("Now (local): %s", now.Format(time.RFC3339)))
 	}
 	writeLine(&sb, "Raw text:")
 	writeLine(&sb, quoteBlock(input.RawText))
@@ -100,6 +106,11 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	writeLine(&sb, "- Always return one item only. Never return arrays at root level.")
 	writeLine(&sb, "- If the text has multiple actions, select the single most actionable one and set needs_review=true.")
 	writeLine(&sb, "- Use needs_review=true when unsure.")
+	writeLine(&sb, "- Interpret relative dates (today, tomorrow, next week) using the provided Timezone and Now (local). Never use UTC for relative dates.")
+	writeLine(&sb, "- Preserve explicit dates and times exactly as stated. Do not shift hours or dates; only format to RFC3339 with the correct timezone offset.")
+	writeLine(&sb, "- If a reminder time is not explicit, choose 09:00 in the user's local timezone and set needs_review=true.")
+	writeLine(&sb, "- Choose context from Available contexts and Context rules. Use Hinted context when relevant.")
+	writeLine(&sb, "- Do not invent flagId or subflagId. If no subflag applies, use null and set needs_review=true if uncertain.")
 	writeLine(&sb, "- If type=event then end must be >= start.")
 	writeLine(&sb, "- If type=shopping then items must be non-empty.")
 	writeLine(&sb, "- If type=reminder then payload.at must exist.")

@@ -75,6 +75,7 @@ O que existe hoje:
 - `flags.go` / `subflags.go`: CRUD de contextos.
 - `context_rules.go`: CRUD de regras keyword -> contexto.
 - `inbox.go`: CRUD do inbox e acoes (reprocess/confirm/dismiss).
+- `agenda.go`: feed combinado (events + tasks + reminders).
 - `tasks.go`, `reminders.go`, `events.go`: CRUD basico das entidades finais.
 - `shopping.go`: CRUD de listas e itens de compras.
 Nota:

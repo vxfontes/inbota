@@ -44,6 +44,7 @@ Com o `docker compose up`, a API usa `air` e recarrega ao salvar arquivos Go.
 - `GET /healthz`
 - `GET /readyz`
 - `GET /swagger-ui/index.html`
+- `GET /v1/agenda` (autenticado, feed combinado)
 
 ## Swagger (gerar docs)
 ```bash

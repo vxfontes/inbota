@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"net/url"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -20,7 +22,8 @@ type dbtx interface {
 
 // NewDB opens a Postgres connection pool.
 func NewDB(ctx context.Context, dsn string) (*DB, error) {
-	db, err := sql.Open("postgres", dsn)
+	normalizedDSN := normalizeDSN(dsn)
+	db, err := sql.Open("postgres", normalizedDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +41,27 @@ func NewDB(ctx context.Context, dsn string) (*DB, error) {
 	}
 
 	return &DB{DB: db}, nil
+}
+
+func normalizeDSN(dsn string) string {
+	parsed, err := url.Parse(dsn)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return dsn
+	}
+
+	query := parsed.Query()
+	if query.Get("sslmode") != "" {
+		return dsn
+	}
+
+	host := parsed.Hostname()
+	if strings.HasSuffix(host, ".supabase.co") || strings.HasSuffix(host, ".supabase.net") || strings.HasSuffix(host, ".supabase.com") {
+		query.Set("sslmode", "require")
+		parsed.RawQuery = query.Encode()
+		return parsed.String()
+	}
+
+	return dsn
 }
 
 // Check pings the database.

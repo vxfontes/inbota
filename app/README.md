@@ -15,7 +15,13 @@ cp .env.example .env
 set -a
 source .env
 set +a
-flutter run --dart-define=API_HOST="$API_HOST"
+flutter run --dart-define-from-file=.env
+```
+
+## Gerar IPA para iOS (macOS):
+```bash
+cd app
+flutter build ipa --release --dart-define-from-file=.env
 ```
 
 ## Configuracao

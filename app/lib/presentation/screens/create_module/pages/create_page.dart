@@ -38,7 +38,7 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     IBText(
-                      'Descreva em texto livre. Se mandar tudo em uma frase, o app tenta quebrar em itens automaticamente.',
+                      'Descreva do seu jeito. Iremos processar e criar itens organizados para você.',
                       context: context,
                     ).muted.build(),
                     const SizedBox(height: 10),
@@ -52,13 +52,13 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
                     ),
                     const SizedBox(height: 12),
                     IBButton(
-                      label: 'Processar com IA',
+                      label: 'Organizar',
                       loading: loading,
                       onPressed: loading ? null : controller.processText,
                     ),
                     const SizedBox(height: 8),
                     IBButton(
-                      label: 'Limpar texto',
+                      label: 'Limpar',
                       variant: IBButtonVariant.secondary,
                       onPressed: loading ? null : controller.clearInput,
                     ),
@@ -81,7 +81,7 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       IBText(
-                        'Resultado por linha',
+                        'Itens por linha',
                         context: context,
                       ).subtitulo.build(),
                       const SizedBox(height: 10),
@@ -109,10 +109,10 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IBText('Criar com IA', context: context).titulo.build(),
+        IBText('Criar', context: context).titulo.build(),
         const SizedBox(height: 6),
         IBText(
-          'A IA vai interpretar seus textos e criar tarefas, lembretes, eventos e listas de compras automaticamente.',
+          'Transforme texto em itens organizados: tarefas, lembretes, eventos e compras.',
           context: context,
         ).muted.build(),
       ],
@@ -121,9 +121,9 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
 
   Widget _buildSummary(BuildContext context, CreateBatchResult batchResult) {
     return IBOverviewCard(
-      title: 'Resumo do processamento',
+      title: 'Resumo',
       subtitle:
-          '${batchResult.successCount} de ${batchResult.totalInputs} linha(s) processadas com sucesso.',
+          '${batchResult.successCount} de ${batchResult.totalInputs} linha(s) processadas. Revise abaixo.',
       chips: [
         IBChip(
           label: 'Tarefas ${batchResult.tasksCount}',

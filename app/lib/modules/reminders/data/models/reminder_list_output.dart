@@ -1,5 +1,10 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import 'reminder_output.dart';
 
+part 'reminder_list_output.g.dart';
+
+@JsonSerializable()
 class ReminderListOutput {
   const ReminderListOutput({required this.items, this.nextCursor});
 
@@ -7,26 +12,20 @@ class ReminderListOutput {
   final String? nextCursor;
 
   factory ReminderListOutput.fromJson(Map<String, dynamic> json) {
-    final rawItems = json['items'];
-    final items = <ReminderOutput>[];
-
-    if (rawItems is List) {
-      for (final item in rawItems) {
-        if (item is Map<String, dynamic>) {
-          items.add(ReminderOutput.fromJson(item));
-        } else if (item is Map) {
-          items.add(
-            ReminderOutput.fromJson(
-              item.map((key, value) => MapEntry(key.toString(), value)),
-            ),
-          );
-        }
-      }
-    }
-
-    return ReminderListOutput(
-      items: items,
-      nextCursor: json['nextCursor']?.toString(),
-    );
+    return _$ReminderListOutputFromJson(json);
   }
+
+  factory ReminderListOutput.fromDynamic(dynamic value) {
+    if (value is Map<String, dynamic>) {
+      return ReminderListOutput.fromJson(value);
+    }
+    if (value is Map) {
+      return ReminderListOutput.fromJson(
+        value.map((key, val) => MapEntry(key.toString(), val)),
+      );
+    }
+    return const ReminderListOutput(items: []);
+  }
+
+  Map<String, dynamic> toJson() => _$ReminderListOutputToJson(this);
 }

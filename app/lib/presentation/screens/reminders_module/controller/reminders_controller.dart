@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/flags/data/models/flag_output.dart';
+import 'package:inbota/modules/flags/data/models/subflag_output.dart';
 import 'package:inbota/modules/flags/domain/usecases/get_flags_usecase.dart';
+import 'package:inbota/modules/flags/domain/usecases/get_subflags_by_flag_usecase.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_list_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/reminders/domain/usecases/get_reminders_usecase.dart';
+import 'package:inbota/modules/reminders/data/models/reminder_create_input.dart';
+import 'package:inbota/modules/reminders/domain/usecases/create_reminder_usecase.dart';
 import 'package:inbota/modules/tasks/data/models/task_create_input.dart';
 import 'package:inbota/modules/tasks/data/models/task_list_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
@@ -25,7 +29,9 @@ class RemindersController implements IBController {
     this._updateTaskUsecase,
     this._deleteTaskUsecase,
     this._getFlagsUsecase,
+    this._getSubflagsByFlagUsecase,
     this._getRemindersUsecase,
+    this._createReminderUsecase,
   );
 
   final CreateTaskUsecase _createTaskUsecase;
@@ -33,13 +39,17 @@ class RemindersController implements IBController {
   final UpdateTaskUsecase _updateTaskUsecase;
   final DeleteTaskUsecase _deleteTaskUsecase;
   final GetFlagsUsecase _getFlagsUsecase;
+  final GetSubflagsByFlagUsecase _getSubflagsByFlagUsecase;
   final GetRemindersUsecase _getRemindersUsecase;
+  final CreateReminderUsecase _createReminderUsecase;
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
   final ValueNotifier<List<TaskOutput>> tasks = ValueNotifier([]);
   final ValueNotifier<List<TaskOutput>> visibleTasks = ValueNotifier([]);
   final ValueNotifier<List<FlagOutput>> flags = ValueNotifier([]);
+  final ValueNotifier<Map<String, List<SubflagOutput>>> subflagsByFlag =
+      ValueNotifier({});
   final ValueNotifier<List<ReminderOutput>> reminders = ValueNotifier([]);
   final Set<String> _doneGraceVisibleTaskIds = <String>{};
   final Map<String, Timer> _hideDoneTaskTimers = <String, Timer>{};
@@ -55,6 +65,7 @@ class RemindersController implements IBController {
     tasks.dispose();
     visibleTasks.dispose();
     flags.dispose();
+    subflagsByFlag.dispose();
     reminders.dispose();
   }
 
@@ -85,6 +96,28 @@ class RemindersController implements IBController {
     );
 
     loading.value = false;
+  }
+
+  Future<void> loadSubflags(String flagId) async {
+    final trimmed = flagId.trim();
+    if (trimmed.isEmpty) return;
+    if (subflagsByFlag.value.containsKey(trimmed)) return;
+
+    final result = await _getSubflagsByFlagUsecase.call(
+      flagId: trimmed,
+      limit: 100,
+    );
+    result.fold(
+      (failure) =>
+          _setError(failure, fallback: 'Nao foi possivel carregar subflags.'),
+      (output) {
+        final next = Map<String, List<SubflagOutput>>.from(
+          subflagsByFlag.value,
+        );
+        next[trimmed] = _safeSubflagItems(output.items);
+        subflagsByFlag.value = next;
+      },
+    );
   }
 
   Future<bool> toggleTask(TaskOutput task, bool done) async {
@@ -191,6 +224,48 @@ class RemindersController implements IBController {
     );
   }
 
+  Future<bool> createReminder({
+    required String title,
+    DateTime? remindAt,
+    String? flagId,
+    String? subflagId,
+  }) async {
+    if (loading.value) return false;
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      error.value = 'Informe um título para o lembrete.';
+      return false;
+    }
+
+    loading.value = true;
+    error.value = null;
+
+    final result = await _createReminderUsecase.call(
+      ReminderCreateInput(
+        title: trimmed,
+        status: 'OPEN',
+        remindAt: remindAt,
+        flagId: flagId,
+        subflagId: subflagId,
+      ),
+    );
+
+    loading.value = false;
+
+    return result.fold(
+      (failure) {
+        _setError(failure, fallback: 'Nao foi possivel criar o lembrete.');
+        return false;
+      },
+      (created) {
+        final list = List<ReminderOutput>.from(reminders.value);
+        list.add(created);
+        reminders.value = list;
+        return true;
+      },
+    );
+  }
+
   Future<void> _refreshTasks() async {
     final result = await _getTasksUsecase.call(limit: 50);
     result.fold((_) {}, (data) => _setTasks(_safeTaskItems(data)));
@@ -242,6 +317,12 @@ class RemindersController implements IBController {
   }
 
   List<FlagOutput> _safeFlagItems(List<FlagOutput> items) {
+    final safe = items.where((item) => item.id.isNotEmpty).toList();
+    safe.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return safe;
+  }
+
+  List<SubflagOutput> _safeSubflagItems(List<SubflagOutput> items) {
     final safe = items.where((item) => item.id.isNotEmpty).toList();
     safe.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return safe;

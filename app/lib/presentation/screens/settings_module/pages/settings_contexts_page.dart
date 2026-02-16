@@ -93,7 +93,7 @@ class _SettingsContextsPageState
 
   Widget _buildAddFlagButton(bool disabled) {
     return SizedBox(
-      width: 132,
+      width: 92,
       child: IBButton(
         label: 'Nova flag',
         variant: IBButtonVariant.ghost,

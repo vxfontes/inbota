@@ -1,26 +1,37 @@
-# inbota
+# Inbota App (Flutter)
 
-A new Flutter project.
+App Flutter do Inbota. Esta pasta contem apenas o app (o backend fica em `../backend`).
 
-## Getting Started
+## Requisitos
+- Flutter 3.35.x
+- Dart (via Flutter)
 
-This project is a starting point for a Flutter application.
+## Rodar local
+```bash
+cd app
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Configuracao
+- A base URL da API fica em `lib/shared/config` (ajuste para `http://localhost:8080` ou IP local).
+- Todas as rotas protegidas usam `Authorization: Bearer <token>`.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Qualidade
+```bash
+cd app
+dart format .
+dart analyze
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-## gerar imagens
+## Gerar imagens
 
 1. Abra o SVG no Preview.
-2. File > Export... e salve como PNG 1024x1024 em app/assets/app_icon.png.
+2. File > Export... e salve como PNG 1024x1024 em `app/assets/app_icon.png`.
 
 Depois rode:
 
+```bash
 flutter pub run flutter_launcher_icons:main -f flutter_launcher_icons.yaml
 flutter pub run flutter_native_splash:create
+```

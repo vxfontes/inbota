@@ -15,6 +15,12 @@ EventOutput _$EventOutputFromJson(Map<String, dynamic> json) => EventOutput(
   endAt: json['endAt'] == null ? null : DateTime.parse(json['endAt'] as String),
   allDay: json['allDay'] as bool? ?? false,
   location: json['location'] as String?,
+  flag: json['flag'] == null
+      ? null
+      : FlagObjectOutput.fromJson(json['flag'] as Map<String, dynamic>),
+  subflag: json['subflag'] == null
+      ? null
+      : FlagObjectOutput.fromJson(json['subflag'] as Map<String, dynamic>),
   createdAt: json['createdAt'] == null
       ? null
       : DateTime.parse(json['createdAt'] as String),
@@ -31,6 +37,8 @@ Map<String, dynamic> _$EventOutputToJson(EventOutput instance) =>
       'endAt': instance.endAt?.toIso8601String(),
       'allDay': instance.allDay,
       'location': instance.location,
+      'flag': instance.flag,
+      'subflag': instance.subflag,
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
     };

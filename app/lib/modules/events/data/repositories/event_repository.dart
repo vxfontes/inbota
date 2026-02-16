@@ -1,7 +1,9 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:inbota/modules/events/data/models/agenda_output.dart';
+import 'package:inbota/modules/events/data/models/event_create_input.dart';
 import 'package:inbota/modules/events/data/models/event_list_output.dart';
+import 'package:inbota/modules/events/data/models/event_output.dart';
 import 'package:inbota/modules/events/domain/repositories/i_event_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
@@ -47,6 +49,34 @@ class EventRepository implements IEventRepository {
   }
 
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
+
+  @override
+  Future<Either<Failure, EventOutput>> createEvent(
+    EventCreateInput input,
+  ) async {
+    try {
+      final response = await _httpClient.post(
+        AppPath.events,
+        data: input.toJson(),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(EventOutput.fromDynamic(response.data));
+      }
+
+      return Left(
+        SaveFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao criar evento.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(SaveFailure(message: err.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, AgendaOutput>> fetchAgenda({int? limit}) async {

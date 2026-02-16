@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import 'package:inbota/modules/reminders/data/models/reminder_list_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
+import 'package:inbota/modules/reminders/data/models/reminder_create_input.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_update_input.dart';
 import 'package:inbota/modules/reminders/domain/repositories/i_reminder_repository.dart';
 import 'package:inbota/shared/errors/api_error_mapper.dart';
@@ -44,6 +45,34 @@ class ReminderRepository implements IReminderRepository {
       );
     } catch (err) {
       return Left(GetListFailure(message: err.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ReminderOutput>> createReminder(
+    ReminderCreateInput input,
+  ) async {
+    try {
+      final response = await _httpClient.post(
+        AppPath.reminders,
+        data: input.toJson(),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (_isSuccess(statusCode)) {
+        return Right(ReminderOutput.fromJson(_asMap(response.data)));
+      }
+
+      return Left(
+        SaveFailure(
+          message: ApiErrorMapper.fromResponseData(
+            response.data,
+            fallbackMessage: 'Erro ao criar lembrete.',
+          ),
+        ),
+      );
+    } catch (err) {
+      return Left(SaveFailure(message: err.toString()));
     }
   }
 

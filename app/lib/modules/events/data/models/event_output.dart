@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:inbota/modules/flags/data/models/flag_object_output.dart';
 
 part 'event_output.g.dart';
 
@@ -11,6 +12,8 @@ class EventOutput {
     this.endAt,
     this.allDay = false,
     this.location,
+    this.flag,
+    this.subflag,
     this.createdAt,
     this.updatedAt,
   });
@@ -21,8 +24,15 @@ class EventOutput {
   final DateTime? endAt;
   final bool allDay;
   final String? location;
+  final FlagObjectOutput? flag;
+  final FlagObjectOutput? subflag;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  String? get flagName => flag?.name;
+  String? get subflagName => subflag?.name;
+  String? get flagColor => flag?.color;
+  String? get subflagColor => subflag?.color;
 
   factory EventOutput.fromJson(Map<String, dynamic> json) {
     return _$EventOutputFromJson(json);

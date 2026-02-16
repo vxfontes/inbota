@@ -4,6 +4,7 @@ class ApiErrorMapper {
   static const Map<String, String> _defaultCodeMessages = {
     'connection_refused': 'Sem conexao com o servidor.',
     'timeout': 'Tempo de conexao esgotado.',
+    'invalid_payload': 'Dados invalidos. Verifique os campos.',
   };
 
   static String fromResponseData(

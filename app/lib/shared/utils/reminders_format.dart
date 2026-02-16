@@ -7,7 +7,7 @@ class RemindersFormat {
   static String taskSubtitle(TaskOutput task) {
     if (task.dueAt == null) return 'Sem data definida';
     final date = task.dueAt!.toLocal();
-    return 'Vence ${formatDate(date)}';
+    return 'Prazo: ${formatDate(date)}';
   }
 
   static String formatReminderTime(ReminderOutput reminder) {

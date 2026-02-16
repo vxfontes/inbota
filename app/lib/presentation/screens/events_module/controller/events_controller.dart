@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/modules/flags/data/models/flag_output.dart';
+import 'package:inbota/modules/flags/data/models/subflag_output.dart';
+import 'package:inbota/modules/flags/domain/usecases/get_flags_usecase.dart';
+import 'package:inbota/modules/flags/domain/usecases/get_subflags_by_flag_usecase.dart';
+import 'package:inbota/modules/events/data/models/event_create_input.dart';
+import 'package:inbota/modules/events/domain/usecases/create_event_usecase.dart';
 import 'package:inbota/modules/events/data/models/event_output.dart';
 import 'package:inbota/modules/events/domain/usecases/delete_event_usecase.dart';
 import 'package:inbota/modules/events/domain/usecases/get_agenda_usecase.dart';
@@ -16,12 +22,18 @@ class EventsController implements IBController {
     this._deleteEventUsecase,
     this._deleteTaskUsecase,
     this._deleteReminderUsecase,
+    this._createEventUsecase,
+    this._getFlagsUsecase,
+    this._getSubflagsByFlagUsecase,
   );
 
   final GetAgendaUsecase _getAgendaUsecase;
   final DeleteEventUsecase _deleteEventUsecase;
   final DeleteTaskUsecase _deleteTaskUsecase;
   final DeleteReminderUsecase _deleteReminderUsecase;
+  final CreateEventUsecase _createEventUsecase;
+  final GetFlagsUsecase _getFlagsUsecase;
+  final GetSubflagsByFlagUsecase _getSubflagsByFlagUsecase;
 
   final weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
   final months = [
@@ -41,6 +53,9 @@ class EventsController implements IBController {
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
+  final ValueNotifier<List<FlagOutput>> flags = ValueNotifier([]);
+  final ValueNotifier<Map<String, List<SubflagOutput>>> subflagsByFlag =
+      ValueNotifier({});
   final ValueNotifier<EventFeedFilter> selectedFilter = ValueNotifier(
     EventFeedFilter.all,
   );
@@ -61,6 +76,8 @@ class EventsController implements IBController {
   void dispose() {
     loading.dispose();
     error.dispose();
+    flags.dispose();
+    subflagsByFlag.dispose();
     selectedFilter.dispose();
     selectedDate.dispose();
     calendarDays.dispose();
@@ -91,9 +108,38 @@ class EventsController implements IBController {
     merged.sort((a, b) => a.date.compareTo(b.date));
     allItems.value = merged;
 
+    final flagsResult = await _getFlagsUsecase.call(limit: 100);
+    flagsResult.fold(
+      (failure) =>
+          _setError(failure, fallback: 'Nao foi possivel carregar flags.'),
+      (data) => flags.value = _safeFlagItems(data.items),
+    );
+
     _rebuildCalendarDays();
     _rebuildVisibleItems();
     loading.value = false;
+  }
+
+  Future<void> loadSubflags(String flagId) async {
+    final trimmed = flagId.trim();
+    if (trimmed.isEmpty) return;
+    if (subflagsByFlag.value.containsKey(trimmed)) return;
+
+    final result = await _getSubflagsByFlagUsecase.call(
+      flagId: trimmed,
+      limit: 100,
+    );
+    result.fold(
+      (failure) =>
+          _setError(failure, fallback: 'Nao foi possivel carregar subflags.'),
+      (output) {
+        final next = Map<String, List<SubflagOutput>>.from(
+          subflagsByFlag.value,
+        );
+        next[trimmed] = _safeSubflagItems(output.items);
+        subflagsByFlag.value = next;
+      },
+    );
   }
 
   void selectDate(DateTime date) {
@@ -138,18 +184,24 @@ class EventsController implements IBController {
   List<EventFeedItem> _eventItems(List<EventOutput> events) {
     return events
         .where((event) => event.id.isNotEmpty && event.startAt != null)
-        .map(
-          (event) => EventFeedItem(
-            id: event.id,
-            type: EventFeedItemType.event,
-            title: event.title,
-            date: event.startAt!.toLocal(),
-            endDate: event.endAt?.toLocal(),
-            secondary: event.location,
-            allDay: event.allDay,
-          ),
-        )
+        .map((event) => _eventItem(event))
         .toList(growable: false);
+  }
+
+  EventFeedItem _eventItem(EventOutput event) {
+    return EventFeedItem(
+      id: event.id,
+      type: EventFeedItemType.event,
+      title: event.title,
+      date: event.startAt!.toLocal(),
+      endDate: event.endAt?.toLocal(),
+      secondary: event.location,
+      flagLabel: _normalizeText(event.flagName),
+      subflagLabel: _normalizeText(event.subflagName),
+      flagColor: _normalizeText(event.flagColor),
+      subflagColor: _normalizeText(event.subflagColor),
+      allDay: event.allDay,
+    );
   }
 
   List<EventFeedItem> _taskItems(List<TaskOutput> tasks) {
@@ -187,9 +239,71 @@ class EventsController implements IBController {
             done: reminder.isDone,
             allDay:
                 reminder.remindAt!.hour == 0 && reminder.remindAt!.minute == 0,
+            flagLabel: _normalizeText(reminder.flagName),
+            subflagLabel: _normalizeText(reminder.subflagName),
+            flagColor: _normalizeText(reminder.flagColor),
+            subflagColor: _normalizeText(reminder.subflagColor),
           ),
         )
         .toList(growable: false);
+  }
+
+  Future<bool> createEvent({
+    required String title,
+    required DateTime? startAt,
+    required DateTime? endAt,
+    String? location,
+    String? flagId,
+    String? subflagId,
+  }) async {
+    if (loading.value) return false;
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      error.value = 'Informe um título para o evento.';
+      return false;
+    }
+    if (startAt == null || endAt == null) {
+      error.value = 'Defina data de início e fim do evento.';
+      return false;
+    }
+    if (endAt.isBefore(startAt)) {
+      error.value = 'A data de fim precisa ser após o início.';
+      return false;
+    }
+
+    loading.value = true;
+    error.value = null;
+
+    final result = await _createEventUsecase.call(
+      EventCreateInput(
+        title: trimmed,
+        startAt: startAt,
+        endAt: endAt,
+        allDay: false,
+        location: location,
+        flagId: flagId,
+        subflagId: subflagId,
+      ),
+    );
+
+    loading.value = false;
+
+    return result.fold(
+      (failure) {
+        _setError(failure, fallback: 'Nao foi possivel criar o evento.');
+        return false;
+      },
+      (created) {
+        if (created.startAt == null) return false;
+        final next = List<EventFeedItem>.from(allItems.value)
+          ..add(_eventItem(created));
+        next.sort((a, b) => a.date.compareTo(b.date));
+        allItems.value = next;
+        _rebuildCalendarDays();
+        _rebuildVisibleItems();
+        return true;
+      },
+    );
   }
 
   void _rebuildCalendarDays() {
@@ -289,6 +403,18 @@ class EventsController implements IBController {
     final cleaned = value?.trim();
     if (cleaned == null || cleaned.isEmpty) return null;
     return cleaned;
+  }
+
+  List<FlagOutput> _safeFlagItems(List<FlagOutput> items) {
+    final safe = items.where((item) => item.id.isNotEmpty).toList();
+    safe.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return safe;
+  }
+
+  List<SubflagOutput> _safeSubflagItems(List<SubflagOutput> items) {
+    final safe = items.where((item) => item.id.isNotEmpty).toList();
+    safe.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return safe;
   }
 }
 

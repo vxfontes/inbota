@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
+import 'package:inbota/presentation/screens/reminders_module/components/create_reminder_bottom_sheet.dart';
 import 'package:inbota/presentation/screens/reminders_module/components/create_todo_bottom_sheet.dart';
 import 'package:inbota/presentation/screens/reminders_module/controller/reminders_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
@@ -57,8 +58,6 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
                       context: context,
                     ).caption.color(AppColors.danger600).build(),
                   ],
-                  const SizedBox(height: 16),
-                  _buildQuickStats(context, reminders),
                   const SizedBox(height: 20),
                   _buildTodoSection(context, tasks),
                   _buildTodaySection(context, reminders),
@@ -80,35 +79,31 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IBText('Lembretes', context: context).titulo.build(),
-        const SizedBox(height: 6),
-        IBText(
-          'Priorize o que vence hoje e acompanhe os próximos dias.',
-          context: context,
-        ).muted.build(),
-      ],
-    );
-  }
-
-  Widget _buildQuickStats(
-    BuildContext context,
-    List<ReminderOutput> reminders,
-  ) {
-    final open = reminders.where((item) => !item.isDone).toList();
-    final done = reminders.where((item) => item.isDone).toList();
-    final today = _todayReminders(open);
-
-    return IBOverviewCard(
-      title: 'Resumo rápido',
-      subtitle:
-          'Você tem ${today.length} lembretes hoje e ${open.length} ativos.',
-      chips: [
-        IBChip(label: 'HOJE ${today.length}', color: AppColors.primary700),
-        IBChip(label: 'ATIVOS ${open.length}', color: AppColors.ai600),
-        IBChip(label: 'CONCLUÍDOS ${done.length}', color: AppColors.success600),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IBText('Lembretes e tarefas', context: context).titulo.build(),
+              const SizedBox(height: 6),
+              IBText(
+                'Priorize o que vence hoje e acompanhe os próximos dias.',
+                context: context,
+              ).muted.build(),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Adicionar lembrete',
+          onPressed: _openCreateReminder,
+          icon: const IBIcon(
+            IBIcon.addRounded,
+            color: AppColors.primary700,
+            size: 20,
+          ),
+        ),
       ],
     );
   }
@@ -279,6 +274,23 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
         onCreateTask: controller.createTask,
         pickTaskDate: _pickTaskDate,
         formatTaskDate: _formatTaskDate,
+      ),
+    );
+  }
+
+  Future<void> _openCreateReminder() async {
+    if (!mounted) return;
+
+    await IBBottomSheet.show<void>(
+      context: context,
+      isFitWithContent: true,
+      child: CreateReminderBottomSheet(
+        loadingListenable: controller.loading,
+        errorListenable: controller.error,
+        flagsListenable: controller.flags,
+        subflagsByFlagListenable: controller.subflagsByFlag,
+        onLoadSubflags: controller.loadSubflags,
+        onCreateReminder: controller.createReminder,
       ),
     );
   }

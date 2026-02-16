@@ -23,7 +23,10 @@ class Validators {
     return null;
   }
 
-  static String? localeAndTimezone({required String locale, required String timezone}) {
+  static String? localeAndTimezone({
+    required String locale,
+    required String timezone,
+  }) {
     if (locale.isEmpty || timezone.isEmpty) {
       return 'Configuracao do dispositivo invalida.';
     }

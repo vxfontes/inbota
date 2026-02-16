@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inbota/presentation/screens/events_module/components/event_calendar_strip.dart';
+import 'package:inbota/presentation/screens/events_module/components/create_event_bottom_sheet.dart';
 import 'package:inbota/presentation/screens/events_module/components/event_feed_item.dart';
 import 'package:inbota/presentation/screens/events_module/components/event_filters.dart';
 import 'package:inbota/presentation/screens/events_module/controller/events_controller.dart';
@@ -123,15 +124,31 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IBText('Agenda', context: context).titulo.build(),
-        const SizedBox(height: 6),
-        IBText(
-          'Eventos, tarefas e lembretes com data em um calendário único.',
-          context: context,
-        ).muted.build(),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IBText('Agenda', context: context).titulo.build(),
+              const SizedBox(height: 6),
+              IBText(
+                'Eventos, tarefas e lembretes com data em um calendário único.',
+                context: context,
+              ).muted.build(),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Adicionar evento',
+          onPressed: _openCreateEvent,
+          icon: const IBIcon(
+            IBIcon.addRounded,
+            color: AppColors.primary700,
+            size: 20,
+          ),
+        ),
       ],
     );
   }
@@ -252,6 +269,23 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _openCreateEvent() async {
+    if (!mounted) return;
+
+    await IBBottomSheet.show<void>(
+      context: context,
+      isFitWithContent: true,
+      child: CreateEventBottomSheet(
+        loadingListenable: controller.loading,
+        errorListenable: controller.error,
+        flagsListenable: controller.flags,
+        subflagsByFlagListenable: controller.subflagsByFlag,
+        onLoadSubflags: controller.loadSubflags,
+        onCreateEvent: controller.createEvent,
       ),
     );
   }

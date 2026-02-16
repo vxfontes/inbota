@@ -37,6 +37,7 @@ class IBTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       onChanged: onChanged,
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       minLines: minLines,
       maxLines: maxLines,
       style: const TextStyle(color: AppColors.text),

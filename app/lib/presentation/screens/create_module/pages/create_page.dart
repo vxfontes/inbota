@@ -30,6 +30,7 @@ class _CreatePageState extends IBState<CreatePage, CreateController> {
           color: AppColors.background,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
               _buildHeader(context),
               const SizedBox(height: 14),

@@ -129,6 +129,7 @@ class IBBottomSheet extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: resolvedPadding,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

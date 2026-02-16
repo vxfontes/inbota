@@ -12,8 +12,7 @@ class SettingsAccountPage extends StatefulWidget {
   State<SettingsAccountPage> createState() => _SettingsAccountPageState();
 }
 
-class _SettingsAccountPageState
-    extends IBState<SettingsAccountPage, Setti  fidngsAccountController> {
+class _SettingsAccountPageState extends IBState<SettingsAccountPage, SettingsAccountController> {
   @override
   void initState() {
     super.initState();
@@ -71,8 +70,6 @@ class _SettingsAccountPageState
   }
 
   Widget _buildProfileCard(BuildContext context, AuthUserModel? user) {
-    final userId = user?.id;
-
     return IBCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +99,6 @@ class _SettingsAccountPageState
             label: 'Fuso horario',
             value: _resolveValue(user?.timezone),
           ),
-          ],
         ],
       ),
     );

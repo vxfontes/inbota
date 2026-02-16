@@ -1,7 +1,7 @@
 package http
 
 // @title Inbota API
-// @version 0.0.1
+// @version 1.0.0
 // @description API do MVP do Inbota.
 // @host localhost:8080
 // @BasePath /

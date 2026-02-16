@@ -2,9 +2,26 @@ class ApiErrorMapper {
   ApiErrorMapper._();
 
   static const Map<String, String> _defaultCodeMessages = {
-    'connection_refused': 'Sem conexao com o servidor.',
-    'timeout': 'Tempo de conexao esgotado.',
-    'invalid_payload': 'Dados invalidos. Verifique os campos.',
+    'missing_required_fields': 'Campos obrigatórios ausentes.',
+    'connection_refused': 'Sem conexão com o servidor.',
+    'timeout': 'Tempo de conexão esgotado.',
+    'invalid_status': 'Status inválido.',
+    'invalid_source': 'Origem inválida.',
+    'invalid_type': 'Tipo inválido.',
+    'invalid_payload': 'Dados inválidos. Verifique os campos.',
+    'invalid_time_range': 'Intervalo de tempo inválido.',
+    'invalid_email': 'E-mail inválido.',
+    'invalid_password': 'Senha inválida.',
+    'invalid_display_name': 'Nome de exibição inválido.',
+    'invalid_credentials': 'Credenciais inválidas.',
+    'invalid_limit': 'Limite inválido.',
+    'invalid_cursor': 'Cursor inválido.',
+    'not_found': 'Recurso não encontrado.',
+    'dependency_missing': 'Dependência necessária não configurada.',
+    'invalid_auth_header': 'Cabeçalho de autorização inválido.',
+    'invalid_token': 'Token inválido.',
+    'unauthorized': 'Não autorizado.',
+    'internal_error': 'Erro interno do servidor.',
   };
 
   static String fromResponseData(

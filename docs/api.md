@@ -23,6 +23,8 @@ Guia detalhado da API HTTP do Inbota. Este documento complementa o Swagger.
 ```
 - Codigos comuns:
   - `missing_required_fields`
+  - `connection_refused`
+  - `timeout`
   - `invalid_status`
   - `invalid_source`
   - `invalid_type`

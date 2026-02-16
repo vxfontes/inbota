@@ -109,6 +109,7 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
                           timeIcon: item.allDay
                               ? IBIcon.eventAvailableOutlined
                               : IBIcon.alarmOutlined,
+                          footer: _buildContextFooter(item),
                         ),
                       ),
                     ),
@@ -183,6 +184,52 @@ class _EventsPageState extends IBState<EventsPage, EventsController> {
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  Widget? _buildContextFooter(EventFeedItem item) {
+    final flag = item.flagLabel?.trim();
+    final subflag = item.subflagLabel?.trim();
+
+    final hasFlag = flag != null && flag.isNotEmpty;
+    final hasSubflag = subflag != null && subflag.isNotEmpty;
+
+    if (!hasFlag && !hasSubflag) return null;
+
+    final chips = <Widget>[];
+    if (hasFlag) {
+      chips.add(
+        IBTagChip(
+          label: flag,
+          color: _parseHexColor(item.flagColor, fallback: AppColors.primary700),
+        ),
+      );
+    }
+    if (hasSubflag) {
+      chips.add(
+        IBTagChip(
+          label: subflag,
+          color: _parseHexColor(
+            item.subflagColor ?? item.flagColor,
+            fallback: AppColors.ai600,
+          ),
+        ),
+      );
+    }
+
+    return Wrap(spacing: 8, runSpacing: 8, children: chips);
+  }
+
+  Color _parseHexColor(String? value, {required Color fallback}) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) return fallback;
+
+    var hex = raw.toUpperCase().replaceAll('#', '');
+    if (hex.length == 6) hex = 'FF$hex';
+    if (hex.length != 8) return fallback;
+
+    final parsed = int.tryParse(hex, radix: 16);
+    if (parsed == null) return fallback;
+    return Color(parsed);
   }
 
   Widget _buildDeleteBackground() {

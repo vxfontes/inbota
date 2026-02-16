@@ -17,6 +17,7 @@ class IBItemCard extends StatelessWidget {
     this.done = false,
     this.doneLabel = 'Feito',
     this.timeIcon,
+    this.footer,
   });
 
   final String title;
@@ -28,6 +29,7 @@ class IBItemCard extends StatelessWidget {
   final IconData typeIcon;
   final String timeLabel;
   final IconData? timeIcon;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +98,7 @@ class IBItemCard extends StatelessWidget {
               ).caption.color(AppColors.primary700).build(),
             ],
           ),
+          if (footer != null) ...[const SizedBox(height: 10), footer!],
         ],
       ),
     );

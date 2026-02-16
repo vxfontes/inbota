@@ -162,6 +162,10 @@ class EventsController implements IBController {
             title: task.title,
             date: task.dueAt!.toLocal(),
             secondary: task.description,
+            flagLabel: _normalizeText(task.flagName),
+            subflagLabel: _normalizeText(task.subflagName),
+            flagColor: _normalizeText(task.flagColor),
+            subflagColor: _normalizeText(task.subflagColor),
             done: task.isDone,
             allDay: task.dueAt!.hour == 0 && task.dueAt!.minute == 0,
           ),
@@ -279,6 +283,12 @@ class EventsController implements IBController {
 
   static bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String? _normalizeText(String? value) {
+    final cleaned = value?.trim();
+    if (cleaned == null || cleaned.isEmpty) return null;
+    return cleaned;
   }
 }
 

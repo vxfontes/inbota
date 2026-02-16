@@ -6,6 +6,10 @@ class EventFeedItem {
     required this.date,
     this.endDate,
     this.secondary,
+    this.flagLabel,
+    this.subflagLabel,
+    this.flagColor,
+    this.subflagColor,
     this.done = false,
     this.allDay = false,
   });
@@ -16,6 +20,10 @@ class EventFeedItem {
   final DateTime date;
   final DateTime? endDate;
   final String? secondary;
+  final String? flagLabel;
+  final String? subflagLabel;
+  final String? flagColor;
+  final String? subflagColor;
   final bool done;
   final bool allDay;
 

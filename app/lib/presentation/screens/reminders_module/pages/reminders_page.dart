@@ -61,11 +61,8 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
                   _buildQuickStats(context, reminders),
                   const SizedBox(height: 20),
                   _buildTodoSection(context, tasks),
-                  const SizedBox(height: 24),
                   _buildTodaySection(context, reminders),
-                  const SizedBox(height: 24),
                   _buildUpcomingSection(context, reminders),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -153,6 +150,9 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     final items = _todayReminders(
       reminders.where((item) => !item.isDone).toList(),
     );
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return _buildReminderSection(
       context,
       title: 'Hoje',
@@ -168,6 +168,9 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     final items = _upcomingReminders(
       reminders.where((item) => !item.isDone).toList(),
     );
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return _buildReminderSection(
       context,
       title: 'Próximos dias',
@@ -186,6 +189,7 @@ class _RemindersPageState extends IBState<RemindersPage, RemindersController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (items.isNotEmpty) const SizedBox(height: 24),
         IBText(title, context: context).subtitulo.build(),
         const SizedBox(height: 12),
         if (items.isEmpty)

@@ -40,8 +40,27 @@ inbota/
 
 - App: Flutter 3.35.x + Dart
 - Backend: Go 1.25.x + Gin
-- Banco: PostgreSQL 18
-- IA: provedor compativel com endpoint de chat completions (ex.: Groq)
+- Banco: PostgreSQL (Supabase)
+- IA: Groq (OpenAI-compatible chat completions)
+- Deploy API: Render
+
+## Infra e servicos em producao
+
+O projeto esta configurado com os seguintes servicos:
+
+- IA (Groq): classificacao e estruturacao de itens do Inbox para `task`, `reminder`, `event` e `shopping`.
+  - Link: [Groq](https://groq.com/)
+  - API docs: [Groq OpenAI-compatible API](https://console.groq.com/docs/openai)
+- Banco de dados (Supabase): PostgreSQL gerenciado para persistencia de usuarios, inbox, sugestoes e entidades finais.
+  - Link: [Supabase](https://supabase.com/)
+  - Console: [Supabase Dashboard](https://supabase.com/dashboard)
+- API em producao (Render): servico backend Go hospedado no Render.
+  - Link: [Render](https://render.com/)
+  - Docs: [Render Web Services](https://render.com/docs/web-services)
+- Keep-alive com Cron: ping automatico da API a cada 15 minutos para manter o servico ativo.
+  - Console: [cron-job.org](https://console.cron-job.org/jobs)
+  - Plataforma: [cron-job.org](https://cron-job.org/)
+  - Sugestao de endpoint monitorado: `GET /healthz` (ex.: `https://<seu-servico>.onrender.com/healthz`)
 
 ## Como rodar local
 

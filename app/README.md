@@ -24,6 +24,12 @@ cd app
 flutter build ipa --release --dart-define-from-file=.env
 ```
 
+## Gerar APK para Android:
+```bash
+cd app
+flutter build apk --release --dart-define-from-file=.env
+```
+
 ## Configuracao
 - A base URL da API usa `API_HOST` via `--dart-define` (arquivo: `lib/shared/config/app_env.dart`).
 - Nao commite `.env` com valores reais. O repositório inclui apenas `.env.example`.

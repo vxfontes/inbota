@@ -87,6 +87,25 @@ class HomeController implements IBController {
     return list.take(5).toList(growable: false);
   }
 
+  List<TaskOutput> get tasksWithDate {
+    return openTasks
+        .where((item) => item.dueAt != null)
+        .toList(growable: false);
+  }
+
+  List<TaskOutput> get upcomingTasks {
+    final now = DateTime.now();
+    final list = tasksWithDate
+        .where((item) => !item.dueAt!.toLocal().isBefore(now))
+        .toList();
+    list.sort((a, b) => a.dueAt!.toLocal().compareTo(b.dueAt!.toLocal()));
+    return list;
+  }
+
+  List<TaskOutput> get homeUpcomingTasksPreview {
+    return upcomingTasks.take(4).toList(growable: false);
+  }
+
   List<ReminderOutput> get openReminders {
     return agenda.value.reminders.where((item) => !item.isDone).toList();
   }
@@ -242,6 +261,32 @@ class HomeController implements IBController {
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
     return lists.take(3).toList(growable: false);
+  }
+
+  int get tasksTodayCount {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+    return tasksWithDate.where((item) {
+      final date = item.dueAt?.toLocal();
+      if (date == null) return false;
+      return !date.isBefore(start) && date.isBefore(end);
+    }).length;
+  }
+
+  int get totalTasksCount => agenda.value.tasks.length;
+  int get doneTasksCount => totalTasksCount - openTasksCount;
+
+  int get totalRemindersCount => agenda.value.reminders.length;
+  int get doneRemindersCount => totalRemindersCount - openReminders.length;
+
+  int get actionItemsTotalCount => totalTasksCount + totalRemindersCount;
+
+  int get actionItemsDoneCount => doneTasksCount + doneRemindersCount;
+
+  double get actionCompletionRate {
+    if (actionItemsTotalCount == 0) return 0;
+    return actionItemsDoneCount / actionItemsTotalCount;
   }
 
   Future<void> load() async {

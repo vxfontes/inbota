@@ -57,6 +57,6 @@
 			<true/>
 		</dict>
 		<key>NSLocalNetworkUsageDescription</key>
-		<string>Permite conectar ao servidor local para desenvolvimento.</string>
+		<string>Permite acessar a rede local (Wi-Fi) para conectar ao servidor.</string>
 	</dict>
 </plist>

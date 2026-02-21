@@ -23,9 +23,9 @@ class _SplashPageState extends IBState<SplashPage, SplashController> {
   }
 
   Future<void> _bootstrap() async {
-    final success = await controller.check();
-    if (!success || !mounted) return;
-    AppNavigation.replace(AppRoutes.auth);
+    final shouldGoHome = await controller.check();
+    if (shouldGoHome == null || !mounted) return;
+    AppNavigation.replace(shouldGoHome ? AppRoutes.rootHome : AppRoutes.auth);
   }
 
   @override

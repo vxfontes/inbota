@@ -76,13 +76,11 @@ class _HomePageState extends IBState<HomePage, HomeController> {
                 _buildOverviewSection(context),
                 const SizedBox(height: 20),
                 _buildRoutinesSection(),
-                const SizedBox(height: 20),
                 _buildTodoSection(),
                 const SizedBox(height: 20),
                 _buildEventsSection(context),
                 const SizedBox(height: 20),
                 _buildReminderSection(context),
-                const SizedBox(height: 20),
                 _buildShoppingSection(context),
                 const SizedBox(height: 12),
               ],
@@ -252,7 +250,9 @@ class _HomePageState extends IBState<HomePage, HomeController> {
 
   Widget _buildRoutinesSection() {
     final routines = controller.routines.value;
+    final pending = routines.where((r) => !r.isCompletedToday).toList();
     if (routines.isEmpty) return const SizedBox.shrink();
+    if (pending.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,10 +268,10 @@ class _HomePageState extends IBState<HomePage, HomeController> {
           )).toList(),
           emptyLabel: 'Todas as rotinas concluídas!',
           onToggle: (index, done) {
-            final pending = routines.where((r) => !r.isCompletedToday).toList();
             controller.toggleRoutine(pending[index], done);
           },
         ),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -342,22 +342,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
 
   Widget _buildReminderSection(BuildContext context) {
     final reminders = controller.homeUpcomingRemindersPreview;
-    if (reminders.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(context, 'Proximos lembretes'),
-          const SizedBox(height: 12),
-          const IBCard(
-            child: IBEmptyState(
-              title: 'Sem lembretes proximos',
-              subtitle: 'Quando houver novos lembretes, eles aparecem aqui.',
-              icon: IBHugeIcon.reminder,
-            ),
-          ),
-        ],
-      );
-    }
+    if (reminders.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,6 +362,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
                 if (i != reminders.length - 1)
                   const Divider(height: 20, color: AppColors.border),
               ],
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -386,22 +372,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
 
   Widget _buildShoppingSection(BuildContext context) {
     final lists = controller.homeShoppingListsPreview;
-    if (lists.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(context, 'Compras em aberto'),
-          const SizedBox(height: 12),
-          const IBCard(
-            child: IBEmptyState(
-              title: 'Sem listas pendentes',
-              subtitle: 'As listas de compras pendentes aparecem aqui.',
-              icon: IBHugeIcon.shoppingBag,
-            ),
-          ),
-        ],
-      );
-    }
+    if (lists.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

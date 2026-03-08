@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_list_output.dart';
+import 'package:inbota/presentation/routes/app_navigation.dart';
+import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/presentation/screens/home_module/controller/home_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -107,6 +109,11 @@ class _HomePageState extends IBState<HomePage, HomeController> {
               ).muted.build(),
             ],
           ),
+        ),
+        IconButton(
+          tooltip: 'Ver todos os lembretes',
+          onPressed: () => AppNavigation.push(AppRoutes.rootReminders),
+          icon: const IBIcon(IBIcon.alarmOutlined, color: AppColors.primary700),
         ),
         IconButton(
           tooltip: 'Atualizar',

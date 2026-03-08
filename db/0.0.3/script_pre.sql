@@ -56,3 +56,4 @@ CREATE INDEX IF NOT EXISTS idx_routines_user_active      ON inbota.routines (use
 CREATE INDEX IF NOT EXISTS idx_routines_weekdays         ON inbota.routines USING GIN (weekdays);
 CREATE INDEX IF NOT EXISTS idx_routine_exceptions_lookup ON inbota.routine_exceptions (routine_id, exception_date);
 CREATE INDEX IF NOT EXISTS idx_routine_completions_date  ON inbota.routine_completions (routine_id, completed_on DESC);
+commit;

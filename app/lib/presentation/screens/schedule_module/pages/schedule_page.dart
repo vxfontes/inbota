@@ -137,6 +137,8 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
 
   Widget _buildWeekdayTabs(int selectedIndex) {
     final weekDays = controller.currentWeekDays;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
     return SizedBox(
       height: 64,
@@ -150,10 +152,12 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
           final date = weekDays[index];
           final dayStr = date.day.toString().padLeft(2, '0');
           
-          final textColor =
-              isSelected ? AppColors.surface : AppColors.text;
-          final dateColor =
-              isSelected ? AppColors.surface.withValues(alpha: 0.8) : AppColors.textMuted;
+          final isToday = date.year == today.year && 
+                         date.month == today.month && 
+                         date.day == today.day;
+
+          final textColor = isSelected ? AppColors.surface : AppColors.text;
+          final dateColor = isSelected ? AppColors.surface.withValues(alpha: 0.8) : AppColors.textMuted;
 
           return InkWell(
             onTap: () => controller.selectWeekdayIndex(index),
@@ -166,7 +170,10 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
                 color: isSelected ? AppColors.primary700 : AppColors.surfaceSoft,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary700 : AppColors.border,
+                  color: isSelected 
+                      ? AppColors.primary700 
+                      : (isToday ? AppColors.primary600.withValues(alpha: 0.5) : AppColors.border),
+                  width: isToday && !isSelected ? 2 : 1,
                 ),
               ),
               child: Column(
@@ -175,6 +182,7 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
                   IBText(label, context: context)
                       .label
                       .color(textColor)
+                      .weight(isToday ? FontWeight.w800 : FontWeight.w400)
                       .build(),
                   const SizedBox(height: 2),
                   IBText(dayStr, context: context)
@@ -293,8 +301,7 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
           secondary: secondaryLabel,
           done: routine.isCompletedToday,
           doneLabel: 'Concluída',
-          // TODO: decidir se vai implementar toggle de conclusão de rotina (naquele dia)
-          // onToggle: (val) => controller.toggleRoutine(routine, val),
+          onToggle: (val) => controller.toggleRoutine(routine, val),
           typeLabel: typeLabel,
           typeColor: cardColor,
           typeIcon: IBIcon.repeatRounded,

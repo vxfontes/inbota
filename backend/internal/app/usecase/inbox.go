@@ -25,6 +25,7 @@ type InboxUsecase struct {
 	Events          repository.EventRepository
 	ShoppingLists   repository.ShoppingListRepository
 	ShoppingItems   repository.ShoppingItemRepository
+	RoutinesUsecase *RoutineUsecase
 	PromptBuilder   *service.PromptBuilder
 	AIClient        service.AIClient
 	SchemaValidator *service.AiSchemaValidator
@@ -58,6 +59,7 @@ type ConfirmResult struct {
 	Event         *domain.Event
 	ShoppingList  *domain.ShoppingList
 	ShoppingItems []domain.ShoppingItem
+	Routine       *domain.Routine
 }
 
 func (uc *InboxUsecase) CreateInboxItem(ctx context.Context, userID string, source *string, rawText string, rawMediaURL *string) (domain.InboxItem, error) {
@@ -473,8 +475,19 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	var flagID *string
 	var subflagID *string
 	if validated.Output.Context != nil {
-		flagID = normalizeOptionalString(validated.Output.Context.FlagID)
-		subflagID = normalizeOptionalString(validated.Output.Context.SubflagID)
+		rawFlagID := normalizeOptionalString(validated.Output.Context.FlagID)
+		rawSubflagID := normalizeOptionalString(validated.Output.Context.SubflagID)
+		
+		if uc.RoutinesUsecase != nil {
+			var err error
+			flagID, subflagID, err = uc.RoutinesUsecase.ResolveFlagAndSubflag(ctx, userID, rawFlagID, rawSubflagID)
+			if err != nil {
+				return ConfirmResult{}, err
+			}
+		} else {
+			flagID = rawFlagID
+			subflagID = rawSubflagID
+		}
 	}
 	if uc.TxRunner != nil {
 		if err := uc.TxRunner.WithTx(ctx, func(tx repository.TxRepositories) error {
@@ -583,6 +596,43 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 					items = append(items, created)
 				}
 				result.ShoppingItems = items
+			case domain.AiSuggestionTypeRoutine:
+				if tx.Routines == nil {
+					return ErrDependencyMissing
+				}
+				routinePayload, ok := validated.Payload.(service.RoutinePayload)
+				if !ok {
+					return ErrInvalidPayload
+				}
+				startsOn := time.Now().Format("2006-01-02")
+				if routinePayload.StartsOn != nil {
+					startsOn = *routinePayload.StartsOn
+				}
+				routine := domain.Routine{
+					UserID:            userID,
+					Title:             title,
+					RecurrenceType:    routinePayload.RecurrenceType,
+					Weekdays:          routinePayload.Weekdays,
+					StartTime:         routinePayload.StartTime,
+					EndTime:           routinePayload.EndTime,
+					WeekOfMonth:       routinePayload.WeekOfMonth,
+					StartsOn:          startsOn,
+					EndsOn:            routinePayload.EndsOn,
+					IsActive:          true,
+					FlagID:            flagID,
+					SubflagID:         subflagID,
+					SourceInboxItemID: &item.ID,
+				}
+				if uc.RoutinesUsecase != nil {
+					if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
+						return err
+					}
+				}
+				created, err := tx.Routines.Create(ctx, routine)
+				if err != nil {
+					return err
+				}
+				result.Routine = &created
 			default:
 				return ErrInvalidType
 			}
@@ -699,6 +749,45 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				items = append(items, created)
 			}
 			result.ShoppingItems = items
+		case domain.AiSuggestionTypeRoutine:
+			if uc.RoutinesUsecase == nil {
+				return ConfirmResult{}, ErrDependencyMissing
+			}
+			routinePayload, ok := validated.Payload.(service.RoutinePayload)
+			if !ok {
+				return ConfirmResult{}, ErrInvalidPayload
+			}
+			startsOn := time.Now().Format("2006-01-02")
+			if routinePayload.StartsOn != nil {
+				startsOn = *routinePayload.StartsOn
+			}
+			routine := domain.Routine{
+				UserID:            userID,
+				Title:             title,
+				RecurrenceType:    routinePayload.RecurrenceType,
+				Weekdays:          routinePayload.Weekdays,
+				StartTime:         routinePayload.StartTime,
+				EndTime:           routinePayload.EndTime,
+				WeekOfMonth:       routinePayload.WeekOfMonth,
+				StartsOn:          startsOn,
+				EndsOn:            routinePayload.EndsOn,
+				IsActive:          true,
+				FlagID:            flagID,
+				SubflagID:         subflagID,
+				SourceInboxItemID: &item.ID,
+			}
+			if uc.RoutinesUsecase != nil {
+				if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
+					return ConfirmResult{}, err
+				}
+				created, err := uc.RoutinesUsecase.Routines.Create(ctx, routine)
+				if err != nil {
+					return ConfirmResult{}, err
+				}
+				result.Routine = &created
+			} else {
+				return ConfirmResult{}, ErrDependencyMissing
+			}
 		default:
 			return ConfirmResult{}, ErrInvalidType
 		}

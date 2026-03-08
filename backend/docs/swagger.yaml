@@ -836,7 +836,7 @@ paths:
   /v1/agenda:
     get:
       parameters:
-      - description: Limite por tipo (events/tasks/reminders). Max 200.
+      - description: Limite de itens. Max 1000.
         in: query
         name: limit
         type: integer

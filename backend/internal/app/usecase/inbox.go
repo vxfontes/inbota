@@ -107,7 +107,7 @@ func (uc *InboxUsecase) ListInboxItems(ctx context.Context, userID string, input
 		filter.Source = &parsed
 	}
 
-	items, next, err := uc.Inbox.List(ctx, userID, filter, opts)
+	items, next, err := uc.Inbox.ListWithSuggestion(ctx, userID, filter, opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,17 +115,18 @@ func (uc *InboxUsecase) ListInboxItems(ctx context.Context, userID string, input
 	results := make([]InboxItemResult, 0, len(items))
 	for _, item := range items {
 		var suggestion *domain.AiSuggestion
-		if uc.Suggestions != nil {
-			latest, err := uc.Suggestions.GetLatestByInboxItem(ctx, userID, item.ID)
-			if err != nil {
-				if !errors.Is(err, postgres.ErrNotFound) {
-					return nil, nil, err
-				}
-			} else {
-				suggestion = &latest
+		if item.SuggestionID != nil {
+			suggestion = &domain.AiSuggestion{
+				ID:          *item.SuggestionID,
+				UserID:      item.UserID,
+				InboxItemID: item.ID,
+				Type:        domain.AiSuggestionType(*item.SuggestionType),
+				Title:       *item.SuggestionTitle,
+				Confidence:  item.SuggestionConfidence,
+				PayloadJSON: item.PayloadJSON,
 			}
 		}
-		results = append(results, InboxItemResult{Item: item, Suggestion: suggestion})
+		results = append(results, InboxItemResult{Item: item.InboxItem, Suggestion: suggestion})
 	}
 
 	return results, next, nil
@@ -135,24 +136,25 @@ func (uc *InboxUsecase) GetInboxItem(ctx context.Context, userID, id string) (In
 	if userID == "" || id == "" {
 		return InboxItemResult{}, ErrMissingRequiredFields
 	}
-	item, err := uc.Inbox.Get(ctx, userID, id)
+	item, err := uc.Inbox.GetWithSuggestion(ctx, userID, id)
 	if err != nil {
 		return InboxItemResult{}, err
 	}
 
 	var suggestion *domain.AiSuggestion
-	if uc.Suggestions != nil {
-		latest, err := uc.Suggestions.GetLatestByInboxItem(ctx, userID, item.ID)
-		if err != nil {
-			if !errors.Is(err, postgres.ErrNotFound) {
-				return InboxItemResult{}, err
-			}
-		} else {
-			suggestion = &latest
+	if item.SuggestionID != nil {
+		suggestion = &domain.AiSuggestion{
+			ID:          *item.SuggestionID,
+			UserID:      item.UserID,
+			InboxItemID: item.ID,
+			Type:        domain.AiSuggestionType(*item.SuggestionType),
+			Title:       *item.SuggestionTitle,
+			Confidence:  item.SuggestionConfidence,
+			PayloadJSON: item.PayloadJSON,
 		}
 	}
 
-	return InboxItemResult{Item: item, Suggestion: suggestion}, nil
+	return InboxItemResult{Item: item.InboxItem, Suggestion: suggestion}, nil
 }
 
 func (uc *InboxUsecase) GetInboxItemsByIDs(ctx context.Context, userID string, ids []string) (map[string]domain.InboxItem, error) {

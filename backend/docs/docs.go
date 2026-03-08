@@ -70,7 +70,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Limite por tipo (events/tasks/reminders). Max 200.",
+                        "description": "Limite de itens. Max 1000.",
                         "name": "limit",
                         "in": "query"
                     }

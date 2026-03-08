@@ -79,7 +79,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		return domain.Routine{}, ErrInvalidPayload
 	}
 
-	resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, input.FlagID, input.SubflagID)
+	resolvedFlagID, resolvedSubflagID, err := uc.ResolveFlagAndSubflag(ctx, userID, input.FlagID, input.SubflagID)
 	if err != nil {
 		return domain.Routine{}, err
 	}
@@ -106,7 +106,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		SubflagID:      resolvedSubflagID,
 	}
 
-	if err := uc.checkOverlap(ctx, userID, "", routine.Weekdays, routine.StartTime, routine.EndTime); err != nil {
+	if err := uc.Validate(ctx, routine); err != nil {
 		return domain.Routine{}, err
 	}
 
@@ -201,6 +201,40 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 	}
 
 	return uc.Routines.Update(ctx, routine)
+}
+
+func (uc *RoutineUsecase) Validate(ctx context.Context, routine domain.Routine) error {
+	if routine.UserID == "" || routine.Title == "" {
+		return ErrMissingRequiredFields
+	}
+
+	if len(routine.Weekdays) == 0 {
+		return ErrMissingRequiredFields
+	}
+
+	if routine.StartTime == "" || routine.EndTime == "" {
+		return ErrMissingRequiredFields
+	}
+
+	validRecurrenceTypes := map[string]bool{
+		"weekly":       true,
+		"biweekly":     true,
+		"triweekly":    true,
+		"monthly_week": true,
+	}
+	recurrenceType := routine.RecurrenceType
+	if recurrenceType == "" {
+		recurrenceType = "weekly"
+	}
+	if !validRecurrenceTypes[recurrenceType] {
+		return ErrInvalidPayload
+	}
+
+	if recurrenceType == "monthly_week" && routine.WeekOfMonth == nil {
+		return ErrInvalidPayload
+	}
+
+	return uc.checkOverlap(ctx, routine.UserID, routine.ID, routine.Weekdays, routine.StartTime, routine.EndTime)
 }
 
 func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID string, weekdays []int, startTime string, endTime string) error {
@@ -514,7 +548,7 @@ func (uc *RoutineUsecase) GetTodaySummary(ctx context.Context, userID string) (i
 	return total, completed, nil
 }
 
-func (uc *RoutineUsecase) resolveFlagAndSubflag(ctx context.Context, userID string, flagID *string, subflagID *string) (*string, *string, error) {
+func (uc *RoutineUsecase) ResolveFlagAndSubflag(ctx context.Context, userID string, flagID *string, subflagID *string) (*string, *string, error) {
 	resolvedFlagID := normalizeOptionalString(flagID)
 	resolvedSubflagID := normalizeOptionalString(subflagID)
 

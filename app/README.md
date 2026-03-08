@@ -48,6 +48,7 @@ dart analyze
 ## gerar json_serializable
 ```bash
 cd app
+find . -name "*.g.dart" -type f -delete
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
 

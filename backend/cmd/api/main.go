@@ -135,6 +135,7 @@ func main() {
 			Events:          eventRepo,
 			ShoppingLists:   shoppingListRepo,
 			ShoppingItems:   shoppingItemRepo,
+			RoutinesUsecase: routineUC,
 			PromptBuilder:   service.NewPromptBuilder(),
 			AIClient:        aiClient,
 			SchemaValidator: service.NewAiSchemaValidator(),

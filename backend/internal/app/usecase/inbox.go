@@ -25,7 +25,7 @@ type InboxUsecase struct {
 	Events          repository.EventRepository
 	ShoppingLists   repository.ShoppingListRepository
 	ShoppingItems   repository.ShoppingItemRepository
-	Routines        repository.RoutineRepository
+	RoutinesUsecase *RoutineUsecase
 	PromptBuilder   *service.PromptBuilder
 	AIClient        service.AIClient
 	SchemaValidator *service.AiSchemaValidator
@@ -475,8 +475,19 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	var flagID *string
 	var subflagID *string
 	if validated.Output.Context != nil {
-		flagID = normalizeOptionalString(validated.Output.Context.FlagID)
-		subflagID = normalizeOptionalString(validated.Output.Context.SubflagID)
+		rawFlagID := normalizeOptionalString(validated.Output.Context.FlagID)
+		rawSubflagID := normalizeOptionalString(validated.Output.Context.SubflagID)
+		
+		if uc.RoutinesUsecase != nil {
+			var err error
+			flagID, subflagID, err = uc.RoutinesUsecase.ResolveFlagAndSubflag(ctx, userID, rawFlagID, rawSubflagID)
+			if err != nil {
+				return ConfirmResult{}, err
+			}
+		} else {
+			flagID = rawFlagID
+			subflagID = rawSubflagID
+		}
 	}
 	if uc.TxRunner != nil {
 		if err := uc.TxRunner.WithTx(ctx, func(tx repository.TxRepositories) error {
@@ -611,6 +622,11 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 					FlagID:            flagID,
 					SubflagID:         subflagID,
 					SourceInboxItemID: &item.ID,
+				}
+				if uc.RoutinesUsecase != nil {
+					if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
+						return err
+					}
 				}
 				created, err := tx.Routines.Create(ctx, routine)
 				if err != nil {
@@ -760,11 +776,18 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				SubflagID:         subflagID,
 				SourceInboxItemID: &item.ID,
 			}
-			created, err := uc.Routines.Create(ctx, routine)
-			if err != nil {
-				return ConfirmResult{}, err
+			if uc.RoutinesUsecase != nil {
+				if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
+					return ConfirmResult{}, err
+				}
+				created, err := uc.RoutinesUsecase.Routines.Create(ctx, routine)
+				if err != nil {
+					return ConfirmResult{}, err
+				}
+				result.Routine = &created
+			} else {
+				return ConfirmResult{}, ErrDependencyMissing
 			}
-			result.Routine = &created
 		default:
 			return ConfirmResult{}, ErrInvalidType
 		}

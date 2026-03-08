@@ -167,11 +167,9 @@ class _RoutineDetailBottomSheetState extends State<RoutineDetailBottomSheet> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                const IBIcon(IBIcon.checkCircleOutlineRounded, color: AppColors.success600, size: 18),
+                const IBIcon(IBIcon.checkCircleOutlineRounded, color: AppColors.primary600, size: 18),
                 const SizedBox(width: 8),
                 IBText(_formatHistoryDate(h.completedOn), context: context).body.build(),
-                const Spacer(),
-                IBText('Concluída', context: context).caption.color(AppColors.success600).build(),
               ],
             ),
           )),

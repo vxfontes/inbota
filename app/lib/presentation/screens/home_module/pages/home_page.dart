@@ -135,7 +135,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
     if (summary == null || summary.total == 0) return const SizedBox.shrink();
 
     final percent = summary.total > 0 ? summary.completed / summary.total : 0.0;
-    final color = percent >= 1.0 ? AppColors.success600 : AppColors.primary600;
+    const color = AppColors.primary600;
 
     return IBCard(
       child: Column(
@@ -154,13 +154,13 @@ class _HomePageState extends IBState<HomePage, HomeController> {
             child: LinearProgressIndicator(
               value: percent,
               backgroundColor: AppColors.surfaceSoft,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+              valueColor: const AlwaysStoppedAnimation<Color>(color),
               minHeight: 8,
             ),
           ),
           if (percent >= 1.0) ...[
             const SizedBox(height: 8),
-            IBText('Tudo pronto por hoje! 🔥', context: context).caption.color(AppColors.success600).build(),
+            IBText('Tudo pronto por hoje!', context: context).caption.color(color).build(),
           ],
         ],
       ),

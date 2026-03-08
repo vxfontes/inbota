@@ -16,7 +16,7 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
-		A7183889F2BA343845A2BABC /* InbotaWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 596CC8C837385B9B1A95B82B /* InbotaWidgetExtension.appex */; };
+		A7183889F2BA343845A2BABC /* InbotaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 596CC8C837385B9B1A95B82B /* InbotaWidgetExtension.appex */; };
 		D9AD52B54B8554AD267C0E71 /* InbotaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB86AB0925912600F99FAB2 /* InbotaWidget.swift */; };
 		E75B2412A13581FC68BA868D /* libPods-Runner.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FD843C2864E411B4E7099312 /* libPods-Runner.a */; };
 /* End PBXBuildFile section */
@@ -39,15 +39,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		049BA1DB7B5EF44DB99C5A52 /* Embed App Extensions */ = {
+		049BA1DB7B5EF44DB99C5A52 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				A7183889F2BA343845A2BABC /* InbotaWidgetExtension.appex in Embed App Extensions */,
+				A7183889F2BA343845A2BABC /* InbotaWidgetExtension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
@@ -261,7 +261,7 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
-				049BA1DB7B5EF44DB99C5A52 /* Embed App Extensions */,
+				049BA1DB7B5EF44DB99C5A52 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				4F3AC96585749ED44EF28AC9 /* [CP] Copy Pods Resources */,
 			);
@@ -282,7 +282,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1510;
+				LastUpgradeCheck = 1640;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					331C8080294A63A400263BE5 = {
@@ -371,9 +371,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

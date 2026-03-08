@@ -299,18 +299,31 @@ func (uc *RoutineUsecase) ListByWeekday(ctx context.Context, userID string, week
 		return nil, ErrMissingRequiredFields
 	}
 	routines, err := uc.Routines.ListByWeekday(ctx, userID, weekday)
-	if err != nil || date == "" {
-		return routines, err
+	if err != nil {
+		return nil, err
 	}
 
-	targetDate, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		return routines, nil
+	completions := make(map[string]bool)
+	if date != "" {
+		comps, err := uc.Completions.GetByDate(ctx, userID, date)
+		if err == nil {
+			for _, c := range comps {
+				completions[c.RoutineID] = true
+			}
+		}
+	}
+
+	targetDate := time.Now()
+	if date != "" {
+		if t, err := time.Parse("2006-01-02", date); err == nil {
+			targetDate = t
+		}
 	}
 
 	filtered := make([]domain.Routine, 0, len(routines))
 	for _, r := range routines {
 		if shouldShowRoutineForDate(r, targetDate) {
+			r.IsCompletedToday = completions[r.ID]
 			filtered = append(filtered, r)
 		}
 	}

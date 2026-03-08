@@ -395,6 +395,7 @@ type RoutineResponse struct {
 	EndsOn         *string        `json:"endsOn,omitempty"`
 	Color          *string        `json:"color,omitempty"`
 	IsActive       bool           `json:"isActive"`
+	IsCompletedToday bool         `json:"isCompletedToday"`
 	Flag           *FlagObject    `json:"flag,omitempty"`
 	Subflag        *SubflagObject `json:"subflag,omitempty"`
 	CreatedAt      time.Time      `json:"createdAt"`

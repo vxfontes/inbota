@@ -202,6 +202,7 @@ type Routine struct {
 	EndsOn            *string
 	Color             *string
 	IsActive          bool
+	IsCompletedToday  bool
 	FlagID            *string
 	SubflagID         *string
 	SourceInboxItemID *string

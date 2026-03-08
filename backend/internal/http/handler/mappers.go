@@ -285,6 +285,7 @@ func toRoutineResponse(routine domain.Routine, flag *domain.Flag, subflag *domai
 		EndsOn:         routine.EndsOn,
 		Color:          routine.Color,
 		IsActive:       routine.IsActive,
+		IsCompletedToday: routine.IsCompletedToday,
 		Flag:           flagObj,
 		Subflag:        subflagObj,
 		CreatedAt:      routine.CreatedAt,

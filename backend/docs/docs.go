@@ -3666,6 +3666,9 @@ const docTemplate = `{
                 "isActive": {
                     "type": "boolean"
                 },
+                "isCompletedToday": {
+                    "type": "boolean"
+                },
                 "recurrenceType": {
                     "type": "string"
                 },

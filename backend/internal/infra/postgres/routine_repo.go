@@ -3,7 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
+
+	"github.com/lib/pq"
 
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
@@ -26,13 +27,11 @@ func (r *RoutineRepositoryImpl) Create(ctx context.Context, routine domain.Routi
 		routine.RecurrenceType = "weekly"
 	}
 
-	weekdaysJSON, _ := json.Marshal(routine.Weekdays)
-
 	row := r.db.QueryRowContext(ctx, `
 		INSERT INTO inbota.routines (user_id, title, description, recurrence_type, weekdays, start_time, end_time, week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		RETURNING id, created_at, updated_at
-	`, routine.UserID, routine.Title, routine.Description, routine.RecurrenceType, weekdaysJSON, routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.SourceInboxItemID)
+	`, routine.UserID, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.SourceInboxItemID)
 
 	if err := row.Scan(&routine.ID, &routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		return domain.Routine{}, err
@@ -41,14 +40,12 @@ func (r *RoutineRepositoryImpl) Create(ctx context.Context, routine domain.Routi
 }
 
 func (r *RoutineRepositoryImpl) Update(ctx context.Context, routine domain.Routine) (domain.Routine, error) {
-	weekdaysJSON, _ := json.Marshal(routine.Weekdays)
-
 	row := r.db.QueryRowContext(ctx, `
 		UPDATE inbota.routines
 		SET title = $1, description = $2, recurrence_type = $3, weekdays = $4, start_time = $5, end_time = $6, week_of_month = $7, starts_on = $8, ends_on = $9, color = $10, is_active = $11, flag_id = $12, subflag_id = $13, updated_at = now()
 		WHERE id = $14 AND user_id = $15
 		RETURNING created_at, updated_at
-	`, routine.Title, routine.Description, routine.RecurrenceType, weekdaysJSON, routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.ID, routine.UserID)
+	`, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.ID, routine.UserID)
 
 	if err := row.Scan(&routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
@@ -89,7 +86,7 @@ func (r *RoutineRepositoryImpl) Get(ctx context.Context, userID, id string) (dom
 	var routine domain.Routine
 	var description, endTime, endsOn, color, flagID, subflagID, sourceInboxItemID sql.NullString
 	var weekOfMonth sql.NullInt64
-	var weekdays []byte
+	var weekdays pq.Int64Array
 
 	if err := row.Scan(&routine.ID, &routine.UserID, &routine.Title, &description, &routine.RecurrenceType, &weekdays, &routine.StartTime, &endTime, &weekOfMonth, &routine.StartsOn, &endsOn, &color, &routine.IsActive, &flagID, &subflagID, &sourceInboxItemID, &routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
@@ -110,8 +107,11 @@ func (r *RoutineRepositoryImpl) Get(ctx context.Context, userID, id string) (dom
 	routine.SubflagID = stringPtrFromNull(subflagID)
 	routine.SourceInboxItemID = stringPtrFromNull(sourceInboxItemID)
 
-	if weekdays != nil {
-		json.Unmarshal(weekdays, &routine.Weekdays)
+	if len(weekdays) > 0 {
+		routine.Weekdays = make([]int, len(weekdays))
+		for i, v := range weekdays {
+			routine.Weekdays[i] = int(v)
+		}
 	}
 
 	return routine, nil
@@ -140,7 +140,7 @@ func (r *RoutineRepositoryImpl) List(ctx context.Context, userID string, opts re
 		var routine domain.Routine
 		var description, endTime, endsOn, color, flagID, subflagID, sourceInboxItemID sql.NullString
 		var weekOfMonth sql.NullInt64
-		var weekdays []byte
+		var weekdays pq.Int64Array
 
 		if err := rows.Scan(&routine.ID, &routine.UserID, &routine.Title, &description, &routine.RecurrenceType, &weekdays, &routine.StartTime, &endTime, &weekOfMonth, &routine.StartsOn, &endsOn, &color, &routine.IsActive, &flagID, &subflagID, &sourceInboxItemID, &routine.CreatedAt, &routine.UpdatedAt); err != nil {
 			return nil, nil, err
@@ -158,8 +158,11 @@ func (r *RoutineRepositoryImpl) List(ctx context.Context, userID string, opts re
 		routine.SubflagID = stringPtrFromNull(subflagID)
 		routine.SourceInboxItemID = stringPtrFromNull(sourceInboxItemID)
 
-		if weekdays != nil {
-			json.Unmarshal(weekdays, &routine.Weekdays)
+		if len(weekdays) > 0 {
+			routine.Weekdays = make([]int, len(weekdays))
+			for i, v := range weekdays {
+				routine.Weekdays[i] = int(v)
+			}
 		}
 
 		items = append(items, routine)
@@ -189,7 +192,7 @@ func (r *RoutineRepositoryImpl) ListByWeekday(ctx context.Context, userID string
 		var routine domain.Routine
 		var description, endTime, endsOn, color, flagID, subflagID, sourceInboxItemID sql.NullString
 		var weekOfMonth sql.NullInt64
-		var weekdays []byte
+		var weekdays pq.Int64Array
 
 		if err := rows.Scan(&routine.ID, &routine.UserID, &routine.Title, &description, &routine.RecurrenceType, &weekdays, &routine.StartTime, &endTime, &weekOfMonth, &routine.StartsOn, &endsOn, &color, &routine.IsActive, &flagID, &subflagID, &sourceInboxItemID, &routine.CreatedAt, &routine.UpdatedAt); err != nil {
 			return nil, err
@@ -207,8 +210,11 @@ func (r *RoutineRepositoryImpl) ListByWeekday(ctx context.Context, userID string
 		routine.SubflagID = stringPtrFromNull(subflagID)
 		routine.SourceInboxItemID = stringPtrFromNull(sourceInboxItemID)
 
-		if weekdays != nil {
-			json.Unmarshal(weekdays, &routine.Weekdays)
+		if len(weekdays) > 0 {
+			routine.Weekdays = make([]int, len(weekdays))
+			for i, v := range weekdays {
+				routine.Weekdays[i] = int(v)
+			}
 		}
 
 		items = append(items, routine)

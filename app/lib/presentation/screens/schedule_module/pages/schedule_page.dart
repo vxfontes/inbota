@@ -29,15 +29,10 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
         controller.error,
         controller.routinesByPeriod,
         controller.selectedWeekday,
-        controller.todayTotal,
-        controller.todayCompleted,
       ]),
       builder: (context, _) {
         final error = controller.error.value;
         final selectedWeekdayIndex = controller.selectedWeekdayIndex;
-        final todayProgress = controller.todayProgress;
-        final todayProgressLabel = controller.todayProgressLabel;
-        final todayPercentageLabel = controller.todayPercentageLabel;
         final routineSections = controller.routineSections;
 
         return Stack(
@@ -55,13 +50,6 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
                         .color(AppColors.danger600)
                         .build(),
                   ],
-                  const SizedBox(height: 20),
-                  if (controller.shouldShowProgress)
-                    _buildProgressBar(
-                      todayProgress,
-                      todayProgressLabel,
-                      todayPercentageLabel,
-                    ),
                   const SizedBox(height: 20),
                   _buildWeekdayTabs(selectedWeekdayIndex),
                   const SizedBox(height: 20),
@@ -112,42 +100,6 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
     );
   }
 
-  Widget _buildProgressBar(
-    double progress,
-    String progressLabel,
-    String percentageLabel,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IBText(progressLabel, context: context)
-                .caption
-                .build(),
-            IBText(percentageLabel, context: context)
-                .caption
-                .color(AppColors.primary700)
-                .build(),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            backgroundColor: AppColors.border,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              progress >= 1.0 ? AppColors.success600 : AppColors.primary700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildWeekdayTabs(int selectedIndex) {
     return SizedBox(
       height: 44,
@@ -157,8 +109,12 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final isSelected = index == selectedIndex;
-          return GestureDetector(
+          final label = ScheduleController.weekdayTabLabels[index];
+          final textColor =
+              isSelected ? AppColors.surface : AppColors.textMuted;
+          return InkWell(
             onTap: () => controller.selectWeekdayIndex(index),
+            borderRadius: BorderRadius.circular(8),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -170,14 +126,10 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
                 ),
               ),
               child: Center(
-                child: Text(
-                  ScheduleController.weekdayTabLabels[index],
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textMuted,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    fontSize: 13,
-                  ),
-                ),
+                child: IBText(label, context: context)
+                    .label
+                    .color(textColor)
+                    .build(),
               ),
             ),
           );
@@ -216,8 +168,11 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
   }
 
   Widget _buildRoutineCard(RoutineOutput routine) {
-    final isCompleted = controller.isCompletedToday(routine.id);
     final cardColor = controller.routineTagColor(routine);
+    final flagLabel = routine.flagName?.trim();
+    final hasFlag = flagLabel != null && flagLabel.isNotEmpty;
+    final subflagLabel = routine.subflagName?.trim();
+    final hasSubflag = subflagLabel != null && subflagLabel.isNotEmpty;
 
     return Dismissible(
       key: Key(routine.id),
@@ -229,152 +184,105 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
           color: AppColors.danger600,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const IBIcon(
+          IBIcon.deleteOutlineRounded,
+          color: AppColors.surface,
+        ),
       ),
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmation(routine);
       },
       child: IBCard(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () => _toggleComplete(routine),
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isCompleted ? AppColors.success600 : cardColor,
-                    width: 2,
-                  ),
-                  color: isCompleted ? AppColors.success600 : Colors.transparent,
-                ),
-                child: isCompleted
-                    ? const Icon(Icons.check, size: 16, color: Colors.white)
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    routine.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      decoration:
-                          isCompleted ? TextDecoration.lineThrough : null,
-                      color: isCompleted
-                          ? AppColors.textMuted
-                          : AppColors.text,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        routine.recurrenceTypeLabel,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      if (routine.flagName != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cardColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            routine.flagName!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cardColor,
-                              fontWeight: FontWeight.w500,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _openEditRoutine(routine),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    IBText(routine.title, context: context)
+                        .subtitulo
+                        .maxLines(2)
+                        .build(),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        IBText(routine.recurrenceTypeLabel, context: context)
+                            .caption
+                            .color(AppColors.textMuted)
+                            .build(),
+                        if (hasFlag) ...[
+                          IBTagChip(
+                            label: flagLabel,
+                            color: _parseHexColor(
+                              routine.flagColor,
+                              fallback: cardColor,
                             ),
                           ),
-                        ),
+                        ],
+                        if (hasSubflag)
+                          IBTagChip(
+                            label: subflagLabel,
+                            color: _parseHexColor(
+                              routine.subflagColor ?? routine.flagColor,
+                              fallback: AppColors.ai600,
+                            ),
+                          ),
                       ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: cardColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                routine.timeLabel,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: cardColor,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              IBChip(label: routine.timeLabel, color: cardColor),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 64,
-            color: AppColors.textMuted.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          IBText(
-            'Nenhuma rotina para este dia',
-            context: context,
-          ).subtitulo.build(),
-          const SizedBox(height: 8),
-          IBText(
-            'Adicione rotinas pelo botão + ou diga algo como "academia toda terça às 7h"',
-            context: context,
-          ).muted.build(),
-        ],
+    return const IBCard(
+      child: IBEmptyState(
+        title: 'Nenhuma rotina para este dia',
+        subtitle:
+            'Adicione rotinas pelo botão + ou diga algo como "academia toda terça às 7h".',
+        icon: IBHugeIcon.calendar,
       ),
     );
   }
 
-  Future<void> _toggleComplete(RoutineOutput routine) async {
-    final isCompleted = controller.isCompletedToday(routine.id);
-    if (isCompleted) {
-      await controller.uncompleteRoutine(routine.id);
-    } else {
-      await controller.completeRoutine(routine.id);
-    }
+  Color _parseHexColor(String? value, {required Color fallback}) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) return fallback;
+
+    var hex = raw.toUpperCase().replaceAll('#', '');
+    if (hex.length == 6) hex = 'FF$hex';
+    if (hex.length != 8) return fallback;
+
+    final parsed = int.tryParse(hex, radix: 16);
+    if (parsed == null) return fallback;
+    return Color(parsed);
   }
 
   Future<bool?> _showDeleteConfirmation(RoutineOutput routine) async {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir rotina?'),
-        content: Text('Tem certeza que deseja excluir "${routine.title}"?'),
+        title: IBText('Excluir rotina?', context: context).subtitulo.build(),
+        content: IBText(
+          'Tem certeza que deseja excluir "${routine.title}"?',
+          context: context,
+        ).body.build(),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
+            child: IBText('Cancelar', context: context).label.build(),
           ),
           TextButton(
             onPressed: () async {
@@ -383,10 +291,10 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
                 Navigator.of(context).pop(true);
               }
             },
-            child: Text(
-              'Excluir',
-              style: TextStyle(color: AppColors.danger600),
-            ),
+            child: IBText('Excluir', context: context)
+                .label
+                .color(AppColors.danger600)
+                .build(),
           ),
         ],
       ),
@@ -397,6 +305,19 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
     if (!mounted) return;
 
     controller.resetCreateForm();
+    await IBBottomSheet.show<void>(
+      smallBottomSheet: false,
+      context: context,
+      child: CreateRoutineBottomSheet(
+        controller: controller,
+      ),
+    );
+  }
+
+  Future<void> _openEditRoutine(RoutineOutput routine) async {
+    if (!mounted) return;
+
+    controller.startEditRoutine(routine);
     await IBBottomSheet.show<void>(
       smallBottomSheet: false,
       context: context,

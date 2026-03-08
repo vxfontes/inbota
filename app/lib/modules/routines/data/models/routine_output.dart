@@ -81,10 +81,22 @@ class RoutineOutput {
   }
 
   String get timeLabel {
-    if (endTime != null && endTime!.isNotEmpty) {
-      return '$startTime - $endTime';
+    final start = _formatTime(startTime);
+    final end = _formatTime(endTime ?? '');
+    if (end.isNotEmpty) {
+      return '$start - $end';
     }
-    return startTime;
+    return start;
+  }
+
+  String _formatTime(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return '';
+    final match = RegExp(r'(\\d{1,2}):(\\d{1,2})').firstMatch(value);
+    if (match == null) return value;
+    final hour = match.group(1)!.padLeft(2, '0');
+    final minute = match.group(2)!.padLeft(2, '0');
+    return '$hour:$minute';
   }
 
   factory RoutineOutput.fromJson(Map<String, dynamic> json) {

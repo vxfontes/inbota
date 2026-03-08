@@ -3,6 +3,8 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"inbota/backend/internal/app/domain"
@@ -104,6 +106,10 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		SubflagID:      resolvedSubflagID,
 	}
 
+	if err := uc.checkOverlap(ctx, userID, "", routine.Weekdays, routine.StartTime, routine.EndTime); err != nil {
+		return domain.Routine{}, err
+	}
+
 	return uc.Routines.Create(ctx, routine)
 }
 
@@ -190,7 +196,81 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 		routine.SubflagID = resolvedSubflagID
 	}
 
+	if err := uc.checkOverlap(ctx, userID, id, routine.Weekdays, routine.StartTime, routine.EndTime); err != nil {
+		return domain.Routine{}, err
+	}
+
 	return uc.Routines.Update(ctx, routine)
+}
+
+func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID string, weekdays []int, startTime string, endTime *string) error {
+	// Fetch all routines for this user
+	// Using a large limit to avoid pagination complexity for now
+	opts := repository.ListOptions{Limit: 1000}
+	routines, _, err := uc.Routines.List(ctx, userID, opts)
+	if err != nil {
+		return err
+	}
+
+	start := timeToMinutes(startTime)
+	var end int
+	if endTime != nil && *endTime != "" {
+		end = timeToMinutes(*endTime)
+		if end <= start {
+			return ErrInvalidTimeRange
+		}
+	} else {
+		end = start + 1
+	}
+
+	weekdaySet := make(map[int]bool)
+	for _, d := range weekdays {
+		weekdaySet[d] = true
+	}
+
+	for _, r := range routines {
+		if r.ID == excludeID {
+			continue
+		}
+
+		// Check common weekdays
+		hasCommonWeekday := false
+		for _, rd := range r.Weekdays {
+			if weekdaySet[rd] {
+				hasCommonWeekday = true
+				break
+			}
+		}
+		if !hasCommonWeekday {
+			continue
+		}
+
+		rStart := timeToMinutes(r.StartTime)
+		var rEnd int
+		if r.EndTime != nil && *r.EndTime != "" {
+			rEnd = timeToMinutes(*r.EndTime)
+		} else {
+			rEnd = rStart + 1
+		}
+
+		// Overlap: (start < rEnd) && (rStart < end)
+		if start < rEnd && rStart < end {
+			return ErrRoutineOverlap
+		}
+	}
+
+	return nil
+}
+
+func timeToMinutes(t string) int {
+	parts := strings.Split(t, ":")
+	if len(parts) < 2 {
+		return 0
+	}
+	var h, m int
+	fmt.Sscanf(parts[0], "%d", &h)
+	fmt.Sscanf(parts[1], "%d", &m)
+	return h*60 + m
 }
 
 func (uc *RoutineUsecase) Delete(ctx context.Context, userID, id string) error {

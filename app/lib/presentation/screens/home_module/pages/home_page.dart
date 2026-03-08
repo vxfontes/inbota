@@ -18,6 +18,20 @@ class _HomePageState extends IBState<HomePage, HomeController> {
   void initState() {
     super.initState();
     controller.load();
+    controller.error.addListener(_onErrorChanged);
+  }
+
+  @override
+  void dispose() {
+    controller.error.removeListener(_onErrorChanged);
+    super.dispose();
+  }
+
+  void _onErrorChanged() {
+    final error = controller.error.value;
+    if (error != null && error.isNotEmpty && mounted) {
+      IBSnackBar.error(context, error);
+    }
   }
 
   @override
@@ -26,7 +40,6 @@ class _HomePageState extends IBState<HomePage, HomeController> {
       animation: Listenable.merge([
         controller.loading,
         controller.refreshing,
-        controller.error,
         controller.agenda,
         controller.shoppingLists,
         controller.shoppingItemsByList,
@@ -34,7 +47,6 @@ class _HomePageState extends IBState<HomePage, HomeController> {
       builder: (context, _) {
         final loading = controller.loading.value;
         final refreshing = controller.refreshing.value;
-        final error = controller.error.value;
 
         if (loading && !controller.hasContent) {
           return const ColoredBox(
@@ -52,10 +64,6 @@ class _HomePageState extends IBState<HomePage, HomeController> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
               children: [
                 _buildHeader(context, refreshing),
-                if (error != null && error.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _buildErrorBanner(context, error),
-                ],
                 const SizedBox(height: 16),
                 _buildAgendaSnapshot(context),
                 const SizedBox(height: 20),
@@ -103,38 +111,9 @@ class _HomePageState extends IBState<HomePage, HomeController> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.refresh_rounded, color: AppColors.primary700),
+              : const IBIcon(IBIcon.refreshRounded, color: AppColors.primary700),
         ),
       ],
-    );
-  }
-
-  Widget _buildErrorBanner(BuildContext context, String message) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.danger600.withAlpha((0.1 * 255).round()),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.danger600.withAlpha((0.25 * 255).round()),
-        ),
-      ),
-      child: Row(
-        children: [
-          const IBIcon(
-            Icons.error_outline_rounded,
-            color: AppColors.danger600,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: IBText(
-              message,
-              context: context,
-            ).caption.color(AppColors.danger600).build(),
-          ),
-        ],
-      ),
     );
   }
 

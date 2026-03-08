@@ -53,6 +53,8 @@ class IBIcon extends StatelessWidget {
   static const IconData repeatRounded = Icons.repeat_rounded;
   static const IconData checkCircleOutlineRounded = Icons.check_circle_outline_rounded;
   static const IconData errorOutlineRounded = Icons.error_outline_rounded;
+  static const IconData editOutlineRounded = Icons.edit_outlined;
+  static const IconData refreshRounded = Icons.refresh_rounded;
 
   @override
   Widget build(BuildContext context) {

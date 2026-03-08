@@ -50,6 +50,7 @@ class IBIcon extends StatelessWidget {
   static const IconData taskAltRounded = Icons.task_alt_rounded;
   static const IconData tune = Icons.tune;
   static const IconData verifiedUserOutlined = Icons.verified_user_outlined;
+  static const IconData repeatRounded = Icons.repeat_rounded;
 
   @override
   Widget build(BuildContext context) {

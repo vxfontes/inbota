@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:inbota/modules/routines/data/models/routine_output.dart';
+import 'package:inbota/modules/routines/data/models/routine_section.dart';
 import 'package:inbota/presentation/screens/schedule_module/components/create_routine_bottom_sheet.dart';
 import 'package:inbota/presentation/screens/schedule_module/controller/schedule_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
@@ -169,10 +170,9 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
 
   Widget _buildRoutineCard(RoutineOutput routine) {
     final cardColor = controller.routineTagColor(routine);
-    final flagLabel = routine.flagName?.trim();
-    final hasFlag = flagLabel != null && flagLabel.isNotEmpty;
-    final subflagLabel = routine.subflagName?.trim();
-    final hasSubflag = subflagLabel != null && subflagLabel.isNotEmpty;
+    final recurrenceLabel = routine.recurrenceTypeLabel;
+    final secondaryLabel =
+        '$recurrenceLabel • ${routine.weekdaysLabel}'.trim();
 
     return Dismissible(
       key: Key(routine.id),
@@ -192,55 +192,19 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmation(routine);
       },
-      child: IBCard(
-        padding: const EdgeInsets.all(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _openEditRoutine(routine),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IBText(routine.title, context: context)
-                        .subtitulo
-                        .maxLines(2)
-                        .build(),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        IBText(routine.recurrenceTypeLabel, context: context)
-                            .caption
-                            .color(AppColors.textMuted)
-                            .build(),
-                        if (hasFlag) ...[
-                          IBTagChip(
-                            label: flagLabel,
-                            color: _parseHexColor(
-                              routine.flagColor,
-                              fallback: cardColor,
-                            ),
-                          ),
-                        ],
-                        if (hasSubflag)
-                          IBTagChip(
-                            label: subflagLabel,
-                            color: _parseHexColor(
-                              routine.subflagColor ?? routine.flagColor,
-                              fallback: AppColors.ai600,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              IBChip(label: routine.timeLabel, color: cardColor),
-            ],
-          ),
+      onDismissed: (_) async {
+        await controller.deleteRoutine(routine.id);
+      },
+      child: GestureDetector(
+        onTap: () => _openEditRoutine(routine),
+        child: IBItemCard(
+          title: routine.title,
+          secondary: secondaryLabel,
+          typeLabel: routine.flagName ?? 'Rotina',
+          typeColor: cardColor,
+          typeIcon: IBIcon.repeatRounded,
+          timeLabel: routine.timeLabel,
+          timeIcon: IBIcon.alarmOutlined,
         ),
       ),
     );
@@ -255,19 +219,6 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
         icon: IBHugeIcon.calendar,
       ),
     );
-  }
-
-  Color _parseHexColor(String? value, {required Color fallback}) {
-    final raw = value?.trim() ?? '';
-    if (raw.isEmpty) return fallback;
-
-    var hex = raw.toUpperCase().replaceAll('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    if (hex.length != 8) return fallback;
-
-    final parsed = int.tryParse(hex, radix: 16);
-    if (parsed == null) return fallback;
-    return Color(parsed);
   }
 
   Future<bool?> _showDeleteConfirmation(RoutineOutput routine) async {

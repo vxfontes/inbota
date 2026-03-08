@@ -161,30 +161,3 @@ class RoutineOutput {
 
   Map<String, dynamic> toJson() => _$RoutineOutputToJson(this);
 }
-
-@JsonSerializable()
-class RoutineListOutput {
-  const RoutineListOutput({
-    this.items = const [],
-    this.nextCursor,
-  });
-
-  final List<RoutineOutput> items;
-  final String? nextCursor;
-
-  factory RoutineListOutput.fromJson(Map<String, dynamic> json) {
-    return _$RoutineListOutputFromJson(json);
-  }
-
-  RoutineListOutput copyWith({
-    List<RoutineOutput>? items,
-    String? nextCursor,
-  }) {
-    return RoutineListOutput(
-      items: items ?? this.items,
-      nextCursor: nextCursor ?? this.nextCursor,
-    );
-  }
-
-  Map<String, dynamic> toJson() => _$RoutineListOutputToJson(this);
-}

@@ -99,7 +99,7 @@ func (r *RoutineRepositoryImpl) Get(ctx context.Context, userID, id string) (dom
 	}
 
 	routine.Description = stringPtrFromNull(description)
-	routine.EndTime = stringPtrFromNull(endTime)
+	routine.EndTime = endTime.String
 	if weekOfMonth.Valid {
 		v := int(weekOfMonth.Int64)
 		routine.WeekOfMonth = &v
@@ -153,7 +153,7 @@ func (r *RoutineRepositoryImpl) List(ctx context.Context, userID string, opts re
 		}
 
 		routine.Description = stringPtrFromNull(description)
-		routine.EndTime = stringPtrFromNull(endTime)
+		routine.EndTime = endTime.String
 		if weekOfMonth.Valid {
 			v := int(weekOfMonth.Int64)
 			routine.WeekOfMonth = &v
@@ -208,7 +208,7 @@ func (r *RoutineRepositoryImpl) ListByWeekday(ctx context.Context, userID string
 		}
 
 		routine.Description = stringPtrFromNull(description)
-		routine.EndTime = stringPtrFromNull(endTime)
+		routine.EndTime = endTime.String
 		if weekOfMonth.Valid {
 			v := int(weekOfMonth.Int64)
 			routine.WeekOfMonth = &v

@@ -12,7 +12,7 @@ class RoutineOutput {
     required this.recurrenceType,
     required this.weekdays,
     required this.startTime,
-    this.endTime,
+    required this.endTime,
     this.weekOfMonth,
     required this.startsOn,
     this.endsOn,
@@ -31,7 +31,7 @@ class RoutineOutput {
   final String recurrenceType;
   final List<int> weekdays;
   final String startTime;
-  final String? endTime;
+  final String endTime;
   final int? weekOfMonth;
   final String startsOn;
   final String? endsOn;
@@ -84,11 +84,8 @@ class RoutineOutput {
 
   String get timeLabel {
     final start = _formatTime(startTime);
-    final end = _formatTime(endTime ?? '');
-    if (end.isNotEmpty) {
-      return '$start - $end';
-    }
-    return start;
+    final end = _formatTime(endTime);
+    return '$start - $end';
   }
 
   String _formatTime(String raw) {
@@ -118,6 +115,7 @@ class RoutineOutput {
       recurrenceType: 'weekly',
       weekdays: [],
       startTime: '',
+      endTime: '',
       startsOn: '',
       isActive: true,
     );

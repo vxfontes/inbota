@@ -415,8 +415,7 @@ class ScheduleController implements IBController {
     createTitleController.text = routine.title;
     createSelectedWeekdays.value = routine.weekdays.toSet();
     createStartTime.value = _normalizeTimeValue(routine.startTime);
-    createEndTime.value =
-        routine.endTime == null ? null : _normalizeTimeValue(routine.endTime!);
+    createEndTime.value = _normalizeTimeValue(routine.endTime);
     createRecurrenceType.value = routine.recurrenceType;
     createSelectedFlagId.value = routine.flag?.id;
     createSelectedSubflagId.value = routine.subflag?.id;
@@ -471,11 +470,16 @@ class ScheduleController implements IBController {
     }
 
     final startTime = createStartTime.value.trim();
-    if (startTime.isEmpty) {
-      error.value = 'Informe o horário da rotina.';
+    final endTime = createEndTime.value?.trim() ?? '';
+    if (startTime.isEmpty || endTime.isEmpty) {
+      error.value = 'Informe o horário de início e término.';
       return false;
     }
-    final endTime = createEndTime.value?.trim() ?? '';
+
+    if (_timeToMinutes(endTime) <= _timeToMinutes(startTime)) {
+      error.value = 'O horário de término deve ser após o de início.';
+      return false;
+    }
 
     if (_hasOverlap(
       weekdays: weekdays,
@@ -514,13 +518,11 @@ class ScheduleController implements IBController {
   bool _hasOverlap({
     required List<int> weekdays,
     required String startTime,
-    String? endTime,
+    required String endTime,
     String? excludeId,
   }) {
     final start = _timeToMinutes(startTime);
-    final end = endTime != null && endTime.isNotEmpty
-        ? _timeToMinutes(endTime)
-        : start + 1;
+    final end = _timeToMinutes(endTime);
 
     for (final routine in allRoutines.value) {
       if (routine.id == excludeId || !routine.isActive) continue;
@@ -530,9 +532,7 @@ class ScheduleController implements IBController {
       if (!hasCommonWeekday) continue;
 
       final rStart = _timeToMinutes(routine.startTime);
-      final rEnd = routine.endTime != null && routine.endTime!.isNotEmpty
-          ? _timeToMinutes(routine.endTime!)
-          : rStart + 1;
+      final rEnd = _timeToMinutes(routine.endTime);
 
       if (start < rEnd && rStart < end) {
         return true;
@@ -555,7 +555,7 @@ class ScheduleController implements IBController {
     required String title,
     required List<int> weekdays,
     required String startTime,
-    String? endTime,
+    required String endTime,
     String recurrenceType = 'weekly',
     String? flagId,
     String? subflagId,
@@ -572,8 +572,13 @@ class ScheduleController implements IBController {
       return false;
     }
 
-    if (startTime.isEmpty) {
-      error.value = 'Informe o horário da rotina.';
+    if (startTime.isEmpty || endTime.isEmpty) {
+      error.value = 'Informe o horário de início e término.';
+      return false;
+    }
+
+    if (_timeToMinutes(endTime) <= _timeToMinutes(startTime)) {
+      error.value = 'O horário de término deve ser após o de início.';
       return false;
     }
 
@@ -619,7 +624,7 @@ class ScheduleController implements IBController {
     required String title,
     required List<int> weekdays,
     required String startTime,
-    String? endTime,
+    required String endTime,
     String recurrenceType = 'weekly',
     String? flagId,
     String? subflagId,
@@ -769,8 +774,8 @@ class ScheduleController implements IBController {
   List<RoutineOutput> getConflicts(RoutineOutput routine) {
     final conflicts = <RoutineOutput>[];
     final start = _timeToMinutes(routine.startTime);
-    final end = routine.endTime != null && routine.endTime!.isNotEmpty
-        ? _timeToMinutes(routine.endTime!)
+    final end = routine.endTime.isNotEmpty
+        ? _timeToMinutes(routine.endTime)
         : start + 1;
 
     for (final r in allRoutines.value) {
@@ -782,8 +787,8 @@ class ScheduleController implements IBController {
       if (!hasCommonWeekday) continue;
 
       final rStart = _timeToMinutes(r.startTime);
-      final rEnd = r.endTime != null && r.endTime!.isNotEmpty
-          ? _timeToMinutes(r.endTime!)
+      final rEnd = r.endTime.isNotEmpty
+          ? _timeToMinutes(r.endTime)
           : rStart + 1;
 
       if (start < rEnd && rStart < end) {

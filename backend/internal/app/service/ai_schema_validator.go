@@ -56,7 +56,7 @@ type NotePayload struct {
 type RoutinePayload struct {
 	Weekdays       []int   `json:"weekdays"`
 	StartTime      string  `json:"startTime"`
-	EndTime        *string `json:"endTime,omitempty"`
+	EndTime        string  `json:"endTime"`
 	RecurrenceType string  `json:"recurrenceType"`
 	WeekOfMonth    *int    `json:"weekOfMonth,omitempty"`
 	StartsOn       *string `json:"startsOn,omitempty"`
@@ -421,7 +421,7 @@ func parseRoutinePayload(payload json.RawMessage) (RoutinePayload, error) {
 	var raw struct {
 		Weekdays       []int   `json:"weekdays"`
 		StartTime      string  `json:"startTime"`
-		EndTime        *string `json:"endTime"`
+		EndTime        string  `json:"endTime"`
 		RecurrenceType string  `json:"recurrenceType"`
 		WeekOfMonth    *int    `json:"weekOfMonth"`
 		StartsOn       *string `json:"startsOn"`
@@ -436,6 +436,9 @@ func parseRoutinePayload(payload json.RawMessage) (RoutinePayload, error) {
 	}
 	if raw.StartTime == "" {
 		return RoutinePayload{}, fmt.Errorf("%w: routine_start_time_required", ErrAISchemaInvalid)
+	}
+	if raw.EndTime == "" {
+		return RoutinePayload{}, fmt.Errorf("%w: routine_end_time_required", ErrAISchemaInvalid)
 	}
 
 	validRecurrenceTypes := map[string]bool{

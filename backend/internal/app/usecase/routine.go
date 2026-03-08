@@ -26,7 +26,7 @@ type RoutineInput struct {
 	RecurrenceType string
 	Weekdays       []int
 	StartTime      string
-	EndTime        *string
+	EndTime        string
 	WeekOfMonth    *int
 	StartsOn       *string
 	EndsOn         *string
@@ -62,7 +62,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		return domain.Routine{}, ErrMissingRequiredFields
 	}
 
-	if input.StartTime == "" {
+	if input.StartTime == "" || input.EndTime == "" {
 		return domain.Routine{}, ErrMissingRequiredFields
 	}
 
@@ -160,7 +160,7 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 	}
 
 	if input.EndTime != nil {
-		routine.EndTime = input.EndTime
+		routine.EndTime = *input.EndTime
 	}
 
 	if input.WeekOfMonth != nil {
@@ -203,7 +203,7 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 	return uc.Routines.Update(ctx, routine)
 }
 
-func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID string, weekdays []int, startTime string, endTime *string) error {
+func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID string, weekdays []int, startTime string, endTime string) error {
 	// Fetch all routines for this user
 	// Using a large limit to avoid pagination complexity for now
 	opts := repository.ListOptions{Limit: 1000}
@@ -214,8 +214,8 @@ func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID st
 
 	start := timeToMinutes(startTime)
 	var end int
-	if endTime != nil && *endTime != "" {
-		end = timeToMinutes(*endTime)
+	if endTime != "" {
+		end = timeToMinutes(endTime)
 		if end <= start {
 			return ErrInvalidTimeRange
 		}
@@ -247,8 +247,8 @@ func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID st
 
 		rStart := timeToMinutes(r.StartTime)
 		var rEnd int
-		if r.EndTime != nil && *r.EndTime != "" {
-			rEnd = timeToMinutes(*r.EndTime)
+		if r.EndTime != "" {
+			rEnd = timeToMinutes(r.EndTime)
 		} else {
 			rEnd = rStart + 1
 		}

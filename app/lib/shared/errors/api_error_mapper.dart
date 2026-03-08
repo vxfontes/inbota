@@ -13,6 +13,7 @@ class ApiErrorMapper {
     'invalid_email': 'E-mail inválido.',
     'invalid_password': 'Senha inválida.',
     'invalid_display_name': 'Nome de exibição inválido.',
+    'invalid_weekday': 'Dia da semana inválido.',
     'routine_overlap': 'Já existe uma rotina neste horário em um dos dias selecionados.',
     'routine_exception_failed': 'Não foi possível registrar exceção na rotina.',
     'uncomplete_failed': 'Não foi possível desmarcar a rotina.',
@@ -23,6 +24,9 @@ class ApiErrorMapper {
     'dependency_missing': 'Dependência necessária não configurada.',
     'invalid_auth_header': 'Cabeçalho de autorização inválido.',
     'invalid_token': 'Token inválido.',
+    'invalid_claims': 'Token com dados inválidos.',
+    'missing_sub': 'Usuário não identificado no token.',
+    'missing_jwt_secret': 'Erro de configuração de segurança (JWT).',
     'unauthorized': 'Não autorizado.',
     'internal_error': 'Erro interno do servidor.',
   };

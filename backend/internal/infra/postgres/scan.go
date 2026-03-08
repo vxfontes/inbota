@@ -28,3 +28,7 @@ func floatPtrFromNull(value sql.NullFloat64) *float64 {
 	v := value.Float64
 	return &v
 }
+
+func nullStringFromStr(s string) sql.NullString {
+	return sql.NullString{String: s, Valid: s != ""}
+}

@@ -31,7 +31,7 @@ func (r *RoutineRepositoryImpl) Create(ctx context.Context, routine domain.Routi
 		INSERT INTO inbota.routines (user_id, title, description, recurrence_type, weekdays, start_time, end_time, week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		RETURNING id, created_at, updated_at
-	`, routine.UserID, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.SourceInboxItemID)
+	`, routine.UserID, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, nullStringFromStr(routine.EndTime), routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.SourceInboxItemID)
 
 	if err := row.Scan(&routine.ID, &routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		return domain.Routine{}, err
@@ -45,7 +45,7 @@ func (r *RoutineRepositoryImpl) Update(ctx context.Context, routine domain.Routi
 		SET title = $1, description = $2, recurrence_type = $3, weekdays = $4, start_time = $5, end_time = $6, week_of_month = $7, starts_on = $8, ends_on = $9, color = $10, is_active = $11, flag_id = $12, subflag_id = $13, updated_at = now()
 		WHERE id = $14 AND user_id = $15
 		RETURNING created_at, updated_at
-	`, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.ID, routine.UserID)
+	`, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, nullStringFromStr(routine.EndTime), routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.ID, routine.UserID)
 
 	if err := row.Scan(&routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
@@ -99,7 +99,11 @@ func (r *RoutineRepositoryImpl) Get(ctx context.Context, userID, id string) (dom
 	}
 
 	routine.Description = stringPtrFromNull(description)
-	routine.EndTime = endTime.String
+	if endTime.Valid {
+		routine.EndTime = endTime.String
+	} else {
+		routine.EndTime = routine.StartTime
+	}
 	if weekOfMonth.Valid {
 		v := int(weekOfMonth.Int64)
 		routine.WeekOfMonth = &v
@@ -153,7 +157,11 @@ func (r *RoutineRepositoryImpl) List(ctx context.Context, userID string, opts re
 		}
 
 		routine.Description = stringPtrFromNull(description)
-		routine.EndTime = endTime.String
+		if endTime.Valid {
+			routine.EndTime = endTime.String
+		} else {
+			routine.EndTime = routine.StartTime
+		}
 		if weekOfMonth.Valid {
 			v := int(weekOfMonth.Int64)
 			routine.WeekOfMonth = &v
@@ -208,7 +216,11 @@ func (r *RoutineRepositoryImpl) ListByWeekday(ctx context.Context, userID string
 		}
 
 		routine.Description = stringPtrFromNull(description)
-		routine.EndTime = endTime.String
+		if endTime.Valid {
+			routine.EndTime = endTime.String
+		} else {
+			routine.EndTime = routine.StartTime
+		}
 		if weekOfMonth.Valid {
 			v := int(weekOfMonth.Int64)
 			routine.WeekOfMonth = &v

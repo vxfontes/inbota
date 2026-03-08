@@ -750,7 +750,7 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 			}
 			result.ShoppingItems = items
 		case domain.AiSuggestionTypeRoutine:
-			if uc.Routines == nil {
+			if uc.RoutinesUsecase == nil {
 				return ConfirmResult{}, ErrDependencyMissing
 			}
 			routinePayload, ok := validated.Payload.(service.RoutinePayload)

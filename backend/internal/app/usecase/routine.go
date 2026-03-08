@@ -156,10 +156,16 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 	}
 
 	if input.StartTime != nil {
+		if *input.StartTime == "" {
+			return domain.Routine{}, ErrMissingRequiredFields
+		}
 		routine.StartTime = *input.StartTime
 	}
 
 	if input.EndTime != nil {
+		if *input.EndTime == "" {
+			return domain.Routine{}, ErrMissingRequiredFields
+		}
 		routine.EndTime = *input.EndTime
 	}
 
@@ -188,7 +194,7 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 		if input.SubflagID != nil {
 			nextSubflagID = normalizeOptionalString(input.SubflagID)
 		}
-		resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, nextFlagID, nextSubflagID)
+		resolvedFlagID, resolvedSubflagID, err := uc.ResolveFlagAndSubflag(ctx, userID, nextFlagID, nextSubflagID)
 		if err != nil {
 			return domain.Routine{}, err
 		}

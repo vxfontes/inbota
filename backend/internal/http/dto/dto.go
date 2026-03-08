@@ -389,7 +389,7 @@ type RoutineResponse struct {
 	RecurrenceType string         `json:"recurrenceType"`
 	Weekdays       []int          `json:"weekdays"`
 	StartTime      string         `json:"startTime"`
-	EndTime        *string        `json:"endTime,omitempty"`
+	EndTime        string         `json:"endTime"`
 	WeekOfMonth    *int           `json:"weekOfMonth,omitempty"`
 	StartsOn       string         `json:"startsOn"`
 	EndsOn         *string        `json:"endsOn,omitempty"`
@@ -413,7 +413,7 @@ type CreateRoutineRequest struct {
 	RecurrenceType *string `json:"recurrenceType,omitempty"`
 	Weekdays       []int   `json:"weekdays"`
 	StartTime      string  `json:"startTime"`
-	EndTime        *string `json:"endTime,omitempty"`
+	EndTime        string  `json:"endTime"`
 	WeekOfMonth    *int    `json:"weekOfMonth,omitempty"`
 	StartsOn       *string `json:"startsOn,omitempty"`
 	EndsOn         *string `json:"endsOn,omitempty"`

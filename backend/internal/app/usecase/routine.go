@@ -26,7 +26,7 @@ type RoutineInput struct {
 	RecurrenceType string
 	Weekdays       []int
 	StartTime      string
-	EndTime        *string
+	EndTime        string
 	WeekOfMonth    *int
 	StartsOn       *string
 	EndsOn         *string
@@ -62,7 +62,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		return domain.Routine{}, ErrMissingRequiredFields
 	}
 
-	if input.StartTime == "" {
+	if input.StartTime == "" || input.EndTime == "" {
 		return domain.Routine{}, ErrMissingRequiredFields
 	}
 
@@ -79,7 +79,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		return domain.Routine{}, ErrInvalidPayload
 	}
 
-	resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, input.FlagID, input.SubflagID)
+	resolvedFlagID, resolvedSubflagID, err := uc.ResolveFlagAndSubflag(ctx, userID, input.FlagID, input.SubflagID)
 	if err != nil {
 		return domain.Routine{}, err
 	}
@@ -106,7 +106,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		SubflagID:      resolvedSubflagID,
 	}
 
-	if err := uc.checkOverlap(ctx, userID, "", routine.Weekdays, routine.StartTime, routine.EndTime); err != nil {
+	if err := uc.Validate(ctx, routine); err != nil {
 		return domain.Routine{}, err
 	}
 
@@ -156,11 +156,17 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 	}
 
 	if input.StartTime != nil {
+		if *input.StartTime == "" {
+			return domain.Routine{}, ErrMissingRequiredFields
+		}
 		routine.StartTime = *input.StartTime
 	}
 
 	if input.EndTime != nil {
-		routine.EndTime = input.EndTime
+		if *input.EndTime == "" {
+			return domain.Routine{}, ErrMissingRequiredFields
+		}
+		routine.EndTime = *input.EndTime
 	}
 
 	if input.WeekOfMonth != nil {
@@ -188,7 +194,7 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 		if input.SubflagID != nil {
 			nextSubflagID = normalizeOptionalString(input.SubflagID)
 		}
-		resolvedFlagID, resolvedSubflagID, err := uc.resolveFlagAndSubflag(ctx, userID, nextFlagID, nextSubflagID)
+		resolvedFlagID, resolvedSubflagID, err := uc.ResolveFlagAndSubflag(ctx, userID, nextFlagID, nextSubflagID)
 		if err != nil {
 			return domain.Routine{}, err
 		}
@@ -203,7 +209,41 @@ func (uc *RoutineUsecase) Update(ctx context.Context, userID, id string, input R
 	return uc.Routines.Update(ctx, routine)
 }
 
-func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID string, weekdays []int, startTime string, endTime *string) error {
+func (uc *RoutineUsecase) Validate(ctx context.Context, routine domain.Routine) error {
+	if routine.UserID == "" || routine.Title == "" {
+		return ErrMissingRequiredFields
+	}
+
+	if len(routine.Weekdays) == 0 {
+		return ErrMissingRequiredFields
+	}
+
+	if routine.StartTime == "" || routine.EndTime == "" {
+		return ErrMissingRequiredFields
+	}
+
+	validRecurrenceTypes := map[string]bool{
+		"weekly":       true,
+		"biweekly":     true,
+		"triweekly":    true,
+		"monthly_week": true,
+	}
+	recurrenceType := routine.RecurrenceType
+	if recurrenceType == "" {
+		recurrenceType = "weekly"
+	}
+	if !validRecurrenceTypes[recurrenceType] {
+		return ErrInvalidPayload
+	}
+
+	if recurrenceType == "monthly_week" && routine.WeekOfMonth == nil {
+		return ErrInvalidPayload
+	}
+
+	return uc.checkOverlap(ctx, routine.UserID, routine.ID, routine.Weekdays, routine.StartTime, routine.EndTime)
+}
+
+func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID string, weekdays []int, startTime string, endTime string) error {
 	// Fetch all routines for this user
 	// Using a large limit to avoid pagination complexity for now
 	opts := repository.ListOptions{Limit: 1000}
@@ -214,8 +254,8 @@ func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID st
 
 	start := timeToMinutes(startTime)
 	var end int
-	if endTime != nil && *endTime != "" {
-		end = timeToMinutes(*endTime)
+	if endTime != "" {
+		end = timeToMinutes(endTime)
 		if end <= start {
 			return ErrInvalidTimeRange
 		}
@@ -247,8 +287,8 @@ func (uc *RoutineUsecase) checkOverlap(ctx context.Context, userID, excludeID st
 
 		rStart := timeToMinutes(r.StartTime)
 		var rEnd int
-		if r.EndTime != nil && *r.EndTime != "" {
-			rEnd = timeToMinutes(*r.EndTime)
+		if r.EndTime != "" {
+			rEnd = timeToMinutes(r.EndTime)
 		} else {
 			rEnd = rStart + 1
 		}
@@ -358,6 +398,14 @@ func shouldShowRoutineForDate(r domain.Routine, targetDate time.Time) bool {
 		return weeksDiff%2 == 0
 	case "triweekly":
 		return weeksDiff%3 == 0
+	case "monthly_week":
+		if r.WeekOfMonth == nil {
+			return true
+		}
+		// Week of month: 1st, 2nd, 3rd, 4th, 5th
+		// Logic: (day-1)/7 + 1
+		targetWeek := (targetDate.Day()-1)/7 + 1
+		return targetWeek == *r.WeekOfMonth
 	default:
 		return true
 	}
@@ -398,7 +446,7 @@ func (uc *RoutineUsecase) Complete(ctx context.Context, userID, routineID, date 
 		CompletedOn: date,
 	}
 
-	return uc.Completions.Create(ctx, completion)
+	return uc.Completions.Create(ctx, userID, completion)
 }
 
 func (uc *RoutineUsecase) Uncomplete(ctx context.Context, userID, routineID, date string) error {
@@ -450,7 +498,7 @@ func (uc *RoutineUsecase) CreateException(ctx context.Context, userID, routineID
 		Reason:        reason,
 	}
 
-	return uc.Exceptions.Create(ctx, exception)
+	return uc.Exceptions.Create(ctx, userID, exception)
 }
 
 func (uc *RoutineUsecase) DeleteException(ctx context.Context, userID, routineID, date string) error {
@@ -506,7 +554,7 @@ func (uc *RoutineUsecase) GetTodaySummary(ctx context.Context, userID string) (i
 	return total, completed, nil
 }
 
-func (uc *RoutineUsecase) resolveFlagAndSubflag(ctx context.Context, userID string, flagID *string, subflagID *string) (*string, *string, error) {
+func (uc *RoutineUsecase) ResolveFlagAndSubflag(ctx context.Context, userID string, flagID *string, subflagID *string) (*string, *string, error) {
 	resolvedFlagID := normalizeOptionalString(flagID)
 	resolvedSubflagID := normalizeOptionalString(subflagID)
 

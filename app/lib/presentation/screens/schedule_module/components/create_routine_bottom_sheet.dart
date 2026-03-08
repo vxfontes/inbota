@@ -48,7 +48,7 @@ class _CreateRoutineBottomSheetState extends State<CreateRoutineBottomSheet> {
             .toList(growable: false);
         final selectedWeekdays = widget.controller.createSelectedWeekdays.value;
         final startTime = widget.controller.createStartTime.value;
-        final endTime = widget.controller.createEndTime.value;
+        final endTime = widget.controller.createEndTime.value ?? '';
         final recurrenceType = widget.controller.createRecurrenceType.value;
         final selectedFlagId = widget.controller.createSelectedFlagId.value;
         final selectedSubflagId =
@@ -204,7 +204,7 @@ class _CreateRoutineBottomSheetState extends State<CreateRoutineBottomSheet> {
   Widget _buildTimePickers(
     BuildContext pickerContext,
     String startTime,
-    String? endTime, {
+    String endTime, {
     required bool enabled,
   }) {
     return Row(
@@ -222,8 +222,8 @@ class _CreateRoutineBottomSheetState extends State<CreateRoutineBottomSheet> {
         Expanded(
           child: IBTimeField(
             label: 'Término',
-            valueLabel: endTime ?? '--:--',
-            hasValue: endTime != null,
+            valueLabel: endTime.isEmpty ? '--:--' : endTime,
+            hasValue: endTime.isNotEmpty,
             enabled: enabled,
             onTap: _pickEndTime,
           ),
@@ -283,7 +283,7 @@ class _CreateRoutineBottomSheetState extends State<CreateRoutineBottomSheet> {
 
   Future<void> _pickEndTime() async {
     final endTime = widget.controller.createEndTime.value;
-    final initialTime = endTime != null
+    final initialTime = endTime != null && endTime.isNotEmpty
         ? TimeOfDay(
             hour: int.parse(endTime.split(':')[0]),
             minute: int.parse(endTime.split(':')[1]),

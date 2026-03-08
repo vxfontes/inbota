@@ -10,7 +10,7 @@ class RoutineCreateInput {
     this.recurrenceType,
     required this.weekdays,
     required this.startTime,
-    this.endTime,
+    required this.endTime,
     this.weekOfMonth,
     this.startsOn,
     this.endsOn,
@@ -24,7 +24,7 @@ class RoutineCreateInput {
   final String? recurrenceType;
   final List<int> weekdays;
   final String startTime;
-  final String? endTime;
+  final String endTime;
   final int? weekOfMonth;
   final String? startsOn;
   final String? endsOn;

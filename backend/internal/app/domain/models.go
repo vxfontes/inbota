@@ -196,7 +196,7 @@ type Routine struct {
 	RecurrenceType    string
 	Weekdays          []int
 	StartTime         string
-	EndTime           *string
+	EndTime           string
 	WeekOfMonth       *int
 	StartsOn          string
 	EndsOn            *string

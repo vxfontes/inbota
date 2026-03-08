@@ -31,7 +31,7 @@ func (r *RoutineRepositoryImpl) Create(ctx context.Context, routine domain.Routi
 		INSERT INTO inbota.routines (user_id, title, description, recurrence_type, weekdays, start_time, end_time, week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		RETURNING id, created_at, updated_at
-	`, routine.UserID, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.SourceInboxItemID)
+	`, routine.UserID, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, nullStringFromStr(routine.EndTime), routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.SourceInboxItemID)
 
 	if err := row.Scan(&routine.ID, &routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		return domain.Routine{}, err
@@ -45,7 +45,7 @@ func (r *RoutineRepositoryImpl) Update(ctx context.Context, routine domain.Routi
 		SET title = $1, description = $2, recurrence_type = $3, weekdays = $4, start_time = $5, end_time = $6, week_of_month = $7, starts_on = $8, ends_on = $9, color = $10, is_active = $11, flag_id = $12, subflag_id = $13, updated_at = now()
 		WHERE id = $14 AND user_id = $15
 		RETURNING created_at, updated_at
-	`, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, routine.EndTime, routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.ID, routine.UserID)
+	`, routine.Title, routine.Description, routine.RecurrenceType, pq.Array(routine.Weekdays), routine.StartTime, nullStringFromStr(routine.EndTime), routine.WeekOfMonth, routine.StartsOn, routine.EndsOn, routine.Color, routine.IsActive, routine.FlagID, routine.SubflagID, routine.ID, routine.UserID)
 
 	if err := row.Scan(&routine.CreatedAt, &routine.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
@@ -99,7 +99,11 @@ func (r *RoutineRepositoryImpl) Get(ctx context.Context, userID, id string) (dom
 	}
 
 	routine.Description = stringPtrFromNull(description)
-	routine.EndTime = stringPtrFromNull(endTime)
+	if endTime.Valid {
+		routine.EndTime = endTime.String
+	} else {
+		routine.EndTime = routine.StartTime
+	}
 	if weekOfMonth.Valid {
 		v := int(weekOfMonth.Int64)
 		routine.WeekOfMonth = &v
@@ -153,7 +157,11 @@ func (r *RoutineRepositoryImpl) List(ctx context.Context, userID string, opts re
 		}
 
 		routine.Description = stringPtrFromNull(description)
-		routine.EndTime = stringPtrFromNull(endTime)
+		if endTime.Valid {
+			routine.EndTime = endTime.String
+		} else {
+			routine.EndTime = routine.StartTime
+		}
 		if weekOfMonth.Valid {
 			v := int(weekOfMonth.Int64)
 			routine.WeekOfMonth = &v
@@ -208,7 +216,11 @@ func (r *RoutineRepositoryImpl) ListByWeekday(ctx context.Context, userID string
 		}
 
 		routine.Description = stringPtrFromNull(description)
-		routine.EndTime = stringPtrFromNull(endTime)
+		if endTime.Valid {
+			routine.EndTime = endTime.String
+		} else {
+			routine.EndTime = routine.StartTime
+		}
 		if weekOfMonth.Valid {
 			v := int(weekOfMonth.Int64)
 			routine.WeekOfMonth = &v
@@ -267,18 +279,22 @@ func NewRoutineExceptionRepositoryTx(tx *sql.Tx) *RoutineExceptionRepositoryImpl
 	return &RoutineExceptionRepositoryImpl{db: tx}
 }
 
-func (r *RoutineExceptionRepositoryImpl) Create(ctx context.Context, exception domain.RoutineException) (domain.RoutineException, error) {
+func (r *RoutineExceptionRepositoryImpl) Create(ctx context.Context, userID string, exception domain.RoutineException) (domain.RoutineException, error) {
 	if exception.Action == "" {
 		exception.Action = "skip"
 	}
 
 	row := r.db.QueryRowContext(ctx, `
 		INSERT INTO inbota.routine_exceptions (routine_id, exception_date, action, new_start_time, new_end_time, reason)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		SELECT $1, $2, $3, $4, $5, $6
+		WHERE EXISTS (SELECT 1 FROM inbota.routines WHERE id = $1 AND user_id = $7)
 		RETURNING id, created_at
-	`, exception.RoutineID, exception.ExceptionDate, exception.Action, exception.NewStartTime, exception.NewEndTime, exception.Reason)
+	`, exception.RoutineID, exception.ExceptionDate, exception.Action, exception.NewStartTime, exception.NewEndTime, exception.Reason, userID)
 
 	if err := row.Scan(&exception.ID, &exception.CreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.RoutineException{}, ErrNotFound
+		}
 		return domain.RoutineException{}, err
 	}
 	return exception, nil
@@ -374,14 +390,18 @@ func NewRoutineCompletionRepositoryTx(tx *sql.Tx) *RoutineCompletionRepositoryIm
 	return &RoutineCompletionRepositoryImpl{db: tx}
 }
 
-func (r *RoutineCompletionRepositoryImpl) Create(ctx context.Context, completion domain.RoutineCompletion) (domain.RoutineCompletion, error) {
+func (r *RoutineCompletionRepositoryImpl) Create(ctx context.Context, userID string, completion domain.RoutineCompletion) (domain.RoutineCompletion, error) {
 	row := r.db.QueryRowContext(ctx, `
 		INSERT INTO inbota.routine_completions (routine_id, completed_on)
-		VALUES ($1, $2)
+		SELECT $1, $2
+		WHERE EXISTS (SELECT 1 FROM inbota.routines WHERE id = $1 AND user_id = $3)
 		RETURNING id, completed_at
-	`, completion.RoutineID, completion.CompletedOn)
+	`, completion.RoutineID, completion.CompletedOn, userID)
 
 	if err := row.Scan(&completion.ID, &completion.CompletedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.RoutineCompletion{}, ErrNotFound
+		}
 		return domain.RoutineCompletion{}, err
 	}
 	return completion, nil
@@ -391,8 +411,8 @@ func (r *RoutineCompletionRepositoryImpl) Delete(ctx context.Context, userID, ro
 	result, err := r.db.ExecContext(ctx, `
 		DELETE FROM inbota.routine_completions
 		WHERE routine_id = $1 AND completed_on = $2
-		AND EXISTS (SELECT 1 FROM inbota.routines WHERE id = $1 AND user_id = $2)
-	`, routineID, completedOn)
+		AND EXISTS (SELECT 1 FROM inbota.routines WHERE id = $1 AND user_id = $3)
+	`, routineID, completedOn, userID)
 	if err != nil {
 		return err
 	}

@@ -214,11 +214,69 @@ func (uc *RoutineUsecase) List(ctx context.Context, userID string, opts reposito
 	return uc.Routines.List(ctx, userID, opts)
 }
 
-func (uc *RoutineUsecase) ListByWeekday(ctx context.Context, userID string, weekday int) ([]domain.Routine, error) {
+func (uc *RoutineUsecase) ListByWeekday(ctx context.Context, userID string, weekday int, date string) ([]domain.Routine, error) {
 	if userID == "" {
 		return nil, ErrMissingRequiredFields
 	}
-	return uc.Routines.ListByWeekday(ctx, userID, weekday)
+	routines, err := uc.Routines.ListByWeekday(ctx, userID, weekday)
+	if err != nil || date == "" {
+		return routines, err
+	}
+
+	targetDate, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return routines, nil
+	}
+
+	filtered := make([]domain.Routine, 0, len(routines))
+	for _, r := range routines {
+		if shouldShowRoutineForDate(r, targetDate) {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered, nil
+}
+
+func shouldShowRoutineForDate(r domain.Routine, targetDate time.Time) bool {
+	if r.RecurrenceType == "weekly" || r.RecurrenceType == "" {
+		return true
+	}
+
+	startsOnStr := r.StartsOn
+	if len(startsOnStr) > 10 {
+		startsOnStr = startsOnStr[:10]
+	}
+	startsOn, err := time.Parse("2006-01-02", startsOnStr)
+	if err != nil {
+		return true
+	}
+
+	startsOnMonday := mondayOf(startsOn)
+	targetMonday := mondayOf(targetDate)
+
+	if targetMonday.Before(startsOnMonday) {
+		return false
+	}
+
+	weeksDiff := int(targetMonday.Sub(startsOnMonday).Hours()) / (24 * 7)
+
+	switch r.RecurrenceType {
+	case "biweekly":
+		return weeksDiff%2 == 0
+	case "triweekly":
+		return weeksDiff%3 == 0
+	default:
+		return true
+	}
+}
+
+func mondayOf(t time.Time) time.Time {
+	weekday := int(t.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	monday := t.AddDate(0, 0, -(weekday - 1))
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 func (uc *RoutineUsecase) Toggle(ctx context.Context, userID, id string, isActive bool) error {
@@ -321,13 +379,14 @@ func (uc *RoutineUsecase) GetTodaySummary(ctx context.Context, userID string) (i
 		return 0, 0, ErrMissingRequiredFields
 	}
 
-	weekday := int(time.Now().Weekday())
-	routines, err := uc.Routines.ListByWeekday(ctx, userID, weekday)
+	now := time.Now()
+	weekday := int(now.Weekday())
+	date := now.Format("2006-01-02")
+	routines, err := uc.ListByWeekday(ctx, userID, weekday, date)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	date := time.Now().Format("2006-01-02")
 	completions, err := uc.Completions.GetByDate(ctx, userID, date)
 	if err != nil {
 		return 0, 0, err

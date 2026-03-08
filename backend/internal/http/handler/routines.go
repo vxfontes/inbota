@@ -126,7 +126,8 @@ func (h *RoutinesHandler) ListByWeekday(c *gin.Context) {
 		return
 	}
 
-	routines, err := h.Usecase.ListByWeekday(c.Request.Context(), userID, weekday)
+	date := c.Query("date")
+	routines, err := h.Usecase.ListByWeekday(c.Request.Context(), userID, weekday, date)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return

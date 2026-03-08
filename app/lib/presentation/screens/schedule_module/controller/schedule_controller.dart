@@ -9,10 +9,12 @@ import 'package:inbota/modules/routines/data/models/routine_output.dart';
 import 'package:inbota/modules/routines/data/models/routine_section.dart';
 import 'package:inbota/modules/routines/data/models/routine_update_input.dart';
 import 'package:inbota/modules/routines/data/models/routine_week_option.dart';
+import 'package:inbota/modules/routines/domain/usecases/complete_routine_usecase.dart';
 import 'package:inbota/modules/routines/domain/usecases/create_routine_usecase.dart';
 import 'package:inbota/modules/routines/domain/usecases/delete_routine_usecase.dart';
 import 'package:inbota/modules/routines/domain/usecases/get_routines_by_weekday_usecase.dart';
 import 'package:inbota/modules/routines/domain/usecases/get_routines_usecase.dart';
+import 'package:inbota/modules/routines/domain/usecases/uncomplete_routine_usecase.dart';
 import 'package:inbota/modules/routines/domain/usecases/update_routine_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/state/ib_state.dart';
@@ -27,6 +29,8 @@ class ScheduleController implements IBController {
     this._getFlagsUsecase,
     this._getSubflagsByFlagUsecase,
     this._getRoutinesUsecase,
+    this._completeRoutineUsecase,
+    this._uncompleteRoutineUsecase,
   );
 
   final GetRoutinesByWeekdayUsecase _getRoutinesByWeekdayUsecase;
@@ -36,6 +40,8 @@ class ScheduleController implements IBController {
   final GetFlagsUsecase _getFlagsUsecase;
   final GetSubflagsByFlagUsecase _getSubflagsByFlagUsecase;
   final GetRoutinesUsecase _getRoutinesUsecase;
+  final CompleteRoutineUsecase _completeRoutineUsecase;
+  final UncompleteRoutineUsecase _uncompleteRoutineUsecase;
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
@@ -58,6 +64,7 @@ class ScheduleController implements IBController {
   final ValueNotifier<String?> createSelectedFlagId = ValueNotifier(null);
   final ValueNotifier<String?> createSelectedSubflagId = ValueNotifier(null);
   String? _editingRoutineId;
+  final Set<String> _togglingRoutineIds = <String>{};
 
   static const List<String> weekdayTabLabels = [
     'SEG',
@@ -550,6 +557,32 @@ class ScheduleController implements IBController {
         routines.value = list;
         _groupRoutinesByPeriod();
         return true;
+      },
+    );
+  }
+
+  Future<void> toggleRoutine(RoutineOutput routine, bool completed) async {
+    if (_togglingRoutineIds.contains(routine.id)) return;
+
+    _togglingRoutineIds.add(routine.id);
+    final dateStr = _dateForWeekday(selectedWeekday.value);
+
+    final result = completed 
+      ? await _completeRoutineUsecase.call(routine.id, date: dateStr)
+      : await _uncompleteRoutineUsecase.call(routine.id, dateStr);
+    
+    _togglingRoutineIds.remove(routine.id);
+
+    result.fold(
+      (failure) => _setError(failure, fallback: 'Não foi possível atualizar a rotina.'),
+      (_) {
+        final list = List<RoutineOutput>.from(routines.value);
+        final idx = list.indexWhere((r) => r.id == routine.id);
+        if (idx != -1) {
+          list[idx] = list[idx].copyWith(isCompletedToday: completed);
+          routines.value = list;
+          _groupRoutinesByPeriod();
+        }
       },
     );
   }

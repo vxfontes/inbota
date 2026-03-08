@@ -265,6 +265,10 @@ class _SchedulePageState extends IBState<SchedulePage, ScheduleController> {
         child: IBItemCard(
           title: routine.title,
           secondary: secondaryLabel,
+          done: routine.isCompletedToday,
+          doneLabel: 'Concluída',
+          // TODO: decidir se vai implementar toggle de conclusão de rotina (naquele dia)
+          // onToggle: (val) => controller.toggleRoutine(routine, val),
           typeLabel: routine.flagName ?? 'Rotina',
           typeColor: cardColor,
           typeIcon: IBIcon.repeatRounded,

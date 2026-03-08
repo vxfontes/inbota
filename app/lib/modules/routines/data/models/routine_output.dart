@@ -18,6 +18,7 @@ class RoutineOutput {
     this.endsOn,
     this.color,
     required this.isActive,
+    this.isCompletedToday = false,
     this.flag,
     this.subflag,
     this.createdAt,
@@ -36,6 +37,7 @@ class RoutineOutput {
   final String? endsOn;
   final String? color;
   final bool isActive;
+  final bool isCompletedToday;
   final FlagObjectOutput? flag;
   final FlagObjectOutput? subflag;
   final DateTime? createdAt;
@@ -92,7 +94,7 @@ class RoutineOutput {
   String _formatTime(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
-    final match = RegExp(r'(\\d{1,2}):(\\d{1,2})').firstMatch(value);
+    final match = RegExp(r'(\d{1,2}):(\d{1,2})').firstMatch(value);
     if (match == null) return value;
     final hour = match.group(1)!.padLeft(2, '0');
     final minute = match.group(2)!.padLeft(2, '0');
@@ -134,6 +136,7 @@ class RoutineOutput {
     String? endsOn,
     String? color,
     bool? isActive,
+    bool? isCompletedToday,
     FlagObjectOutput? flag,
     FlagObjectOutput? subflag,
     DateTime? createdAt,
@@ -152,6 +155,7 @@ class RoutineOutput {
       endsOn: endsOn ?? this.endsOn,
       color: color ?? this.color,
       isActive: isActive ?? this.isActive,
+      isCompletedToday: isCompletedToday ?? this.isCompletedToday,
       flag: flag ?? this.flag,
       subflag: subflag ?? this.subflag,
       createdAt: createdAt ?? this.createdAt,

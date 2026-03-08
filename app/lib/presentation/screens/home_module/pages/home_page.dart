@@ -41,6 +41,8 @@ class _HomePageState extends IBState<HomePage, HomeController> {
         controller.loading,
         controller.refreshing,
         controller.agenda,
+        controller.routines,
+        controller.routineSummary,
         controller.shoppingLists,
         controller.shoppingItemsByList,
       ]),
@@ -65,9 +67,13 @@ class _HomePageState extends IBState<HomePage, HomeController> {
               children: [
                 _buildHeader(context, refreshing),
                 const SizedBox(height: 16),
+                _buildRoutineProgress(),
+                const SizedBox(height: 16),
                 _buildAgendaSnapshot(context),
                 const SizedBox(height: 20),
                 _buildOverviewSection(context),
+                const SizedBox(height: 20),
+                _buildRoutinesSection(),
                 const SizedBox(height: 20),
                 _buildTodoSection(),
                 const SizedBox(height: 20),
@@ -114,6 +120,43 @@ class _HomePageState extends IBState<HomePage, HomeController> {
               : const IBIcon(IBIcon.refreshRounded, color: AppColors.primary700),
         ),
       ],
+    );
+  }
+
+  Widget _buildRoutineProgress() {
+    final summary = controller.routineSummary.value;
+    if (summary == null || summary.total == 0) return const SizedBox.shrink();
+
+    final percent = summary.total > 0 ? summary.completed / summary.total : 0.0;
+    final color = percent >= 1.0 ? AppColors.success600 : AppColors.primary600;
+
+    return IBCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IBText('Rotinas de hoje', context: context).label.weight(FontWeight.w600).build(),
+              IBText('${summary.completed}/${summary.total}', context: context).caption.color(color).build(),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: percent,
+              backgroundColor: AppColors.surfaceSoft,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 8,
+            ),
+          ),
+          if (percent >= 1.0) ...[
+            const SizedBox(height: 8),
+            IBText('Tudo pronto por hoje! 🔥', context: context).caption.color(AppColors.success600).build(),
+          ],
+        ],
+      ),
     );
   }
 
@@ -195,6 +238,32 @@ class _HomePageState extends IBState<HomePage, HomeController> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoutinesSection() {
+    final routines = controller.routines.value;
+    if (routines.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(context, 'Rotinas pendentes'),
+        const SizedBox(height: 12),
+        IBTodoList(
+          items: routines.where((r) => !r.isCompletedToday).map((r) => IBTodoItemData(
+            id: r.id,
+            title: r.title,
+            subtitle: r.timeLabel,
+            done: r.isCompletedToday,
+          )).toList(),
+          emptyLabel: 'Todas as rotinas concluídas!',
+          onToggle: (index, done) {
+            final pending = routines.where((r) => !r.isCompletedToday).toList();
+            controller.toggleRoutine(pending[index], done);
+          },
         ),
       ],
     );

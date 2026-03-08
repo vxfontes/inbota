@@ -22,6 +22,7 @@ RoutineOutput _$RoutineOutputFromJson(Map<String, dynamic> json) =>
       endsOn: json['endsOn'] as String?,
       color: json['color'] as String?,
       isActive: json['isActive'] as bool,
+      isCompletedToday: json['isCompletedToday'] as bool? ?? false,
       flag: json['flag'] == null
           ? null
           : FlagObjectOutput.fromJson(json['flag'] as Map<String, dynamic>),
@@ -50,6 +51,7 @@ Map<String, dynamic> _$RoutineOutputToJson(RoutineOutput instance) =>
       'endsOn': instance.endsOn,
       'color': instance.color,
       'isActive': instance.isActive,
+      'isCompletedToday': instance.isCompletedToday,
       'flag': instance.flag,
       'subflag': instance.subflag,
       'createdAt': instance.createdAt?.toIso8601String(),

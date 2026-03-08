@@ -22,6 +22,8 @@ flutter run --dart-define-from-file=.env
 ```bash
 cd app
 flutter build ipa --release --dart-define-from-file=.env
+flutter build ipa --release --export-method ad-hoc --dart-define-from-file=.env
+
 ```
 
 ## Gerar APK para Android:

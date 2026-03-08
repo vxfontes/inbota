@@ -20,6 +20,7 @@ import 'package:inbota/modules/tasks/domain/usecases/delete_task_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/get_tasks_usecase.dart';
 import 'package:inbota/modules/tasks/domain/usecases/update_task_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/widget/widget_bridge_service.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 
 class RemindersController implements IBController {
@@ -73,25 +74,26 @@ class RemindersController implements IBController {
     if (loading.value) return;
     loading.value = true;
     error.value = null;
+    await _applyWidgetCompletedTasks();
 
     final taskResult = await _getTasksUsecase.call(limit: 50);
     taskResult.fold(
       (failure) =>
-          _setError(failure, fallback: 'Nao foi possivel carregar tarefas.'),
+          _setError(failure, fallback: 'Não foi possível carregar tarefas.'),
       (data) => _setTasks(_safeTaskItems(data)),
     );
 
     final reminderResult = await _getRemindersUsecase.call(limit: 50);
     reminderResult.fold(
       (failure) =>
-          _setError(failure, fallback: 'Nao foi possivel carregar lembretes.'),
+          _setError(failure, fallback: 'Não foi possível carregar lembretes.'),
       (data) => reminders.value = _safeReminderItems(data),
     );
 
     final flagsResult = await _getFlagsUsecase.call(limit: 100);
     flagsResult.fold(
       (failure) =>
-          _setError(failure, fallback: 'Nao foi possivel carregar flags.'),
+          _setError(failure, fallback: 'Não foi possível carregar flags.'),
       (data) => flags.value = _safeFlagItems(data.items),
     );
 
@@ -109,7 +111,7 @@ class RemindersController implements IBController {
     );
     result.fold(
       (failure) =>
-          _setError(failure, fallback: 'Nao foi possivel carregar subflags.'),
+          _setError(failure, fallback: 'Não foi possível carregar subflags.'),
       (output) {
         final next = Map<String, List<SubflagOutput>>.from(
           subflagsByFlag.value,
@@ -132,7 +134,7 @@ class RemindersController implements IBController {
 
     return result.fold(
       (failure) {
-        _setError(failure, fallback: 'Nao foi possivel atualizar a tarefa.');
+        _setError(failure, fallback: 'Não foi possível atualizar a tarefa.');
         _refreshTasks();
         return false;
       },
@@ -169,7 +171,7 @@ class RemindersController implements IBController {
     final result = await _deleteTaskUsecase.call(id);
     return result.fold(
       (failure) {
-        _setError(failure, fallback: 'Nao foi possivel excluir a tarefa.');
+        _setError(failure, fallback: 'Não foi possível excluir a tarefa.');
         return false;
       },
       (_) {
@@ -212,7 +214,7 @@ class RemindersController implements IBController {
 
     return result.fold(
       (failure) {
-        _setError(failure, fallback: 'Nao foi possivel criar a tarefa.');
+        _setError(failure, fallback: 'Não foi possível criar a tarefa.');
         return false;
       },
       (created) {
@@ -254,7 +256,7 @@ class RemindersController implements IBController {
 
     return result.fold(
       (failure) {
-        _setError(failure, fallback: 'Nao foi possivel criar o lembrete.');
+        _setError(failure, fallback: 'Não foi possível criar o lembrete.');
         return false;
       },
       (created) {
@@ -274,6 +276,25 @@ class RemindersController implements IBController {
   void _setTasks(List<TaskOutput> items) {
     tasks.value = items;
     _rebuildVisibleTasks();
+    unawaited(_syncTasksToWidget());
+  }
+
+  Future<void> _applyWidgetCompletedTasks() async {
+    final completedTaskIds = await WidgetBridgeService.instance
+        .consumeCompletedTaskIds();
+    if (completedTaskIds.isEmpty) return;
+
+    for (final taskId in completedTaskIds) {
+      await _updateTaskUsecase.call(
+        TaskUpdateInput(id: taskId, status: 'DONE'),
+      );
+    }
+  }
+
+  Future<void> _syncTasksToWidget() async {
+    await WidgetBridgeService.instance.syncTasks(
+      tasks.value.where((task) => !task.isDone).toList(growable: false),
+    );
   }
 
   void _rebuildVisibleTasks() {

@@ -82,6 +82,7 @@ func main() {
 		routineRepo := postgres.NewRoutineRepository(db)
 		routineExceptionRepo := postgres.NewRoutineExceptionRepository(db)
 		routineCompletionRepo := postgres.NewRoutineCompletionRepository(db)
+		agendaRepo := postgres.NewAgendaRepository(db)
 
 		flagUC := &usecase.FlagUsecase{Flags: flagRepo}
 		subflagUC := &usecase.SubflagUsecase{Subflags: subflagRepo, Flags: flagRepo}
@@ -106,6 +107,7 @@ func main() {
 			Flags:       flagRepo,
 			Subflags:    subflagRepo,
 		}
+		agendaUC := usecase.NewAgendaUsecase(agendaRepo)
 		txRunner := postgres.NewTxRunner(db)
 
 		var aiClient service.AIClient
@@ -149,7 +151,7 @@ func main() {
 			Subflags:      handler.NewSubflagsHandler(subflagUC, flagUC),
 			ContextRules:  handler.NewContextRulesHandler(ruleUC, flagUC, subflagUC),
 			Inbox:         handler.NewInboxHandler(inboxUC, flagUC, subflagUC),
-			Agenda:        handler.NewAgendaHandler(eventUC, taskUC, reminderUC, flagUC, subflagUC),
+			Agenda:        handler.NewAgendaHandler(agendaUC),
 			Tasks:         handler.NewTasksHandler(taskUC, inboxUC, flagUC, subflagUC),
 			Reminders:     handler.NewRemindersHandler(reminderUC, inboxUC, flagUC, subflagUC),
 			Events:        handler.NewEventsHandler(eventUC, inboxUC, flagUC, subflagUC),

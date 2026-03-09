@@ -23,6 +23,11 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 	engine.GET("/readyz", handler.ReadinessHandler(readinessCheckers...))
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// Public daily summary endpoint
+	if apiHandlers != nil && apiHandlers.Digest != nil {
+		engine.GET("/daily-summary", apiHandlers.Digest.GetDailySummary)
+	}
+
 	v1 := engine.Group("/v1")
 
 	v1.GET("/healthz", handler.HealthHandler)

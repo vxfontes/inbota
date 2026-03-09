@@ -82,51 +82,63 @@ func NewDigestService(
 }
 
 type DigestData struct {
-	Date             string
-	HasSchedule      bool
-	Schedule         []ScheduleItemData
-	HasAgenda        bool
-	Agenda           []AgendaItemData
-	HasReminders     bool
-	Reminders        []ReminderItemData
-	HasTasks         bool
-	Tasks            []TaskItemData
-	HasOpenTasks     bool
-	OpenTasks        []TaskItemData
-	HasShoppingLists bool
-	ShoppingLists    []ShoppingListData
+	Date             string             `json:"date"`
+	Detail           DigestDetail       `json:"detail"`
+	HasSchedule      bool               `json:"hasSchedule"`
+	Schedule         []ScheduleItemData `json:"schedule"`
+	HasAgenda        bool               `json:"hasAgenda"`
+	Agenda           []AgendaItemData   `json:"agenda"`
+	HasReminders     bool               `json:"hasReminders"`
+	Reminders        []ReminderItemData `json:"reminders"`
+	HasTasks         bool               `json:"hasTasks"`
+	Tasks            []TaskItemData     `json:"tasks"`
+	HasOpenTasks     bool               `json:"hasOpenTasks"`
+	OpenTasks        []TaskItemData     `json:"openTasks"`
+	HasShoppingLists bool               `json:"hasShoppingLists"`
+	ShoppingLists    []ShoppingListData `json:"shoppingLists"`
+}
+
+type DigestDetail struct {
+	Purpose       string `json:"purpose"`
+	Schedule      string `json:"schedule"`
+	Agenda        string `json:"agenda"`
+	Reminders     string `json:"reminders"`
+	Tasks         string `json:"tasks"`
+	OpenTasks     string `json:"openTasks"`
+	ShoppingLists string `json:"shoppingLists"`
+	Flags         string `json:"flags"`
 }
 
 type ScheduleItemData struct {
-	Time        string
-	Title       string
-	Recurrence  string
-	Context     string
-	IsCompleted bool
+	Time        string `json:"time"`
+	Title       string `json:"title"`
+	Recurrence  string `json:"recurrence"`
+	Context     string `json:"context"`
+	IsCompleted bool   `json:"isCompleted"`
 }
 
 type AgendaItemData struct {
-	Time    string
-	Type    string
-	TypeKey string
-	Title   string
-	Context string
+	Time    string `json:"time"`
+	Type    string `json:"type"`
+	TypeKey string `json:"typeKey"`
+	Title   string `json:"title"`
+	Context string `json:"context"`
 }
 
 type ReminderItemData struct {
-	Time  string
-	Title string
+	Time  string `json:"time"`
+	Title string `json:"title"`
 }
 
 type TaskItemData struct {
-	DueTime string
-	Title   string
+	DueTime string `json:"dueTime"`
+	Title   string `json:"title"`
 }
 
 type ShoppingListData struct {
-	Title        string
-	PendingCount int
-	PendingItems []string
+	Title        string   `json:"title"`
+	PendingCount int      `json:"pendingCount"`
+	PendingItems []string `json:"pendingItems"`
 }
 
 func (s *DigestService) SetNow(nowFn func() time.Time) {
@@ -148,7 +160,8 @@ func (s *DigestService) BuildDigestData(ctx context.Context, userID string, targ
 	loc := targetDate.Location()
 
 	data := DigestData{
-		Date: targetDate.Format("02/01/2006"),
+		Date:   targetDate.Format("02/01/2006"),
+		Detail: defaultDigestDetail(),
 	}
 
 	startOfDay := time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), 0, 0, 0, 0, loc)
@@ -263,6 +276,30 @@ func (s *DigestService) BuildDigestData(ctx context.Context, userID string, targ
 	data.HasShoppingLists = len(data.ShoppingLists) > 0
 
 	return data, nil
+}
+
+func defaultDigestDetail() DigestDetail {
+	return DigestDetail{
+		Purpose:       "Resumo consolidado do dia do usuario para exibicao e interpretacao por IA.",
+		Schedule:      "Itens de rotina planejados para hoje (habitos/rotinas recorrentes), com janela de horario, recorrencia, contexto e status de conclusao.",
+		Agenda:        "Linha do tempo dos compromissos do dia (eventos, lembretes e outros itens com horario), com tipo, titulo e contexto.",
+		Reminders:     "Subconjunto da agenda contendo apenas lembretes com horario e titulo, util para destaque rapido.",
+		Tasks:         "Tarefas abertas com prazo para hoje, incluindo horario limite (dueTime) quando disponivel.",
+		OpenTasks:     "Tarefas abertas sem prazo definido (backlog), priorize por relevancia/contexto na exibicao.",
+		ShoppingLists: "Listas de compras abertas com contagem de itens pendentes e nomes dos itens ainda nao marcados.",
+		Flags:         "Campos booleanos 'has*' indicam se cada secao possui dados para permitir renderizacao condicional na interface.",
+	}
+}
+
+func (s *DigestService) ValidateUser(ctx context.Context, userID, email string) (bool, error) {
+	user, err := s.userRepo.Get(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	if user.ID == "" {
+		return false, nil
+	}
+	return strings.EqualFold(user.Email, strings.TrimSpace(email)), nil
 }
 
 func (s *DigestService) buildScheduleItems(ctx context.Context, userID string, targetDate time.Time) ([]ScheduleItemData, error) {

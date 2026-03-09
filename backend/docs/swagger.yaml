@@ -1,5 +1,118 @@
 basePath: /
 definitions:
+  digest.AgendaItemData:
+    properties:
+      context:
+        type: string
+      time:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      typeKey:
+        type: string
+    type: object
+  digest.DigestData:
+    properties:
+      agenda:
+        items:
+          $ref: '#/definitions/digest.AgendaItemData'
+        type: array
+      date:
+        type: string
+      detail:
+        $ref: '#/definitions/digest.DigestDetail'
+      hasAgenda:
+        type: boolean
+      hasOpenTasks:
+        type: boolean
+      hasReminders:
+        type: boolean
+      hasSchedule:
+        type: boolean
+      hasShoppingLists:
+        type: boolean
+      hasTasks:
+        type: boolean
+      openTasks:
+        items:
+          $ref: '#/definitions/digest.TaskItemData'
+        type: array
+      reminders:
+        items:
+          $ref: '#/definitions/digest.ReminderItemData'
+        type: array
+      schedule:
+        items:
+          $ref: '#/definitions/digest.ScheduleItemData'
+        type: array
+      shoppingLists:
+        items:
+          $ref: '#/definitions/digest.ShoppingListData'
+        type: array
+      tasks:
+        items:
+          $ref: '#/definitions/digest.TaskItemData'
+        type: array
+    type: object
+  digest.DigestDetail:
+    properties:
+      agenda:
+        type: string
+      flags:
+        type: string
+      openTasks:
+        type: string
+      purpose:
+        type: string
+      reminders:
+        type: string
+      schedule:
+        type: string
+      shoppingLists:
+        type: string
+      tasks:
+        type: string
+    type: object
+  digest.ReminderItemData:
+    properties:
+      time:
+        type: string
+      title:
+        type: string
+    type: object
+  digest.ScheduleItemData:
+    properties:
+      context:
+        type: string
+      isCompleted:
+        type: boolean
+      recurrence:
+        type: string
+      time:
+        type: string
+      title:
+        type: string
+    type: object
+  digest.ShoppingListData:
+    properties:
+      pendingCount:
+        type: integer
+      pendingItems:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+    type: object
+  digest.TaskItemData:
+    properties:
+      dueTime:
+        type: string
+      title:
+        type: string
+    type: object
   dto.AgendaResponse:
     properties:
       events:
@@ -964,6 +1077,49 @@ info:
   title: Inbota API
   version: "0.1"
 paths:
+  /daily-summary:
+    get:
+      description: Retorna o resumo consolidado do dia do usuário (rotinas, agenda,
+        tarefas, compras).
+      parameters:
+      - description: User Email
+        in: query
+        name: email
+        required: true
+        type: string
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/digest.DigestData'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Resumo diário público
+      tags:
+      - Digest
   /healthz:
     get:
       produces:

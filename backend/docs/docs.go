@@ -15,6 +15,69 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/daily-summary": {
+            "get": {
+                "description": "Retorna o resumo consolidado do dia do usuário (rotinas, agenda, tarefas, compras).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Digest"
+                ],
+                "summary": "Resumo diário público",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/digest.DigestData"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/healthz": {
             "get": {
                 "produces": [
@@ -3228,6 +3291,179 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "digest.AgendaItemData": {
+            "type": "object",
+            "properties": {
+                "context": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "typeKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "digest.DigestData": {
+            "type": "object",
+            "properties": {
+                "agenda": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/digest.AgendaItemData"
+                    }
+                },
+                "date": {
+                    "type": "string"
+                },
+                "detail": {
+                    "$ref": "#/definitions/digest.DigestDetail"
+                },
+                "hasAgenda": {
+                    "type": "boolean"
+                },
+                "hasOpenTasks": {
+                    "type": "boolean"
+                },
+                "hasReminders": {
+                    "type": "boolean"
+                },
+                "hasSchedule": {
+                    "type": "boolean"
+                },
+                "hasShoppingLists": {
+                    "type": "boolean"
+                },
+                "hasTasks": {
+                    "type": "boolean"
+                },
+                "openTasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/digest.TaskItemData"
+                    }
+                },
+                "reminders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/digest.ReminderItemData"
+                    }
+                },
+                "schedule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/digest.ScheduleItemData"
+                    }
+                },
+                "shoppingLists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/digest.ShoppingListData"
+                    }
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/digest.TaskItemData"
+                    }
+                }
+            }
+        },
+        "digest.DigestDetail": {
+            "type": "object",
+            "properties": {
+                "agenda": {
+                    "type": "string"
+                },
+                "flags": {
+                    "type": "string"
+                },
+                "openTasks": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "type": "string"
+                },
+                "reminders": {
+                    "type": "string"
+                },
+                "schedule": {
+                    "type": "string"
+                },
+                "shoppingLists": {
+                    "type": "string"
+                },
+                "tasks": {
+                    "type": "string"
+                }
+            }
+        },
+        "digest.ReminderItemData": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "digest.ScheduleItemData": {
+            "type": "object",
+            "properties": {
+                "context": {
+                    "type": "string"
+                },
+                "isCompleted": {
+                    "type": "boolean"
+                },
+                "recurrence": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "digest.ShoppingListData": {
+            "type": "object",
+            "properties": {
+                "pendingCount": {
+                    "type": "integer"
+                },
+                "pendingItems": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "digest.TaskItemData": {
+            "type": "object",
+            "properties": {
+                "dueTime": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AgendaResponse": {
             "type": "object",
             "properties": {

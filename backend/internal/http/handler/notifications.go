@@ -266,8 +266,9 @@ func (h *NotificationsHandler) SendTestNotification(c *gin.Context) {
 			writeError(c, http.StatusBadRequest, "no_active_devices")
 			return
 		}
+		// Log detail server-side; keep client contract stable.
 		c.Error(err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "notification_send_failed", "detail": errMsg})
+		writeError(c, http.StatusBadGateway, "notification_send_failed")
 		return
 	}
 

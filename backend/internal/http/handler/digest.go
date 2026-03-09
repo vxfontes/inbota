@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"inbota/backend/internal/app/digest"
+	"inbota/backend/internal/infra/postgres"
 )
 
 type DigestHandler struct {
@@ -38,6 +40,10 @@ func (h *DigestHandler) GetDailySummary(c *gin.Context) {
 
 	userID, err := h.digestService.ResolveUserIDByDailySummaryToken(c.Request.Context(), token)
 	if err != nil {
+		if errors.Is(err, postgres.ErrNotFound) {
+			writeError(c, http.StatusUnauthorized, "invalid_token")
+			return
+		}
 		writeUsecaseError(c, err)
 		return
 	}

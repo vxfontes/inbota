@@ -490,6 +490,10 @@ type RegisterTokenRequest struct {
 	AppVersion *string `json:"appVersion,omitempty"`
 }
 
+type UnregisterTokenRequest struct {
+	Token string `json:"token" binding:"required"`
+}
+
 // Notifications
 
 type NotificationPreferencesResponse struct {

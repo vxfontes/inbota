@@ -449,12 +449,12 @@ const docTemplate = `{
                 "summary": "Remover token de dispositivo",
                 "parameters": [
                     {
-                        "description": "Unregister token request (only token needed)",
+                        "description": "Unregister token request",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.RegisterTokenRequest"
+                            "$ref": "#/definitions/dto.UnregisterTokenRequest"
                         }
                     }
                 ],
@@ -4341,6 +4341,17 @@ const docTemplate = `{
             "properties": {
                 "isActive": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.UnregisterTokenRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string"
                 }
             }
         },

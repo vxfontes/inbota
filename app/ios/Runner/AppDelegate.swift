@@ -1,7 +1,6 @@
 import Flutter
 import UIKit
 import WidgetKit
-import FirebaseCore
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -15,7 +14,6 @@ import FirebaseCore
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FirebaseApp.configure()
     GeneratedPluginRegistrant.register(with: self)
 
     if let registrar = registrar(forPlugin: "WidgetBridgePlugin") {

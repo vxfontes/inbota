@@ -26,8 +26,6 @@ type Config struct {
 	AITimeout               time.Duration
 	AIMaxRetries            int
 
-	FCMCredentialsJSON string
-
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
@@ -50,7 +48,6 @@ func Load() (Config, error) {
 		AIFallbackOnNeedsReview: getEnvBool("AI_FALLBACK_ON_NEEDS_REVIEW", false),
 		AITimeout:               getEnvDuration("AI_TIMEOUT", 15*time.Second),
 		AIMaxRetries:            getEnvInt("AI_MAX_RETRIES", 2),
-		FCMCredentialsJSON:      getEnv("FCM_CREDENTIALS_JSON", ""),
 		ReadTimeout:             getEnvDuration("READ_TIMEOUT", 5*time.Second),
 		WriteTimeout:            getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
 		IdleTimeout:             getEnvDuration("IDLE_TIMEOUT", 60*time.Second),

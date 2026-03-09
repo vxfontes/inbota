@@ -8,7 +8,7 @@ CREATE TYPE inbota.notification_status AS ENUM ('pending', 'sent', 'failed', 'de
 CREATE TYPE inbota.notification_type AS ENUM ('reminder', 'event', 'task', 'routine');
 
 -- -----------------------------------------------------------------------------
--- device_tokens: tokens FCM por dispositivo/usuário
+-- device_tokens: tokens/tópicos por dispositivo/usuário
 -- -----------------------------------------------------------------------------
 CREATE TABLE inbota.device_tokens (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -222,11 +222,13 @@ func (h *NotificationsHandler) SendTestNotification(c *gin.Context) {
 
 	err := h.Usecase.SendTestNotification(c.Request.Context(), userID)
 	if err != nil {
-		if err.Error() == "no_active_devices" {
+		errMsg := err.Error()
+		if errMsg == "no_active_devices" {
 			writeError(c, http.StatusBadRequest, "no_active_devices")
 			return
 		}
-		writeUsecaseError(c, err)
+		c.Error(err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "notification_send_failed", "detail": errMsg})
 		return
 	}
 

@@ -64,7 +64,7 @@ func (h *DevicesHandler) RegisterToken(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body dto.RegisterTokenRequest true "Unregister token request (only token needed)"
+// @Param body body dto.UnregisterTokenRequest true "Unregister token request"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 401 {object} dto.ErrorResponse
@@ -75,7 +75,7 @@ func (h *DevicesHandler) UnregisterToken(c *gin.Context) {
 		return
 	}
 
-	var req dto.RegisterTokenRequest
+	var req dto.UnregisterTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "invalid_payload")
 		return

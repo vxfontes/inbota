@@ -10,7 +10,6 @@ import (
 
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
-	"inbota/backend/internal/infra/push"
 )
 
 type NotificationScheduler struct {
@@ -24,7 +23,6 @@ type NotificationScheduler struct {
 	Routines  repository.RoutineRepository
 	Templates repository.NotificationTemplateRepository
 	Config    repository.AppConfigRepository
-	FCM       *push.FCMClient
 	Logger    *slog.Logger
 
 	// carregados em memória no startup
@@ -332,40 +330,10 @@ func (s *NotificationScheduler) dispatchOne(ctx context.Context, l domain.Notifi
 		}
 	}
 
-	// 3. Envia via FCM
-	data := map[string]string{
-		"type":                string(l.Type),
-		"reference_id":        l.ReferenceID,
-		"notification_log_id": l.ID, // chave correta esperada pelo Flutter
-	}
-	if l.LeadMins != nil {
-		data["lead_mins"] = strconv.Itoa(*l.LeadMins)
-	}
-
-	success := false
-	for _, t := range tokens {
-		err := s.FCM.Send(ctx, t.Token, l.Title, l.Body, data)
-		if err == nil {
-			success = true
-		} else {
-			s.Logger.Warn("fcm_send_error", slog.String("error", err.Error()), slog.String("token", t.Token))
-			if push.IsTokenInvalid(err) {
-				if deactivateErr := s.Tokens.Deactivate(ctx, t.Token); deactivateErr != nil {
-					s.Logger.Error("token_deactivate_error", slog.String("error", deactivateErr.Error()))
-				}
-			}
-		}
-	}
-
-	if success {
-		if err := s.Log.UpdateStatus(ctx, l.ID, domain.NotificationStatusSent, nil); err != nil {
-			s.Logger.Error("update_status_sent_error", slog.String("error", err.Error()))
-		}
-	} else {
-		msg := "failed to send to all devices"
-		if err := s.Log.UpdateStatus(ctx, l.ID, domain.NotificationStatusFailed, &msg); err != nil {
-			s.Logger.Error("update_status_failed_error", slog.String("error", err.Error()))
-		}
+	// 3. TODO: Implement dispatch using ntfy.sh
+	// Para agora, apenas marcamos como enviado para evitar loop
+	if err := s.Log.UpdateStatus(ctx, l.ID, domain.NotificationStatusSent, nil); err != nil {
+		s.Logger.Error("update_status_sent_error", slog.String("error", err.Error()))
 	}
 }
 

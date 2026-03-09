@@ -28,7 +28,6 @@ import (
 	"inbota/backend/internal/http/handler"
 	"inbota/backend/internal/infra/ai"
 	"inbota/backend/internal/infra/postgres"
-	"inbota/backend/internal/infra/push"
 	"inbota/backend/internal/observability"
 	"inbota/backend/internal/scheduler"
 )
@@ -159,17 +158,11 @@ func main() {
 			TxRunner:        txRunner,
 		}
 
-		fcmClient, err := push.NewFCMClient(cfg.FCMCredentialsJSON)
-		if err != nil {
-			log.Warn("fcm_client_init_error", slog.String("error", err.Error()))
-		}
-
 		notificationUC := &usecase.NotificationUsecase{
 			Prefs:  notificationPrefsRepo,
 			Log:    notificationLogRepo,
 			Tokens: deviceTokenRepo,
 			Config: appConfigRepo,
-			FCM:    fcmClient,
 		}
 
 		notifScheduler := &scheduler.NotificationScheduler{
@@ -183,7 +176,6 @@ func main() {
 			Routines:  routineRepo,
 			Templates: notificationTemplateRepo,
 			Config:    appConfigRepo,
-			FCM:       fcmClient,
 			Logger:    log,
 		}
 		go notifScheduler.Run(ctx)

@@ -1,24 +1,25 @@
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:inbota/modules/notifications/domain/repositories/i_notifications_repository.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/shared/services/push/notification_payload.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class PushNotificationService {
   PushNotificationService._();
   static final PushNotificationService instance = PushNotificationService._();
 
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   INotificationsRepository? _repository;
   bool _initialized = false;
+  String? _currentTopic;
 
   void setRepository(INotificationsRepository repository) {
     _repository = repository;
@@ -27,32 +28,13 @@ class PushNotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    // 1. Request permissions
-    NotificationSettings settings = await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // 1. Init local notifications
+    await _initLocalNotifications();
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      if (kDebugMode) {
-        print('User granted permission');
-      }
+    // 2. Load or generate ntfy topic
+    await _setupNtfy();
 
-      // 2. Init local notifications for foreground
-      await _initLocalNotifications();
-
-      // 3. Listeners
-      _setupListeners();
-
-      // 4. Handle initial message if app was killed
-      RemoteMessage? initialMessage = await _fcm.getInitialMessage();
-      if (initialMessage != null) {
-        onTap(NotificationPayload.fromMap(initialMessage.data));
-      }
-
-      _initialized = true;
-    }
+    _initialized = true;
   }
 
   Future<void> _initLocalNotifications() async {
@@ -83,56 +65,35 @@ class PushNotificationService {
     );
   }
 
-  void _setupListeners() {
-    // Foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        print('Got a message whilst in the foreground!');
-      }
-      _showLocalNotification(message);
-    });
-
-    // Background tap
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        print('A new onMessageOpenedApp event was published!');
-      }
-      onTap(NotificationPayload.fromMap(message.data));
-    });
-
-    // Token refresh
-    _fcm.onTokenRefresh.listen((token) {
-      _registerTokenOnBackend(token);
-    });
+  Future<void> _setupNtfy() async {
+    // TODO: Implement ntfy.sh topic generation and subscription
+    // 1. Check if topic exists in secure storage
+    // 2. If not, generate uuid and save
+    // 3. Register topic on backend
+    // 4. Start WebSocket listener
   }
 
-  Future<void> _showLocalNotification(RemoteMessage message) async {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
-
-    if (notification != null) {
-      await _localNotifications.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
-        notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription: 'This channel is used for important notifications.',
-            importance: Importance.max,
-            priority: Priority.high,
-            icon: android?.smallIcon,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+  void _showLocalNotification(String title, String body, Map<String, dynamic> data) async {
+    await _localNotifications.show(
+      id: title.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          channelDescription: 'This channel is used for important notifications.',
+          importance: Importance.max,
+          priority: Priority.high,
         ),
-        payload: jsonEncode(message.data),
-      );
-    }
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: jsonEncode(data),
+    );
   }
 
   void onTap(NotificationPayload payload) {
@@ -158,58 +119,22 @@ class PushNotificationService {
     }
   }
 
-  Future<String?> getToken() async {
-    if (Platform.isIOS) {
-      // No iOS, às vezes o token APNS demora um pouco para ser registrado.
-      // Vamos tentar aguardar um pouco se necessário.
-      String? apnsToken;
-      int retries = 0;
-      while (apnsToken == null && retries < 3) {
-        apnsToken = await _fcm.getAPNSToken();
-        if (apnsToken == null) {
-          await Future.delayed(const Duration(seconds: 2));
-          retries++;
-        }
-      }
-
-      if (apnsToken == null && kDebugMode) {
-        print('Warning: APNS token is still null after retries. FCM token might fail.');
-      }
-    }
-
-    try {
-      return await _fcm.getToken();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error getting FCM token: $e');
-      }
-      return null;
-    }
-  }
-
   Future<void> registerToken() async {
-    String? token = await getToken();
-    if (token != null) {
-      await _registerTokenOnBackend(token);
-    }
-  }
-
-  Future<void> _registerTokenOnBackend(String token) async {
-    if (_repository != null) {
+    if (_currentTopic != null && _repository != null) {
+      final info = await PackageInfo.fromPlatform();
       String platform = Platform.isIOS ? 'ios' : 'android';
       await _repository!.registerDeviceToken(
-        token,
+        _currentTopic!,
         platform,
-        appVersion: '0.0.4',
+        appVersion: info.version,
       );
     }
   }
 
   Future<void> unregisterToken() async {
-    String? token = await getToken();
-    if (token != null && _repository != null) {
-      await _repository!.unregisterDeviceToken(token);
+    if (_currentTopic != null && _repository != null) {
+      await _repository!.unregisterDeviceToken(_currentTopic!);
     }
-    await _fcm.deleteToken();
+    // TODO: Stop ntfy subscription
   }
 }

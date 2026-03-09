@@ -6,7 +6,6 @@ import (
 
 	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
-	"inbota/backend/internal/infra/push"
 )
 
 type NotificationUsecase struct {
@@ -14,7 +13,6 @@ type NotificationUsecase struct {
 	Log     repository.NotificationLogRepository
 	Tokens  repository.DeviceTokenRepository
 	Config  repository.AppConfigRepository
-	FCM     *push.FCMClient
 }
 
 func (uc *NotificationUsecase) GetPreferences(ctx context.Context, userID string) (domain.NotificationPreferences, error) {
@@ -52,25 +50,6 @@ func (uc *NotificationUsecase) SendTestNotification(ctx context.Context, userID 
 		return fmt.Errorf("no_active_devices")
 	}
 
-	title := "Teste de Notificação"
-	body := "Isso é um teste do Inbota! 🎉"
-	if uc.Config != nil {
-		if cfg, err := uc.Config.GetAll(ctx); err == nil {
-			if v := cfg["notification.test_title"]; v != "" {
-				title = v
-			}
-			if v := cfg["notification.test_body"]; v != "" {
-				body = v
-			}
-		}
-	}
-
-	data := map[string]string{"type": "test"}
-	for _, t := range tokens {
-		if uc.FCM != nil {
-			_ = uc.FCM.Send(ctx, t.Token, title, body, data)
-		}
-	}
-
+	// TODO: Implement ntfy test notification
 	return nil
 }

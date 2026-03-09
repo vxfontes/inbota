@@ -69,46 +69,76 @@ func (h *AgendaHandler) List(c *gin.Context) {
 		var flag *dto.FlagObject
 		if item.FlagName != nil {
 			flag = &dto.FlagObject{
+				ID:    "",
 				Name:  *item.FlagName,
 				Color: item.FlagColor,
 			}
-		}
-		var subflag *dto.SubflagObject
-		if item.SubflagName != nil {
-			subflag = &dto.SubflagObject{
-				Name:  *item.SubflagName,
-				Color: item.SubflagColor,
+			if item.ResolvedFlagID != nil {
+				flag.ID = *item.ResolvedFlagID
+			} else if item.FlagID != nil {
+				flag.ID = *item.FlagID
 			}
 		}
 
-		scheduledAt := item.ScheduledAt
+		var subflag *dto.SubflagObject
+		if item.SubflagName != nil {
+			subflag = &dto.SubflagObject{
+				ID:    "",
+				Name:  *item.SubflagName,
+				Color: item.SubflagColor,
+			}
+			if item.SubflagID != nil {
+				subflag.ID = *item.SubflagID
+			}
+		}
 
 		switch item.ItemType {
 		case "event":
+			startAt := item.StartAt
+			if startAt == nil {
+				v := item.ScheduledAt
+				startAt = &v
+			}
+
+			allDay := false
+			if item.AllDay != nil {
+				allDay = *item.AllDay
+			}
+
 			eventItems = append(eventItems, dto.EventResponse{
-				ID:      item.ID,
-				Title:   item.Title,
-				StartAt: &scheduledAt,
-				Flag:    flag,
-				Subflag: subflag,
+				ID:        item.ID,
+				Title:     item.Title,
+				StartAt:   startAt,
+				EndAt:     item.EndAt,
+				AllDay:    allDay,
+				Location:  item.Location,
+				Flag:      flag,
+				Subflag:   subflag,
+				CreatedAt: item.CreatedAt,
+				UpdatedAt: item.UpdatedAt,
 			})
 		case "task":
 			taskItems = append(taskItems, dto.TaskResponse{
-				ID:      item.ID,
-				Title:   item.Title,
-				Status:  item.Status,
-				DueAt:   &scheduledAt,
-				Flag:    flag,
-				Subflag: subflag,
+				ID:        item.ID,
+				Title:     item.Title,
+				Description: item.Description,
+				Status:    item.Status,
+				DueAt:     item.DueAt,
+				Flag:      flag,
+				Subflag:   subflag,
+				CreatedAt: item.CreatedAt,
+				UpdatedAt: item.UpdatedAt,
 			})
 		case "reminder":
 			reminderItems = append(reminderItems, dto.ReminderResponse{
-				ID:       item.ID,
-				Title:    item.Title,
-				Status:   item.Status,
-				RemindAt: &scheduledAt,
-				Flag:     flag,
-				Subflag:  subflag,
+				ID:        item.ID,
+				Title:     item.Title,
+				Status:    item.Status,
+				RemindAt:  item.RemindAt,
+				Flag:      flag,
+				Subflag:   subflag,
+				CreatedAt: item.CreatedAt,
+				UpdatedAt: item.UpdatedAt,
 			})
 		}
 	}

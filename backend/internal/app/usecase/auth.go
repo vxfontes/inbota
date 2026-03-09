@@ -73,7 +73,9 @@ func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName,
 		RoutineLeadMins:   []int{15},
 		QuietHoursEnabled: false,
 	}
-	_ = uc.NotificationPrefs.Upsert(ctx, defaultPrefs)
+	if err := uc.NotificationPrefs.Upsert(ctx, defaultPrefs); err != nil {
+		return domain.User{}, "", err
+	}
 
 	token, err := uc.Auth.SignToken(created.ID)
 	if err != nil {

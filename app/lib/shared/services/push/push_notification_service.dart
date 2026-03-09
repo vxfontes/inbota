@@ -146,6 +146,22 @@ class PushNotificationService {
         }
       },
     );
+
+    if (Platform.isAndroid) {
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'high_importance_channel',
+          'High Importance Notifications',
+          description: 'Notificações importantes do Inbota.',
+          importance: Importance.max,
+        ),
+      );
+    }
   }
 
   Future<void> _loadDeviceInfo() async {

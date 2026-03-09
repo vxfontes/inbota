@@ -16,8 +16,9 @@ var ErrInvalidCredentials = errors.New("invalid_credentials")
 
 // AuthUsecase handles signup/login flows.
 type AuthUsecase struct {
-	Users repository.UserRepository
-	Auth  *service.AuthService
+	Users             repository.UserRepository
+	Auth              *service.AuthService
+	NotificationPrefs repository.NotificationPreferencesRepository
 }
 
 func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName, locale, timezone string) (domain.User, string, error) {
@@ -54,6 +55,25 @@ func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName,
 	if err != nil {
 		return domain.User{}, "", err
 	}
+
+	// Create default notification preferences
+	defaultPrefs := domain.NotificationPreferences{
+		UserID:            created.ID,
+		RemindersEnabled:  true,
+		ReminderAtTime:    true,
+		ReminderLeadMins:  []int{5, 15},
+		EventsEnabled:     true,
+		EventAtTime:       true,
+		EventLeadMins:     []int{15, 60, 1440},
+		TasksEnabled:      true,
+		TaskAtTime:        true,
+		TaskLeadMins:      []int{60, 1440},
+		RoutinesEnabled:   true,
+		RoutineAtTime:     true,
+		RoutineLeadMins:   []int{15},
+		QuietHoursEnabled: false,
+	}
+	_ = uc.NotificationPrefs.Upsert(ctx, defaultPrefs)
 
 	token, err := uc.Auth.SignToken(created.ID)
 	if err != nil {

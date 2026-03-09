@@ -28,7 +28,9 @@ import (
 	"inbota/backend/internal/http/handler"
 	"inbota/backend/internal/infra/ai"
 	"inbota/backend/internal/infra/postgres"
+	"inbota/backend/internal/infra/push"
 	"inbota/backend/internal/observability"
+	"inbota/backend/internal/scheduler"
 )
 
 func main() {
@@ -66,7 +68,16 @@ func main() {
 		}
 		userRepo := postgres.NewUserRepository(db)
 		authSvc := service.NewAuthService(cfg.JWTSecret, usecase.DefaultTokenTTL)
-		authUC := &usecase.AuthUsecase{Users: userRepo, Auth: authSvc}
+
+		deviceTokenRepo := postgres.NewDeviceTokenRepository(db)
+		notificationPrefsRepo := postgres.NewNotificationPreferencesRepository(db)
+		notificationLogRepo := postgres.NewNotificationLogRepository(db)
+
+		authUC := &usecase.AuthUsecase{
+			Users:             userRepo,
+			Auth:              authSvc,
+			NotificationPrefs: notificationPrefsRepo,
+		}
 		authHandler = handler.NewAuthHandler(authUC)
 
 		flagRepo := postgres.NewFlagRepository(db)
@@ -108,6 +119,7 @@ func main() {
 			Subflags:    subflagRepo,
 		}
 		agendaUC := usecase.NewAgendaUsecase(agendaRepo)
+		deviceTokenUC := &usecase.DeviceTokenUsecase{DeviceTokens: deviceTokenRepo}
 		txRunner := postgres.NewTxRunner(db)
 
 		var aiClient service.AIClient
@@ -145,6 +157,32 @@ func main() {
 			TxRunner:        txRunner,
 		}
 
+		fcmClient, err := push.NewFCMClient(cfg.FCMCredentialsJSON)
+		if err != nil {
+			log.Warn("fcm_client_init_error", slog.String("error", err.Error()))
+		}
+
+		notificationUC := &usecase.NotificationUsecase{
+			Prefs:  notificationPrefsRepo,
+			Log:    notificationLogRepo,
+			Tokens: deviceTokenRepo,
+			FCM:    fcmClient,
+		}
+
+		notifScheduler := &scheduler.NotificationScheduler{
+			Prefs:     notificationPrefsRepo,
+			Log:       notificationLogRepo,
+			Tokens:    deviceTokenRepo,
+			Users:     userRepo,
+			Reminders: reminderRepo,
+			Events:    eventRepo,
+			Tasks:     taskRepo,
+			Routines:  routineRepo,
+			FCM:       fcmClient,
+			Logger:    log,
+		}
+		go notifScheduler.Run(ctx)
+
 		apiHandlers = &handler.APIHandlers{
 			Me:            handler.NewMeHandler(authUC),
 			Flags:         handler.NewFlagsHandler(flagUC),
@@ -158,6 +196,8 @@ func main() {
 			ShoppingLists: handler.NewShoppingListsHandler(shoppingListUC, inboxUC),
 			ShoppingItems: handler.NewShoppingItemsHandler(shoppingItemUC, shoppingListUC),
 			Routines:      handler.NewRoutinesHandler(routineUC, flagUC, subflagUC),
+			Devices:       handler.NewDevicesHandler(deviceTokenUC),
+			Notifications: handler.NewNotificationsHandler(notificationUC),
 		}
 	}
 

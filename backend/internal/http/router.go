@@ -111,6 +111,18 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 			authGroup.POST("/routines/:id/exceptions", apiHandlers.Routines.CreateException)
 			authGroup.DELETE("/routines/:id/exceptions/:date", apiHandlers.Routines.DeleteException)
 		}
+		if apiHandlers.Devices != nil {
+			authGroup.POST("/devices/token", apiHandlers.Devices.RegisterToken)
+			authGroup.DELETE("/devices/token", apiHandlers.Devices.UnregisterToken)
+		}
+		if apiHandlers.Notifications != nil {
+			authGroup.GET("/notification-preferences", apiHandlers.Notifications.GetPreferences)
+			authGroup.PUT("/notification-preferences", apiHandlers.Notifications.UpdatePreferences)
+			authGroup.GET("/notifications", apiHandlers.Notifications.ListNotifications)
+			authGroup.POST("/notifications/test", apiHandlers.Notifications.SendTestNotification)
+			authGroup.PATCH("/notifications/:id/read", apiHandlers.Notifications.MarkAsRead)
+			authGroup.PATCH("/notifications/read-all", apiHandlers.Notifications.MarkAllAsRead)
+		}
 	}
 
 	return engine

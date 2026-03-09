@@ -14,4 +14,6 @@ type APIHandlers struct {
 	ShoppingLists *ShoppingListsHandler
 	ShoppingItems *ShoppingItemsHandler
 	Routines      *RoutinesHandler
+	Devices       *DevicesHandler
+	Notifications *NotificationsHandler
 }

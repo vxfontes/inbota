@@ -516,6 +516,8 @@ type NotificationPreferencesResponse struct {
 	QuietHoursEnabled bool      `json:"quietHoursEnabled"`
 	QuietStart        *string   `json:"quietStart,omitempty"` // "HH:MM"
 	QuietEnd          *string   `json:"quietEnd,omitempty"`   // "HH:MM"
+	DailyDigestEnabled bool      `json:"dailyDigestEnabled"`
+	DailyDigestHour    int       `json:"dailyDigestHour"`
 	UpdatedAt         time.Time `json:"updatedAt"`
 }
 
@@ -535,6 +537,8 @@ type UpdateNotificationPreferencesRequest struct {
 	QuietHoursEnabled *bool   `json:"quietHoursEnabled,omitempty"`
 	QuietStart        *string `json:"quietStart,omitempty"`
 	QuietEnd          *string `json:"quietEnd,omitempty"`
+	DailyDigestEnabled *bool   `json:"dailyDigestEnabled,omitempty"`
+	DailyDigestHour    *int    `json:"dailyDigestHour,omitempty"`
 }
 
 type NotificationLogResponse struct {

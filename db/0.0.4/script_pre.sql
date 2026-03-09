@@ -62,9 +62,32 @@ CREATE TABLE inbota.notification_preferences (
     quiet_start          TIME,                             -- ex: '22:00'
     quiet_end            TIME,                             -- ex: '08:00'
 
+    -- Daily Digest
+    daily_digest_enabled BOOLEAN NOT NULL DEFAULT false,
+    daily_digest_hour    INT NOT NULL DEFAULT 4,           -- 0-23 (default 04:00)
+
     created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- -----------------------------------------------------------------------------
+-- email_digests: controle de envio e idempotência de digests por e-mail
+-- -----------------------------------------------------------------------------
+CREATE TABLE inbota.email_digests (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id       UUID NOT NULL REFERENCES inbota.users(id) ON DELETE CASCADE,
+    digest_date   DATE NOT NULL,           -- data local do usuário
+    type          TEXT NOT NULL DEFAULT 'daily_digest',
+    status        TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'success', 'failed'
+    sent_at       TIMESTAMPTZ,
+    error_msg     TEXT,
+    provider_id   TEXT,                    -- id retornado pelo provedor (ex: Resend)
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX idx_email_digests_unique ON inbota.email_digests(user_id, digest_date, type);
+CREATE INDEX idx_email_digests_user_date ON inbota.email_digests(user_id, digest_date DESC);
 
 -- -----------------------------------------------------------------------------
 -- notification_log: histórico de notificações enviadas

@@ -123,6 +123,9 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 			authGroup.PATCH("/notifications/:id/read", apiHandlers.Notifications.MarkAsRead)
 			authGroup.PATCH("/notifications/read-all", apiHandlers.Notifications.MarkAllAsRead)
 		}
+		if apiHandlers.Digest != nil {
+			authGroup.POST("/digest/test", apiHandlers.Digest.SendTestEmail)
+		}
 	}
 
 	return engine

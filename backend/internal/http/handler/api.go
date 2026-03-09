@@ -16,4 +16,5 @@ type APIHandlers struct {
 	Routines      *RoutinesHandler
 	Devices       *DevicesHandler
 	Notifications *NotificationsHandler
+	Digest        *DigestHandler
 }

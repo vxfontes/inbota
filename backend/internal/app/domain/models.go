@@ -296,8 +296,33 @@ type NotificationPreferences struct {
 	QuietHoursEnabled bool
 	QuietStart        *string // format HH:MM
 	QuietEnd          *string // format HH:MM
+
+	DailyDigestEnabled bool
+	DailyDigestHour    int
+
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+}
+
+type EmailDigestStatus string
+
+const (
+	EmailDigestStatusPending EmailDigestStatus = "pending"
+	EmailDigestStatusSuccess EmailDigestStatus = "success"
+	EmailDigestStatusFailed  EmailDigestStatus = "failed"
+)
+
+type EmailDigest struct {
+	ID         string
+	UserID     string
+	DigestDate time.Time
+	Type       string
+	Status     EmailDigestStatus
+	SentAt     *time.Time
+	ErrorMsg   *string
+	ProviderID *string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type NotificationLog struct {

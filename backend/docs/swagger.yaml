@@ -467,6 +467,10 @@ definitions:
     type: object
   dto.NotificationPreferencesResponse:
     properties:
+      dailyDigestEnabled:
+        type: boolean
+      dailyDigestHour:
+        type: integer
       eventAtTime:
         type: boolean
       eventLeadMins:
@@ -775,6 +779,10 @@ definitions:
     type: object
   dto.UpdateNotificationPreferencesRequest:
     properties:
+      dailyDigestEnabled:
+        type: boolean
+      dailyDigestHour:
+        type: integer
       eventAtTime:
         type: boolean
       eventLeadMins:

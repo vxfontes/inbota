@@ -3947,6 +3947,12 @@ const docTemplate = `{
         "dto.NotificationPreferencesResponse": {
             "type": "object",
             "properties": {
+                "dailyDigestEnabled": {
+                    "type": "boolean"
+                },
+                "dailyDigestHour": {
+                    "type": "integer"
+                },
                 "eventAtTime": {
                     "type": "boolean"
                 },
@@ -4417,6 +4423,12 @@ const docTemplate = `{
         "dto.UpdateNotificationPreferencesRequest": {
             "type": "object",
             "properties": {
+                "dailyDigestEnabled": {
+                    "type": "boolean"
+                },
+                "dailyDigestHour": {
+                    "type": "integer"
+                },
                 "eventAtTime": {
                     "type": "boolean"
                 },

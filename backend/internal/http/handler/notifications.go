@@ -111,6 +111,12 @@ func (h *NotificationsHandler) UpdatePreferences(c *gin.Context) {
 		if req.QuietEnd != nil {
 			prefs.QuietEnd = req.QuietEnd
 		}
+		if req.DailyDigestEnabled != nil {
+			prefs.DailyDigestEnabled = *req.DailyDigestEnabled
+		}
+		if req.DailyDigestHour != nil {
+			prefs.DailyDigestHour = *req.DailyDigestHour
+		}
 	})
 
 	if err != nil {
@@ -252,6 +258,8 @@ func toNotificationPreferencesResponse(p domain.NotificationPreferences) dto.Not
 		QuietHoursEnabled: p.QuietHoursEnabled,
 		QuietStart:        p.QuietStart,
 		QuietEnd:          p.QuietEnd,
+		DailyDigestEnabled: p.DailyDigestEnabled,
+		DailyDigestHour:    p.DailyDigestHour,
 		UpdatedAt:         p.UpdatedAt,
 	}
 }

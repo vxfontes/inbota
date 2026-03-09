@@ -1,0 +1,39 @@
+Seu dia no Inbota - {{.Date}}
+
+{{if .HasAgenda}}
+--- Agenda de Hoje ---
+{{range .Agenda}}
+[{{.Time}}] {{.Title}} {{if .Flag}}({{.Flag}}){{end}}
+{{end}}
+{{end}}
+
+{{if .HasReminders}}
+--- Lembretes ---
+{{range .Reminders}}
+[{{.Time}}] {{.Title}}
+{{end}}
+{{end}}
+
+{{if .HasTasks}}
+--- Tasks (com data) ---
+{{range .Tasks}}
+{{if .DueTime}}[{{.DueTime}}] {{end}}{{.Title}}
+{{end}}
+{{end}}
+
+{{if .HasOpenTasks}}
+--- Tasks Pendentes ---
+{{range .OpenTasks}}
+• {{.Title}}
+{{end}}
+{{end}}
+
+{{if .HasShoppingLists}}
+--- Listas de Compra ---
+{{range .ShoppingLists}}
+• {{.Title}}: {{.PendingCount}} itens pendentes
+{{end}}
+{{end}}
+
+---
+Enviado com ❤️ pelo Inbota.

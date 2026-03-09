@@ -3940,6 +3940,12 @@
         "dto.NotificationPreferencesResponse": {
             "type": "object",
             "properties": {
+                "dailyDigestEnabled": {
+                    "type": "boolean"
+                },
+                "dailyDigestHour": {
+                    "type": "integer"
+                },
                 "eventAtTime": {
                     "type": "boolean"
                 },
@@ -4410,6 +4416,12 @@
         "dto.UpdateNotificationPreferencesRequest": {
             "type": "object",
             "properties": {
+                "dailyDigestEnabled": {
+                    "type": "boolean"
+                },
+                "dailyDigestHour": {
+                    "type": "integer"
+                },
                 "eventAtTime": {
                     "type": "boolean"
                 },

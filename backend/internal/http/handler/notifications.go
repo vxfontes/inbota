@@ -186,6 +186,16 @@ func (h *NotificationsHandler) ListNotifications(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
+	if limit < 1 {
+		limit = 20
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
 	logs, err := h.Usecase.ListNotifications(c.Request.Context(), userID, limit, offset)
 	if err != nil {
 		writeUsecaseError(c, err)

@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:inbota/modules/notifications/data/models/notification_preferences_model.dart';
 import 'package:inbota/presentation/screens/settings_module/controller/settings_notifications_controller.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/components/ib_lib/ib_chip_group.dart';
 import 'package:inbota/shared/components/ib_lib/ib_toggle.dart';
+import 'package:inbota/shared/services/push/push_notification_service.dart';
 import 'package:inbota/shared/state/ib_state.dart';
+import 'package:inbota/shared/theme/app_colors.dart';
 
 class SettingsNotificationsPage extends StatefulWidget {
   const SettingsNotificationsPage({super.key});
@@ -19,6 +24,7 @@ class _SettingsNotificationsPageState extends IBState<SettingsNotificationsPage,
     super.initState();
     controller.fetchPreferences();
     controller.error.addListener(_onErrorChanged);
+    unawaited(PushNotificationService.instance.ensureTopic());
   }
 
   @override
@@ -55,7 +61,7 @@ class _SettingsNotificationsPageState extends IBState<SettingsNotificationsPage,
                     title: 'Lembretes',
                     children: [
                       IBToggle(
-                        title: 'Ativar notifications',
+                        title: 'Ativar notificações',
                         value: prefs.remindersEnabled,
                         onChanged: (v) => _updatePrefs(prefs.copyWith(remindersEnabled: v)),
                       ),
@@ -152,9 +158,7 @@ class _SettingsNotificationsPageState extends IBState<SettingsNotificationsPage,
                       IBText('Antecedência', context: context).caption.build(),
                       const SizedBox(height: 8),
                       IBChipGroup<int>(
-                        options: [
-                          IBChipOption(label: '15min', value: 15),
-                        ],
+                        options: [IBChipOption(label: '15min', value: 15)],
                         selectedValues: prefs.routineLeadMins,
                         onChanged: (v) => _updatePrefs(prefs.copyWith(routineLeadMins: v)),
                       ),
@@ -197,17 +201,108 @@ class _SettingsNotificationsPageState extends IBState<SettingsNotificationsPage,
                       ],
                     ],
                   ),
+                  const SizedBox(height: 20),
+                  _Section(
+                    title: 'Dispositivo (ntfy.sh)',
+                    children: [
+                      IBText(
+                        'Use este tópico no app ntfy para receber notificações mesmo com o app fechado.',
+                        context: context,
+                      ).caption.build(),
+                      const SizedBox(height: 12),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: PushNotificationService
+                            .instance
+                            .topicLoadingListenable,
+                        builder: (context, loading, _) {
+                          return ValueListenableBuilder<String?>(
+                            valueListenable: PushNotificationService
+                                .instance
+                                .topicListenable,
+                            builder: (context, topic, __) {
+                              final topicLabel =
+                                  topic ??
+                                  (loading
+                                      ? 'Gerando tópico...'
+                                      : 'Tópico indisponível');
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surface,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: AppColors.border,
+                                        ),
+                                      ),
+                                      child: IBText(
+                                        topicLabel,
+                                        context: context,
+                                      ).build(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: topic == null
+                                        ? null
+                                        : () {
+                                            Clipboard.setData(
+                                              ClipboardData(text: topic),
+                                            );
+                                            IBSnackBar.success(
+                                              context,
+                                              'Tópico copiado!',
+                                            );
+                                          },
+                                    icon: const Icon(
+                                      Icons.copy_rounded,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Copiar tópico',
+                                  ),
+                                  IconButton(
+                                    onPressed: loading
+                                        ? null
+                                        : () => unawaited(
+                                            PushNotificationService.instance
+                                                .ensureTopic(
+                                                  forceRefresh: true,
+                                                ),
+                                          ),
+                                    icon: const Icon(
+                                      Icons.refresh_rounded,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Gerar novamente',
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 32),
                   ValueListenableBuilder<bool>(
                     valueListenable: controller.sendingTest,
-                    builder: (context, sending, _) {
+                    builder: (_, sending, _) {
                       return IBButton(
                         label: 'Enviar notificação de teste',
                         loading: sending,
                         onPressed: () async {
-                          final success = await controller.sendTestNotification();
+                          final success = await controller
+                              .sendTestNotification();
                           if (success && mounted) {
-                            IBSnackBar.success(context, 'Notificação de teste enviada!');
+                            IBSnackBar.success(
+                              this.context,
+                              'Notificação de teste enviada!',
+                            );
                           }
                         },
                         variant: IBButtonVariant.secondary,
@@ -231,7 +326,11 @@ class _SettingsNotificationsPageState extends IBState<SettingsNotificationsPage,
     final initial = isStart ? prefs.quietStart : prefs.quietEnd;
     final time = await IBTimeField.pickTime(
       context,
-      initialTime: initial != null ? _parseTime(initial) : (isStart ? const TimeOfDay(hour: 22, minute: 0) : const TimeOfDay(hour: 8, minute: 0)),
+      initialTime: initial != null
+          ? _parseTime(initial)
+          : (isStart
+                ? const TimeOfDay(hour: 22, minute: 0)
+                : const TimeOfDay(hour: 8, minute: 0)),
     );
 
     if (time != null) {

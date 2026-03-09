@@ -9,7 +9,7 @@ class LogoutUsecase extends IBUsecase {
   LogoutUsecase(this._repository);
 
   UsecaseResponse<Failure, void> call() async {
-    await PushNotificationService.instance.unregisterToken();
+    await PushNotificationService.instance.unregisterDevice();
     return _repository.logout();
   }
 }

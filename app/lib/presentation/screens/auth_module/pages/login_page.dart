@@ -45,7 +45,6 @@ class _LoginPageState extends IBState<LoginPage, LoginController> {
     final pushService = PushNotificationService.instance;
     pushService.setRepository(Modular.get<INotificationsRepository>());
     await pushService.initialize();
-    await pushService.registerToken();
 
     AppNavigation.clearAndPush(AppRoutes.rootHome);
   }

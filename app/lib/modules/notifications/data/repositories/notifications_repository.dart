@@ -5,6 +5,7 @@ import 'package:inbota/shared/errors/api_error_mapper.dart';
 import 'package:inbota/shared/errors/failures.dart';
 import 'package:inbota/shared/services/http/app_path.dart';
 import 'package:inbota/shared/services/http/http_client.dart';
+import 'package:inbota/shared/services/push/push_notification_service.dart';
 
 class NotificationsRepository implements INotificationsRepository {
   NotificationsRepository(this._httpClient);
@@ -53,15 +54,19 @@ class NotificationsRepository implements INotificationsRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> registerDeviceToken(String token, String platform, {String? deviceName, String? appVersion}) async {
+  Future<Either<Failure, String>> registerDeviceToken(String deviceId, String platform, {String? deviceName, String? appVersion}) async {
     try {
       final response = await _httpClient.post(AppPath.deviceToken, data: {
-        'token': token,
+        'deviceId': deviceId,
         'platform': platform,
         'deviceName': deviceName,
         'appVersion': appVersion,
       });
-      if ((response.statusCode ?? 0) < 300) return const Right(unit);
+      if ((response.statusCode ?? 0) < 300) {
+        final topic = response.data['topic'] as String;
+        PushNotificationService.instance.updateTopicFromServer(topic);
+        return Right(topic);
+      }
       return Left(SaveFailure(message: ApiErrorMapper.fromResponseData(response.data, fallbackMessage: 'Erro ao registrar dispositivo.')));
     } catch (e) {
       return Left(SaveFailure(message: e.toString()));
@@ -69,10 +74,10 @@ class NotificationsRepository implements INotificationsRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> unregisterDeviceToken(String token) async {
+  Future<Either<Failure, Unit>> unregisterDeviceToken(String deviceId) async {
     try {
       final response = await _httpClient.delete(AppPath.deviceToken, data: {
-        'token': token,
+        'deviceId': deviceId,
       });
       if ((response.statusCode ?? 0) < 300) return const Right(unit);
       return Left(DeleteFailure(message: ApiErrorMapper.fromResponseData(response.data, fallbackMessage: 'Erro ao remover dispositivo.')));

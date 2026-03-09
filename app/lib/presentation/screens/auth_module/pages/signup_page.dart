@@ -46,7 +46,6 @@ class _SignupPageState extends IBState<SignupPage, SignupController> {
     final pushService = PushNotificationService.instance;
     pushService.setRepository(Modular.get<INotificationsRepository>());
     await pushService.initialize();
-    await pushService.registerToken();
 
     AppNavigation.clearAndPush(AppRoutes.rootHome);
   }

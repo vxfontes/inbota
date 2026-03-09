@@ -6,7 +6,7 @@ abstract class INotificationsRepository {
   Future<Either<Failure, List<NotificationLogModel>>> fetchNotifications({int? limit, int? offset});
   Future<Either<Failure, Unit>> markAsRead(String id);
   Future<Either<Failure, Unit>> markAllAsRead();
-  Future<Either<Failure, Unit>> registerDeviceToken(String token, String platform, {String? deviceName, String? appVersion});
-  Future<Either<Failure, Unit>> unregisterDeviceToken(String token);
+  Future<Either<Failure, String>> registerDeviceToken(String deviceId, String platform, {String? deviceName, String? appVersion});
+  Future<Either<Failure, Unit>> unregisterDeviceToken(String deviceId);
   Future<Either<Failure, Unit>> sendTestNotification();
 }

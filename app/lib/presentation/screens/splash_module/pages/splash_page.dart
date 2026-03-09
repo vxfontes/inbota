@@ -27,16 +27,15 @@ class _SplashPageState extends IBState<SplashPage, SplashController> {
 
   Future<void> _bootstrap() async {
     final shouldGoHome = await controller.check();
-    if (shouldGoHome == null || !mounted) return;
-
-    if (shouldGoHome) {
+    
+    if (shouldGoHome != null && shouldGoHome && mounted) {
       final pushService = PushNotificationService.instance;
       pushService.setRepository(Modular.get<INotificationsRepository>());
       await pushService.initialize();
-      await pushService.registerToken();
     }
 
-    AppNavigation.replace(shouldGoHome ? AppRoutes.rootHome : AppRoutes.auth);
+    if (!mounted) return;
+    AppNavigation.replace(shouldGoHome == true ? AppRoutes.rootHome : AppRoutes.auth);
   }
 
   @override

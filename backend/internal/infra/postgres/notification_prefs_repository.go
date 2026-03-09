@@ -48,7 +48,7 @@ func (r *NotificationPreferencesRepository) GetByUserID(ctx context.Context, use
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.NotificationPreferences{}, errors.New("notification_preferences_not_found")
+			return domain.NotificationPreferences{}, ErrNotFound
 		}
 		return domain.NotificationPreferences{}, err
 	}

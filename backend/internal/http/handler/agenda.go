@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"inbota/backend/internal/app/domain"
 	"inbota/backend/internal/app/repository"
 	"inbota/backend/internal/app/usecase"
 	"inbota/backend/internal/http/dto"

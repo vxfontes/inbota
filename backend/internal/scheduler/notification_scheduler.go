@@ -114,30 +114,29 @@ func (s *NotificationScheduler) renderTemplate(tpl string, vars map[string]strin
 // buildMessage retorna (title, body) para o tipo e gatilho especificados.
 // Fallback para strings fixas caso o template não exista no cache.
 func (s *NotificationScheduler) buildMessage(nType domain.NotificationType, triggerKey, itemTitle string, vars map[string]string) (title, body string) {
+	if vars == nil {
+		vars = map[string]string{}
+	}
+
 	cacheKey := string(nType) + "_" + triggerKey
 	vars["title"] = itemTitle
 
 	if tpl, ok := s.templates[cacheKey]; ok {
 		title = s.renderTemplate(tpl.TitleTemplate, vars)
 		body = s.renderTemplate(tpl.BodyTemplate, vars)
+		if isLeadTemplateInvalid(triggerKey, title, body, vars) {
+			return defaultNotificationMessage(nType, triggerKey, itemTitle, vars)
+		}
 		return
 	}
 
-	// fallback
-	title = itemTitle
-	switch triggerKey {
-	case "at_time":
-		body = string(nType) + " agora"
-	case "lead_time":
-		body = string(nType) + " em " + vars["lead_mins"] + " minutos"
-	case "lead_time_day":
-		body = string(nType) + " amanhã"
-	}
-	return
+	return defaultNotificationMessage(nType, triggerKey, itemTitle, vars)
 }
 
 func (s *NotificationScheduler) scheduleUpcoming(ctx context.Context) {
 	now := time.Now()
+	nowMinute := now.Truncate(time.Minute)
+	nowUTCMinute := now.UTC().Truncate(time.Minute)
 	dayThreshold := s.configInt("scheduler.day_threshold_mins", 1440)
 	reminderLookahead := time.Duration(s.configInt("scheduler.reminder_lookahead_hours", 2)) * time.Hour
 	eventLookahead := time.Duration(s.configInt("scheduler.event_lookahead_hours", 24)) * time.Hour
@@ -161,7 +160,7 @@ func (s *NotificationScheduler) scheduleUpcoming(ctx context.Context) {
 
 			for _, mins := range prefs.ReminderLeadMins {
 				scheduledFor := r.RemindAt.Add(time.Duration(-mins) * time.Minute)
-				if scheduledFor.After(now) {
+				if !scheduledFor.Before(nowMinute) {
 					title, body := s.buildMessage(domain.NotificationTypeReminder, "lead_time", r.Title, map[string]string{
 						"lead_mins": strconv.Itoa(mins),
 					})
@@ -189,7 +188,7 @@ func (s *NotificationScheduler) scheduleUpcoming(ctx context.Context) {
 
 			for _, mins := range prefs.EventLeadMins {
 				scheduledFor := e.StartAt.Add(time.Duration(-mins) * time.Minute)
-				if scheduledFor.After(now) {
+				if !scheduledFor.Before(nowMinute) {
 					triggerKey := "lead_time"
 					if mins >= dayThreshold {
 						triggerKey = "lead_time_day"
@@ -221,7 +220,7 @@ func (s *NotificationScheduler) scheduleUpcoming(ctx context.Context) {
 
 			for _, mins := range prefs.TaskLeadMins {
 				scheduledFor := t.DueAt.Add(time.Duration(-mins) * time.Minute)
-				if scheduledFor.After(now) {
+				if !scheduledFor.Before(nowMinute) {
 					triggerKey := "lead_time"
 					if mins >= dayThreshold {
 						triggerKey = "lead_time_day"
@@ -235,37 +234,71 @@ func (s *NotificationScheduler) scheduleUpcoming(ctx context.Context) {
 		}
 	}
 
-	// 4. Routines
-	weekday := int(now.Weekday())
-	routines, err := s.Routines.ListAllByWeekday(ctx, weekday)
-	if err != nil {
-		s.Logger.Error("scheduler_list_routines_error", slog.String("error", err.Error()))
-	} else {
-		for _, r := range routines {
-			prefs, err := s.Prefs.GetByUserID(ctx, r.UserID)
-			if err != nil || !prefs.RoutinesEnabled {
-				continue
-			}
+	// 4. Routines (considerando timezone do usuário e recorrência)
+	candidateWeekdays := schedulerCandidateWeekdays(now)
+	routinesByID := make(map[string]domain.Routine)
+	for _, weekday := range candidateWeekdays {
+		routines, err := s.Routines.ListAllByWeekday(ctx, weekday)
+		if err != nil {
+			s.Logger.Error("scheduler_list_routines_error", slog.String("error", err.Error()), slog.Int("weekday", weekday))
+			continue
+		}
+		for _, routine := range routines {
+			routinesByID[routine.ID] = routine
+		}
+	}
 
-			startTime, err := time.Parse("15:04", r.StartTime)
+	userCache := make(map[string]domain.User)
+	locCache := make(map[string]*time.Location)
+	for _, r := range routinesByID {
+		prefs, err := s.Prefs.GetByUserID(ctx, r.UserID)
+		if err != nil || !prefs.RoutinesEnabled {
+			continue
+		}
+
+		user, ok := userCache[r.UserID]
+		if !ok {
+			loadedUser, err := s.Users.Get(ctx, r.UserID)
 			if err != nil {
 				continue
 			}
-			scheduledFor := time.Date(now.Year(), now.Month(), now.Day(), startTime.Hour(), startTime.Minute(), 0, 0, now.Location())
+			user = loadedUser
+			userCache[r.UserID] = user
+		}
 
-			if prefs.RoutineAtTime {
-				title, body := s.buildMessage(domain.NotificationTypeRoutine, "at_time", r.Title, map[string]string{})
-				s.scheduleItem(ctx, r.UserID, domain.NotificationTypeRoutine, r.ID, title, body, &scheduledFor, nil)
+		loc := timezoneLocation(user.Timezone, locCache)
+		userNow := now.In(loc)
+
+		if !routineHasWeekday(r.Weekdays, int(userNow.Weekday())) {
+			continue
+		}
+		if !shouldShowRoutineForDate(r, userNow) {
+			continue
+		}
+
+		startTime, err := time.Parse("15:04", r.StartTime)
+		if err != nil {
+			continue
+		}
+
+		scheduledForLocal := time.Date(userNow.Year(), userNow.Month(), userNow.Day(), startTime.Hour(), startTime.Minute(), 0, 0, loc)
+		scheduledForUTC := scheduledForLocal.UTC()
+
+		if prefs.RoutineAtTime && !scheduledForUTC.Before(nowUTCMinute) {
+			title, body := s.buildMessage(domain.NotificationTypeRoutine, "at_time", r.Title, map[string]string{})
+			s.scheduleItem(ctx, r.UserID, domain.NotificationTypeRoutine, r.ID, title, body, &scheduledForUTC, nil)
+		}
+
+		for _, mins := range prefs.RoutineLeadMins {
+			if mins <= 0 {
+				continue
 			}
-
-			for _, mins := range prefs.RoutineLeadMins {
-				leadScheduledFor := scheduledFor.Add(time.Duration(-mins) * time.Minute)
-				if leadScheduledFor.After(now) {
-					title, body := s.buildMessage(domain.NotificationTypeRoutine, "lead_time", r.Title, map[string]string{
-						"lead_mins": strconv.Itoa(mins),
-					})
-					s.scheduleItem(ctx, r.UserID, domain.NotificationTypeRoutine, r.ID, title, body, &leadScheduledFor, &mins)
-				}
+			leadScheduledForUTC := scheduledForUTC.Add(time.Duration(-mins) * time.Minute)
+			if !leadScheduledForUTC.Before(nowUTCMinute) {
+				title, body := s.buildMessage(domain.NotificationTypeRoutine, "lead_time", r.Title, map[string]string{
+					"lead_mins": strconv.Itoa(mins),
+				})
+				s.scheduleItem(ctx, r.UserID, domain.NotificationTypeRoutine, r.ID, title, body, &leadScheduledForUTC, &mins)
 			}
 		}
 	}
@@ -294,6 +327,184 @@ func (s *NotificationScheduler) scheduleItem(ctx context.Context, userID string,
 	if err != nil {
 		s.Logger.Error("schedule_item_error", slog.String("error", err.Error()), slog.String("ref_id", refID))
 	}
+}
+
+func isLeadTemplateInvalid(triggerKey, title, body string, vars map[string]string) bool {
+	combined := strings.ToLower(strings.TrimSpace(title + " " + body))
+	switch triggerKey {
+	case "lead_time":
+		lead := strings.TrimSpace(vars["lead_mins"])
+		if lead == "" {
+			return false
+		}
+		if strings.Contains(combined, "agora") {
+			return true
+		}
+		return !strings.Contains(combined, lead)
+	case "lead_time_day":
+		return !strings.Contains(combined, "amanh")
+	default:
+		return false
+	}
+}
+
+func defaultNotificationMessage(nType domain.NotificationType, triggerKey, itemTitle string, vars map[string]string) (string, string) {
+	lead := strings.TrimSpace(vars["lead_mins"])
+	leadLabel := humanLeadLabel(lead)
+
+	switch nType {
+	case domain.NotificationTypeReminder:
+		switch triggerKey {
+		case "at_time":
+			return "Lembrete agora", itemTitle
+		case "lead_time":
+			return "Lembrete em " + leadLabel, itemTitle
+		case "lead_time_day":
+			return "Lembrete amanhã", itemTitle
+		}
+	case domain.NotificationTypeEvent:
+		switch triggerKey {
+		case "at_time":
+			return "Evento começando", itemTitle + " começa agora."
+		case "lead_time":
+			return "Evento em " + leadLabel, itemTitle + " começa em " + leadLabel + "."
+		case "lead_time_day":
+			return "Evento amanhã", itemTitle + " começa amanhã."
+		}
+	case domain.NotificationTypeTask:
+		switch triggerKey {
+		case "at_time":
+			return "Prazo agora", itemTitle + " vence agora."
+		case "lead_time":
+			return "Prazo em " + leadLabel, itemTitle + " vence em " + leadLabel + "."
+		case "lead_time_day":
+			return "Prazo amanhã", itemTitle + " vence amanhã."
+		}
+	case domain.NotificationTypeRoutine:
+		switch triggerKey {
+		case "at_time":
+			return "Hora da rotina", itemTitle + " começa agora."
+		case "lead_time":
+			return "Rotina em " + leadLabel, itemTitle + " começa em " + leadLabel + "."
+		case "lead_time_day":
+			return "Rotina amanhã", itemTitle + " começa amanhã."
+		}
+	}
+
+	// fallback final
+	switch triggerKey {
+	case "at_time":
+		return itemTitle, "Agora"
+	case "lead_time":
+		return itemTitle, "Em " + leadLabel
+	case "lead_time_day":
+		return itemTitle, "Amanhã"
+	default:
+		return itemTitle, ""
+	}
+}
+
+func humanLeadLabel(raw string) string {
+	mins, err := strconv.Atoi(raw)
+	if err != nil || mins <= 0 {
+		return "breve"
+	}
+	if mins == 1 {
+		return "1 minuto"
+	}
+	return strconv.Itoa(mins) + " minutos"
+}
+
+func schedulerCandidateWeekdays(now time.Time) []int {
+	values := []int{
+		int(now.Add(-24 * time.Hour).Weekday()),
+		int(now.Weekday()),
+		int(now.Add(24 * time.Hour).Weekday()),
+	}
+	seen := make(map[int]struct{})
+	result := make([]int, 0, len(values))
+	for _, value := range values {
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		result = append(result, value)
+	}
+	return result
+}
+
+func timezoneLocation(timezone string, cache map[string]*time.Location) *time.Location {
+	tz := strings.TrimSpace(timezone)
+	if tz == "" {
+		return time.UTC
+	}
+	if loc, ok := cache[tz]; ok {
+		return loc
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		cache[tz] = time.UTC
+		return time.UTC
+	}
+	cache[tz] = loc
+	return loc
+}
+
+func routineHasWeekday(weekdays []int, weekday int) bool {
+	for _, w := range weekdays {
+		if w == weekday {
+			return true
+		}
+	}
+	return false
+}
+
+func shouldShowRoutineForDate(r domain.Routine, targetDate time.Time) bool {
+	if r.RecurrenceType == "weekly" || r.RecurrenceType == "" {
+		return true
+	}
+
+	startsOnStr := r.StartsOn
+	if len(startsOnStr) > 10 {
+		startsOnStr = startsOnStr[:10]
+	}
+	startsOn, err := time.Parse("2006-01-02", startsOnStr)
+	if err != nil {
+		return true
+	}
+
+	startsOnMonday := mondayOf(startsOn)
+	targetMonday := mondayOf(targetDate)
+
+	if targetMonday.Before(startsOnMonday) {
+		return false
+	}
+
+	weeksDiff := int(targetMonday.Sub(startsOnMonday).Hours()) / (24 * 7)
+
+	switch r.RecurrenceType {
+	case "biweekly":
+		return weeksDiff%2 == 0
+	case "triweekly":
+		return weeksDiff%3 == 0
+	case "monthly_week":
+		if r.WeekOfMonth == nil {
+			return true
+		}
+		targetWeek := (targetDate.Day()-1)/7 + 1
+		return targetWeek == *r.WeekOfMonth
+	default:
+		return true
+	}
+}
+
+func mondayOf(t time.Time) time.Time {
+	weekday := int(t.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	monday := t.AddDate(0, 0, -(weekday - 1))
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 func (s *NotificationScheduler) dispatch(ctx context.Context) {

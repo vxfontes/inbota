@@ -235,7 +235,6 @@
                     <h2 class="section-title">Cronograma do dia</h2>
                     {{range .Schedule}}
                     <div class="item">
-                        <span class="schedule-dot"></span>
                         <span class="time">{{.Time}}</span>
                         <span class="title{{if .IsCompleted}} is-completed{{end}}">{{.Title}}</span>
                         {{if or .Recurrence .Context}}

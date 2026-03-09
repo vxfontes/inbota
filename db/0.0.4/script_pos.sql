@@ -6,17 +6,18 @@ ON CONFLICT (user_id) DO NOTHING;
 -- Seed: templates de mensagens por tipo e gatilho
 -- Placeholders suportados: {{title}}, {{lead_mins}}
 INSERT INTO inbota.notification_templates (type, trigger_key, title_template, body_template) VALUES
-    ('reminder', 'at_time',       '{{title}}', 'Lembrete agora'),
-    ('reminder', 'lead_time',     '{{title}}', 'Lembrete em {{lead_mins}} minutos'),
-    ('event',    'at_time',       '{{title}}', 'Evento começando agora'),
-    ('event',    'lead_time',     '{{title}}', 'Evento em {{lead_mins}} minutos'),
-    ('event',    'lead_time_day', '{{title}}', 'Evento amanhã'),
-    ('task',     'at_time',       '{{title}}', 'Tarefa vence agora'),
-    ('task',     'lead_time',     '{{title}}', 'Tarefa vence em {{lead_mins}} minutos'),
-    ('task',     'lead_time_day', '{{title}}', 'Tarefa vence amanhã'),
-    ('routine',  'at_time',       '{{title}}', 'Hora da sua rotina'),
-    ('routine',  'lead_time',     '{{title}}', 'Rotina em {{lead_mins}} minutos')
+    ('reminder', 'at_time',       'Lembrete agora', '{{title}}'),
+    ('reminder', 'lead_time',     'Lembrete em {{lead_mins}} minutos', '{{title}}'),
+    ('event',    'at_time',       'Evento começando', '{{title}} começa agora.'),
+    ('event',    'lead_time',     'Evento em {{lead_mins}} minutos', '{{title}} começa em {{lead_mins}} minutos.'),
+    ('event',    'lead_time_day', 'Evento amanhã', '{{title}} começa amanhã.'),
+    ('task',     'at_time',       'Prazo agora', '{{title}} vence agora.'),
+    ('task',     'lead_time',     'Prazo em {{lead_mins}} minutos', '{{title}} vence em {{lead_mins}} minutos.'),
+    ('task',     'lead_time_day', 'Prazo amanhã', '{{title}} vence amanhã.'),
+    ('routine',  'at_time',       'Hora da rotina', '{{title}} começa agora.'),
+    ('routine',  'lead_time',     'Rotina em {{lead_mins}} minutos', '{{title}} começa em {{lead_mins}} minutos.')
 ON CONFLICT (type, trigger_key) DO NOTHING;
+commit;
 
 -- Seed: configurações do scheduler e notificações
 INSERT INTO inbota.app_config (key, value, description) VALUES

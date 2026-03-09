@@ -17,14 +17,14 @@ func NewDevicesHandler(uc *usecase.DeviceTokenUsecase) *DevicesHandler {
 	return &DevicesHandler{Usecase: uc}
 }
 
-// RegisterToken registers or updates a device topic.
-// @Summary Registrar tópico de dispositivo
+// RegisterToken registers or updates a device and returns its ntfy topic.
+// @Summary Registrar dispositivo
 // @Tags Devices
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body dto.RegisterTokenRequest true "Register topic request"
-// @Success 200 {object} map[string]string
+// @Param body body dto.RegisterTokenRequest true "Register device request"
+// @Success 200 {object} dto.RegisterTokenResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 401 {object} dto.ErrorResponse
 // @Router /v1/devices/token [post]
@@ -49,22 +49,22 @@ func (h *DevicesHandler) RegisterToken(c *gin.Context) {
 		appVersion = *req.AppVersion
 	}
 
-	err := h.Usecase.RegisterToken(c.Request.Context(), userID, req.Topic, req.Platform, deviceName, appVersion)
+	topic, err := h.Usecase.RegisterToken(c.Request.Context(), userID, req.DeviceID, req.Platform, deviceName, appVersion)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	c.JSON(http.StatusOK, dto.RegisterTokenResponse{Topic: topic})
 }
 
-// UnregisterToken removes a device topic.
-// @Summary Remover tópico de dispositivo
+// UnregisterToken removes a device subscription.
+// @Summary Remover dispositivo
 // @Tags Devices
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body dto.UnregisterTokenRequest true "Unregister topic request"
+// @Param body body dto.UnregisterTokenRequest true "Unregister device request"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 401 {object} dto.ErrorResponse
@@ -81,7 +81,7 @@ func (h *DevicesHandler) UnregisterToken(c *gin.Context) {
 		return
 	}
 
-	err := h.Usecase.UnregisterToken(c.Request.Context(), req.Topic, userID)
+	err := h.Usecase.UnregisterToken(c.Request.Context(), req.DeviceID, userID)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return

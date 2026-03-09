@@ -484,14 +484,18 @@ type CompleteRoutineRequest struct {
 // Devices
 
 type RegisterTokenRequest struct {
-	Topic      string  `json:"topic" binding:"required"`
+	DeviceID   string  `json:"deviceId" binding:"required"`
 	Platform   string  `json:"platform" binding:"required"` // ios | android
 	DeviceName *string `json:"deviceName,omitempty"`
 	AppVersion *string `json:"appVersion,omitempty"`
 }
 
+type RegisterTokenResponse struct {
+	Topic string `json:"topic"`
+}
+
 type UnregisterTokenRequest struct {
-	Topic string `json:"topic" binding:"required"`
+	DeviceID string `json:"deviceId" binding:"required"`
 }
 
 // Notifications

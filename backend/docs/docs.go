@@ -395,10 +395,10 @@ const docTemplate = `{
                 "tags": [
                     "Devices"
                 ],
-                "summary": "Registrar tópico de dispositivo",
+                "summary": "Registrar dispositivo",
                 "parameters": [
                     {
-                        "description": "Register topic request",
+                        "description": "Register device request",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -411,10 +411,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.RegisterTokenResponse"
                         }
                     },
                     "400": {
@@ -446,10 +443,10 @@ const docTemplate = `{
                 "tags": [
                     "Devices"
                 ],
-                "summary": "Remover tópico de dispositivo",
+                "summary": "Remover dispositivo",
                 "parameters": [
                     {
-                        "description": "Unregister topic request",
+                        "description": "Unregister device request",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -4017,11 +4014,14 @@ const docTemplate = `{
         "dto.RegisterTokenRequest": {
             "type": "object",
             "required": [
-                "platform",
-                "topic"
+                "deviceId",
+                "platform"
             ],
             "properties": {
                 "appVersion": {
+                    "type": "string"
+                },
+                "deviceId": {
                     "type": "string"
                 },
                 "deviceName": {
@@ -4030,7 +4030,12 @@ const docTemplate = `{
                 "platform": {
                     "description": "ios | android",
                     "type": "string"
-                },
+                }
+            }
+        },
+        "dto.RegisterTokenResponse": {
+            "type": "object",
+            "properties": {
                 "topic": {
                     "type": "string"
                 }
@@ -4347,10 +4352,10 @@ const docTemplate = `{
         "dto.UnregisterTokenRequest": {
             "type": "object",
             "required": [
-                "topic"
+                "deviceId"
             ],
             "properties": {
-                "topic": {
+                "deviceId": {
                     "type": "string"
                 }
             }

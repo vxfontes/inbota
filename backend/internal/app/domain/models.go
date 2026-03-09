@@ -268,6 +268,7 @@ const (
 type DeviceToken struct {
 	ID         string
 	UserID     string
+	DeviceID   string
 	Topic      string
 	Platform   DevicePlatform
 	DeviceName *string

@@ -13,6 +13,7 @@ CREATE TYPE inbota.notification_type AS ENUM ('reminder', 'event', 'task', 'rout
 CREATE TABLE inbota.device_tokens (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID NOT NULL REFERENCES inbota.users(id) ON DELETE CASCADE,
+    device_id     TEXT NOT NULL,
     ntfy_topic    TEXT NOT NULL,
     platform      inbota.device_platform NOT NULL,
     device_name   TEXT,                          -- "iPhone de Vanessa", "Pixel 8"
@@ -22,7 +23,9 @@ CREATE TABLE inbota.device_tokens (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Um tópico é único por dispositivo
+-- Um dispositivo é único
+CREATE UNIQUE INDEX idx_device_tokens_device_id ON inbota.device_tokens(device_id);
+-- Um tópico também deve ser único por segurança
 CREATE UNIQUE INDEX idx_device_tokens_topic ON inbota.device_tokens(ntfy_topic);
 -- Busca rápida por usuário ativo
 CREATE INDEX idx_device_tokens_user ON inbota.device_tokens(user_id, is_active);

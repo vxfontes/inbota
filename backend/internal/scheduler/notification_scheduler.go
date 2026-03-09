@@ -337,6 +337,7 @@ func (s *NotificationScheduler) dispatchOne(ctx context.Context, l domain.Notifi
 		"type":                string(l.Type),
 		"reference_id":        l.ReferenceID,
 		"notification_log_id": l.ID,
+		"click_url":           s.generateClickURL(l),
 	}
 	if l.LeadMins != nil {
 		data["lead_mins"] = strconv.Itoa(*l.LeadMins)
@@ -363,6 +364,21 @@ func (s *NotificationScheduler) dispatchOne(ctx context.Context, l domain.Notifi
 		if err := s.Log.UpdateStatus(ctx, l.ID, domain.NotificationStatusFailed, &msg); err != nil {
 			s.Logger.Error("update_status_failed_error", slog.String("error", err.Error()))
 		}
+	}
+}
+
+func (s *NotificationScheduler) generateClickURL(l domain.NotificationLog) string {
+	switch l.Type {
+	case domain.NotificationTypeReminder:
+		return "/reminders?id=" + l.ReferenceID
+	case domain.NotificationTypeEvent:
+		return "/events?id=" + l.ReferenceID
+	case domain.NotificationTypeTask:
+		return "/home?id=" + l.ReferenceID
+	case domain.NotificationTypeRoutine:
+		return "/schedule"
+	default:
+		return "/"
 	}
 }
 

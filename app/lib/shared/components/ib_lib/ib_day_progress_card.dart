@@ -91,13 +91,6 @@ class IBDayProgressCard extends StatelessWidget {
             total: remindersTotal,
             color: AppColors.warning500,
           ),
-          if (safeProgress >= 1 && overallTotal > 0) ...[
-            const SizedBox(height: 10),
-            IBText(
-              'Tudo concluído!',
-              context: context,
-            ).caption.color(AppColors.primary600).build(),
-          ],
         ],
       ),
     );

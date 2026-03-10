@@ -19,7 +19,22 @@ class HomeRepository implements IHomeRepository {
       final statusCode = response.statusCode ?? 0;
 
       if (_isSuccess(statusCode)) {
-        return Right(HomeDashboardOutput.fromDynamic(response.data));
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          return Right(HomeDashboardOutput.fromJson(data));
+        }
+        if (data is Map) {
+          return Right(
+            HomeDashboardOutput.fromJson(
+              data.map((key, value) => MapEntry(key.toString(), value)),
+            ),
+          );
+        }
+        return Left(
+          GetFailure(
+            message: 'Resposta inválida ao carregar dashboard da Home.',
+          ),
+        );
       }
 
       return Left(

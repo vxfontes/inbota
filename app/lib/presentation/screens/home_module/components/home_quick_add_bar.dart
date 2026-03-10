@@ -33,7 +33,7 @@ class HomeQuickAddBar extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: IBText(
-                  'O que voce quer organizar hoje?',
+                  'O que você quer organizar hoje?',
                   context: context,
                 ).body.color(AppColors.textMuted).build(),
               ),

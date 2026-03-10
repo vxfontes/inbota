@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:inbota/presentation/screens/home_module/components/timeline_item.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
-import 'package:inbota/shared/utils/text_utils.dart';
+import 'package:inbota/shared/utils/home_insights_utils.dart';
 
 class HomeBentoRow extends StatelessWidget {
-  static const double _sideCardHeight = 160;
+  static const double _sideCardHeight = 170;
 
   const HomeBentoRow({
     super.key,
@@ -20,8 +21,9 @@ class HomeBentoRow extends StatelessWidget {
     required this.shoppingItemCount,
     required this.eventsTodayCount,
     required this.remindersTodayCount,
+    required this.todayTimeline,
     required this.onShoppingTap,
-    required this.onAgendaTap,
+    required this.onInsightsTap,
   });
 
   final double progressPercent;
@@ -35,8 +37,9 @@ class HomeBentoRow extends StatelessWidget {
   final int shoppingItemCount;
   final int eventsTodayCount;
   final int remindersTodayCount;
+  final List<TimelineItem> todayTimeline;
   final VoidCallback onShoppingTap;
-  final VoidCallback onAgendaTap;
+  final VoidCallback onInsightsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +67,7 @@ class HomeBentoRow extends StatelessWidget {
                     flex: 5,
                     child: SizedBox(
                       height: _sideCardHeight,
-                      child: _buildAgendaTodayCard(context),
+                      child: _buildInsightsCard(context),
                     ),
                   ),
                 ],
@@ -89,7 +92,7 @@ class HomeBentoRow extends StatelessWidget {
                   const SizedBox(height: 12),
                   SizedBox(
                     height: _sideCardHeight,
-                    child: _buildAgendaTodayCard(context),
+                    child: _buildInsightsCard(context),
                   ),
                 ],
               ),
@@ -120,42 +123,66 @@ class HomeBentoRow extends StatelessWidget {
     );
   }
 
-  Widget _buildAgendaTodayCard(BuildContext context) {
+  Widget _buildInsightsCard(BuildContext context) {
     final commitments = eventsTodayCount + remindersTodayCount;
-    final summary = commitments == 0
-        ? 'Dia livre'
-        : TextUtils.countLabel(commitments, 'compromisso', 'compromissos');
+    final slots = todayTimeline
+        .where(
+          (item) =>
+              item.type == TimelineItemType.event ||
+              item.type == TimelineItemType.reminder,
+        )
+        .map(
+          (item) => DayScheduleSlot(
+            start: item.scheduledTime,
+            end: item.endScheduledTime,
+          ),
+        )
+        .toList(growable: false);
+
+    final insight = HomeInsightsUtils.buildDailyInsight(
+      slots: slots,
+      commitmentsCount: commitments,
+    );
+    final highlightColor = insight.isFocus
+        ? AppColors.primary600
+        : AppColors.success600;
 
     return Material(
       color: AppColors.transparent,
       child: InkWell(
-        onTap: onAgendaTap,
+        onTap: onInsightsTap,
         borderRadius: BorderRadius.circular(18),
         child: Ink(
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.surface2,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const IBIcon(
-                IBIcon.calendar,
+              IBIcon(
+                IBIcon.autoAwesomeRounded,
                 size: 18,
-                color: AppColors.success600,
+                color: highlightColor,
               ),
               const SizedBox(height: 8),
-              IBText('Agenda hoje', context: context).subtitulo.build(),
+              IBText(
+                insight.title,
+                context: context,
+              ).subtitulo.weight(FontWeight.w700).build(),
               const SizedBox(height: 4),
-              IBText(summary, context: context).muted.maxLines(2).build(),
+              IBText(
+                insight.summary,
+                context: context,
+              ).muted.maxLines(3).build(),
               const SizedBox(height: 10),
               IBText(
-                '$eventsTodayCount evento(s) • $remindersTodayCount lembrete(s)',
+                insight.footer,
                 context: context,
-              ).caption.build(),
+              ).caption.color(highlightColor).maxLines(2).build(),
             ],
           ),
         ),

@@ -37,8 +37,8 @@ class HomeInsightsUtils {
     if (!from.isBefore(dayEnd)) {
       return const DayInsight(
         title: 'Dia encerrando',
-        summary: 'Sem janela relevante para hoje.',
-        footer: 'Sugestao: planeje o primeiro bloco de amanha.',
+        summary: 'Hoje já não há uma boa janela livre.',
+        footer: 'Planeje o primeiro bloco de amanhã.',
         isFocus: false,
       );
     }
@@ -50,21 +50,20 @@ class HomeInsightsUtils {
     if (!hasAgenda) {
       final minutes = best.duration.inMinutes;
       return DayInsight(
-        title: 'Janela mais livre',
+        title: 'Janela livre do dia',
         summary:
-            '${_time(best.start)}-${_time(best.end)} ($minutes min livres).',
-        footer:
-            'Sugestao: bloco de foco de 60 min a partir de ${_time(best.start)}.',
+        '${_time(best.start)}–${_time(best.end)} ($minutes min livres).',
+        footer: 'Que tal focar por 60 min às ${_time(best.start)}?',
         isFocus: true,
       );
     }
 
     if (best.duration.inMinutes >= 120) {
       return DayInsight(
-        title: 'Janela forte',
+        title: 'Ótima janela',
         summary:
-            '${_time(best.start)}-${_time(best.end)} para tarefa profunda.',
-        footer: 'Sugestão: reserve 90 min sem interrupcoes nesse intervalo.',
+        '${_time(best.start)}–${_time(best.end)} para foco profundo.',
+        footer: 'Reserve 90 min nesse intervalo.',
         isFocus: true,
       );
     }
@@ -73,17 +72,17 @@ class HomeInsightsUtils {
       return DayInsight(
         title: 'Boa janela livre',
         summary:
-            '${_time(best.start)}-${_time(best.end)} para avancar pendencias.',
-        footer: 'Sugestao: bloco rapido de 45 min em ${_time(best.start)}.',
+        '${_time(best.start)}–${_time(best.end)} para avançar pendências.',
+        footer: 'Um bloco rápido às ${_time(best.start)} pode render bem.',
         isFocus: true,
       );
     }
 
     return DayInsight(
-      title: 'Dia mais distribuido',
+      title: 'Dia mais fragmentado',
       summary:
-          'A maior janela livre hoje e ${_time(best.start)}-${_time(best.end)}.',
-      footer: 'Sugestao: use microblocos de 20 min entre compromissos.',
+      'Sua maior janela livre é ${_time(best.start)}–${_time(best.end)}.',
+      footer: 'Use blocos curtos entre compromissos.',
       isFocus: false,
     );
   }

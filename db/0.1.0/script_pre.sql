@@ -1,3 +1,5 @@
+ALTER DATABASE inbota SET TimeZone TO 'America/Sao_Paulo';
+
 -- Home optimization objects (v0.1.0)
 
 CREATE TABLE IF NOT EXISTS inbota.home_insight_templates (

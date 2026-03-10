@@ -1,23 +1,17 @@
-import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:inbota/modules/events/data/models/agenda_output.dart';
 import 'package:inbota/modules/events/data/models/event_output.dart';
-import 'package:inbota/modules/events/domain/usecases/get_agenda_usecase.dart';
+import 'package:inbota/modules/home/data/models/home_dashboard_output.dart';
+import 'package:inbota/modules/home/domain/usecases/get_home_dashboard_usecase.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_output.dart';
 import 'package:inbota/modules/reminders/data/models/reminder_update_input.dart';
 import 'package:inbota/modules/reminders/domain/usecases/update_reminder_usecase.dart';
-import 'package:inbota/modules/routines/data/models/routine_list_output.dart';
 import 'package:inbota/modules/routines/data/models/routine_output.dart';
 import 'package:inbota/modules/routines/data/models/routine_today_summary_output.dart';
 import 'package:inbota/modules/routines/domain/usecases/complete_routine_usecase.dart';
-import 'package:inbota/modules/routines/domain/usecases/get_routines_by_weekday_usecase.dart';
-import 'package:inbota/modules/routines/domain/usecases/get_today_summary_usecase.dart';
 import 'package:inbota/modules/routines/domain/usecases/uncomplete_routine_usecase.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_item_output.dart';
-import 'package:inbota/modules/shopping/data/models/shopping_list_list_output.dart';
 import 'package:inbota/modules/shopping/data/models/shopping_list_output.dart';
-import 'package:inbota/modules/shopping/domain/usecases/get_shopping_items_usecase.dart';
-import 'package:inbota/modules/shopping/domain/usecases/get_shopping_lists_usecase.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
 import 'package:inbota/modules/tasks/data/models/task_update_input.dart';
 import 'package:inbota/modules/tasks/domain/usecases/update_task_usecase.dart';
@@ -28,30 +22,23 @@ import 'package:inbota/shared/utils/text_utils.dart';
 
 class HomeController implements IBController {
   HomeController(
-    this._getAgendaUsecase,
-    this._getShoppingListsUsecase,
-    this._getShoppingItemsUsecase,
+    this._getHomeDashboardUsecase,
     this._updateTaskUsecase,
     this._updateReminderUsecase,
-    this._getRoutinesByWeekdayUsecase,
     this._completeRoutineUsecase,
     this._uncompleteRoutineUsecase,
-    this._getTodaySummaryUsecase,
   );
 
-  final GetAgendaUsecase _getAgendaUsecase;
-  final GetShoppingListsUsecase _getShoppingListsUsecase;
-  final GetShoppingItemsUsecase _getShoppingItemsUsecase;
+  final GetHomeDashboardUsecase _getHomeDashboardUsecase;
   final UpdateTaskUsecase _updateTaskUsecase;
   final UpdateReminderUsecase _updateReminderUsecase;
-  final GetRoutinesByWeekdayUsecase _getRoutinesByWeekdayUsecase;
   final CompleteRoutineUsecase _completeRoutineUsecase;
   final UncompleteRoutineUsecase _uncompleteRoutineUsecase;
-  final GetTodaySummaryUsecase _getTodaySummaryUsecase;
 
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<bool> refreshing = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
+  final ValueNotifier<HomeDashboardOutput?> dashboardData = ValueNotifier(null);
 
   final ValueNotifier<AgendaOutput> agenda = ValueNotifier(
     const AgendaOutput(events: [], tasks: [], reminders: []),
@@ -71,11 +58,15 @@ class HomeController implements IBController {
   final Set<String> _updatingRoutineIds = <String>{};
 
   bool get hasContent {
-    return agenda.value.events.isNotEmpty ||
-        agenda.value.tasks.isNotEmpty ||
-        agenda.value.reminders.isNotEmpty ||
-        shoppingLists.value.isNotEmpty ||
-        routines.value.isNotEmpty;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return false;
+    return dashboard.timeline.isNotEmpty ||
+        dashboard.shoppingPreview.isNotEmpty ||
+        dashboard.focusTasks.isNotEmpty ||
+        dashboard.dayProgress.routinesTotal > 0 ||
+        dashboard.dayProgress.tasksTotal > 0 ||
+        (dashboard.eventsTodayCount ?? 0) > 0 ||
+        (dashboard.remindersTodayCount ?? 0) > 0;
   }
 
   List<TaskOutput> get openTasks {
@@ -162,14 +153,8 @@ class HomeController implements IBController {
   int get totalOverdueCount => overdueTasksCount + overdueRemindersCount;
 
   int get remindersTodayCount {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-    return openReminders.where((item) {
-      final date = item.remindAt?.toLocal();
-      if (date == null) return false;
-      return !date.isBefore(start) && date.isBefore(end);
-    }).length;
+    final dashboardCount = dashboardData.value?.remindersTodayCount;
+    return dashboardCount ?? 0;
   }
 
   int get remindersUpcomingCount {
@@ -187,14 +172,8 @@ class HomeController implements IBController {
   }
 
   int get eventsTodayCount {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-    return eventsWithDate.where((item) {
-      final date = item.startAt?.toLocal();
-      if (date == null) return false;
-      return !date.isBefore(start) && date.isBefore(end);
-    }).length;
+    final dashboardCount = dashboardData.value?.eventsTodayCount;
+    return dashboardCount ?? 0;
   }
 
   int get eventsThisWeekCount {
@@ -210,212 +189,163 @@ class HomeController implements IBController {
   }
 
   List<ShoppingListOutput> get activeShoppingLists {
-    return shoppingLists.value
-        .where((list) => !list.isArchived)
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return const [];
+    return dashboard.shoppingPreview
+        .map(
+          (item) => ShoppingListOutput(
+            id: item.id,
+            title: item.title,
+            status: 'OPEN',
+          ),
+        )
         .toList(growable: false);
   }
 
   int get openShoppingListsCount {
-    return activeShoppingLists.where((list) => !list.isDone).length;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    return dashboard.shoppingPreview.length;
   }
 
   int get openShoppingLists => openShoppingListsCount;
 
   int get pendingShoppingItemsCount {
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
     var total = 0;
-    final byList = shoppingItemsByList.value;
-
-    for (final list in activeShoppingLists) {
-      if (list.isDone) continue;
-      final items = byList[list.id] ?? const <ShoppingItemOutput>[];
-      total += items.where((item) => !item.isDone).length;
+    for (final list in dashboard.shoppingPreview) {
+      total += list.pendingItems;
     }
-
     return total;
   }
 
   int get totalPendingShoppingItems => pendingShoppingItemsCount;
 
   int pendingItemsForList(String listId) {
-    final items =
-        shoppingItemsByList.value[listId] ?? const <ShoppingItemOutput>[];
-    return items.where((item) => !item.isDone).length;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    for (final list in dashboard.shoppingPreview) {
+      if (list.id == listId) return list.pendingItems;
+    }
+    return 0;
   }
 
   List<ShoppingListOutput> get homeShoppingListsPreview {
-    final lists = activeShoppingLists.where((list) => !list.isDone).toList();
-    lists.sort((a, b) {
-      final byPending = pendingItemsForList(
-        b.id,
-      ).compareTo(pendingItemsForList(a.id));
-      if (byPending != 0) return byPending;
-      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-    });
-    return lists.take(3).toList(growable: false);
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return const [];
+    return dashboard.shoppingPreview
+        .map(
+          (item) => ShoppingListOutput(
+            id: item.id,
+            title: item.title,
+            status: 'OPEN',
+          ),
+        )
+        .toList(growable: false);
   }
 
   List<TimelineItem> get nextActionsTimeline {
+    final dashboardTimeline = _dashboardTimelineForNextActions;
+    if (dashboardTimeline.isEmpty) return const [];
     final now = DateTime.now();
-    return _timelineItemsToday
+    return dashboardTimeline
         .where((item) => !item.scheduledTime.isBefore(now))
         .take(10)
         .toList(growable: false);
   }
 
   List<TimelineItem> get pastActionsToday {
+    final dashboardTimeline = _dashboardTimelineForNextActions;
+    if (dashboardTimeline.isEmpty) return const [];
     final now = DateTime.now();
-    return _timelineItemsToday
+    return dashboardTimeline
         .where((item) => item.scheduledTime.isBefore(now))
         .toList(growable: false);
   }
 
   List<TimelineItem> get insightsTimelineToday {
-    final merged = <TimelineItem>[
-      ..._agendaTimelineItemsTodayForInsights,
-      ..._routineTimelineItemsTodayForInsights,
-    ];
-
-    merged.sort((a, b) {
-      final byTime = a.scheduledTime.compareTo(b.scheduledTime);
-      if (byTime != 0) return byTime;
-      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-    });
-
-    return merged;
+    final dashboardTimeline = _dashboardTimelineForInsights;
+    return dashboardTimeline;
   }
 
   int get routinesDone {
-    final summary = routineSummary.value;
-    if (summary != null) return summary.completed;
-    return routines.value.where((item) => item.isCompletedToday).length;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    return dashboard.dayProgress.routinesDone;
   }
 
   int get routinesTotal {
-    final summary = routineSummary.value;
-    if (summary != null) return summary.total;
-    return routines.value.length;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    return dashboard.dayProgress.routinesTotal;
   }
 
   int get tasksDone {
-    return _todayTasksForProgress.where((item) => item.isDone).length;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    return dashboard.dayProgress.tasksDone;
   }
 
   int get tasksTotal {
-    return _todayTasksForProgress.length;
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    return dashboard.dayProgress.tasksTotal;
   }
 
   double get dayProgressPercent {
-    final total = routinesTotal + tasksTotal;
-    if (total == 0) return 0;
-
-    final done = routinesDone + tasksDone;
-    return (done / total).clamp(0, 1).toDouble();
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return 0;
+    return dashboard.dayProgress.progressPercent.clamp(0, 1).toDouble();
   }
 
   List<TaskOutput> get focusTasks {
-    final now = DateTime.now();
-    final start = _startOfDay(now);
-    final end = start.add(const Duration(days: 1));
-
-    final list = openTasks.where((task) {
-      final due = task.dueAt?.toLocal();
-      if (due == null) return true;
-      return due.isBefore(end);
-    }).toList();
-
-    list.sort((a, b) {
-      final aDue = a.dueAt?.toLocal();
-      final bDue = b.dueAt?.toLocal();
-      final aPriority = _focusPriority(aDue, start, end);
-      final bPriority = _focusPriority(bDue, start, end);
-
-      final byPriority = aPriority.compareTo(bPriority);
-      if (byPriority != 0) return byPriority;
-
-      if (aPriority == 0 || aPriority == 1) {
-        if (aDue != null && bDue != null) {
-          final byDate = aDue.compareTo(bDue);
-          if (byDate != 0) return byDate;
-        }
-      }
-
-      if (aPriority == 2) {
-        final aCreated = a.createdAt?.toLocal();
-        final bCreated = b.createdAt?.toLocal();
-        if (aCreated != null && bCreated != null) {
-          final byCreatedDesc = bCreated.compareTo(aCreated);
-          if (byCreatedDesc != 0) return byCreatedDesc;
-        } else if (aCreated != null) {
-          return -1;
-        } else if (bCreated != null) {
-          return 1;
-        }
-      }
-
-      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-    });
-
-    return list.take(5).toList(growable: false);
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return const [];
+    return dashboard.focusTasks.take(5).toList(growable: false);
   }
 
   String get executiveSummary {
-    if (totalOverdueCount > 0) {
-      return '${TextUtils.countLabel(totalOverdueCount, 'item atrasado', 'itens atrasados')}. Bom momento para colocar o dia em dia.';
-    }
-
-    final commitmentsToday =
-        eventsTodayCount + remindersTodayCount + routinesTotal + tasksTotal;
-    final criticalOpen = focusTasks.length;
-
-    if (commitmentsToday == 0 && criticalOpen == 0) {
-      return 'Dia livre! Sem compromissos agendados.';
-    }
-
-    if (commitmentsToday == 0) {
-      return 'Sem compromissos hoje, mas você tem ${TextUtils.countLabel(criticalOpen, 'tarefa crítica aberta', 'tarefas críticas abertas')}.';
-    }
-
-    if (criticalOpen == 0) {
-      return 'Você tem ${TextUtils.countLabel(commitmentsToday, 'compromisso', 'compromissos')} hoje.';
-    }
-
-    return 'Você tem ${TextUtils.countLabel(commitmentsToday, 'compromisso', 'compromissos')} hoje e ${TextUtils.countLabel(criticalOpen, 'tarefa crítica aberta', 'tarefas críticas abertas')}.';
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return '';
+    return dashboard.executiveSummary;
   }
 
   Map<DateTime, int> get weekDensityMap {
-    final today = _startOfDay(DateTime.now());
-    final start = today.subtract(Duration(days: today.weekday - 1));
-    final end = start.add(const Duration(days: 7));
-
-    final density = <DateTime, int>{
-      for (var i = 0; i < 7; i++) start.add(Duration(days: i)): 0,
-    };
-
-    void increment(DateTime? raw) {
-      if (raw == null) return;
-      final local = raw.toLocal();
-      final day = _startOfDay(local);
-      if (day.isBefore(start) || !day.isBefore(end)) return;
-      density[day] = (density[day] ?? 0) + 1;
+    final dashboard = dashboardData.value;
+    if (dashboard == null || dashboard.weekDensity.isEmpty) {
+      return const <DateTime, int>{};
     }
-
-    for (final item in agenda.value.events) {
-      increment(item.startAt);
-    }
-    for (final item in agenda.value.tasks) {
-      increment(item.dueAt);
-    }
-    for (final item in agenda.value.reminders) {
-      increment(item.remindAt);
-    }
-
-    for (final routine in routines.value) {
-      final schedule = _routineStartAtToday(routine);
-      if (schedule == null) continue;
-      increment(schedule);
-    }
-
+    final density = <DateTime, int>{};
+    dashboard.weekDensity.forEach((key, value) {
+      final date = DateTime.tryParse(key);
+      if (date == null) return;
+      final localDay = _startOfDay(date.toLocal());
+      density[localDay] = value;
+    });
     return Map.unmodifiable(density);
+  }
+
+  String get insightTitle {
+    final insight = dashboardData.value?.insight;
+    if (insight == null) return '';
+    return insight.title;
+  }
+
+  String get insightSummary {
+    final insight = dashboardData.value?.insight;
+    if (insight == null) return '';
+    return insight.summary;
+  }
+
+  String get insightFooter {
+    final insight = dashboardData.value?.insight;
+    if (insight == null) return '';
+    return insight.footer;
+  }
+
+  bool get insightIsFocus {
+    return dashboardData.value?.insight?.isFocus == true;
   }
 
   Future<void> load() async {
@@ -439,12 +369,18 @@ class HomeController implements IBController {
     );
     _updatingTaskIds.remove(task.id);
 
-    result.fold((failure) {
-      _setError(
-        failure,
-        fallback: 'Não foi possível atualizar a tarefa pela Home.',
-      );
-    }, _replaceTaskInAgenda);
+    result.fold(
+      (failure) {
+        _setError(
+          failure,
+          fallback: 'Não foi possível atualizar a tarefa pela Home.',
+        );
+      },
+      (task) {
+        _replaceTaskInAgenda(task);
+        _replaceTaskInDashboard(task);
+      },
+    );
   }
 
   Future<void> toggleRoutine(RoutineOutput routine, bool completed) async {
@@ -471,6 +407,7 @@ class HomeController implements IBController {
           list[idx] = list[idx].copyWith(isCompletedToday: completed);
           routines.value = list;
         }
+        _replaceRoutineInDashboard(routine.id, completed);
         _refreshRoutineSummary();
       },
     );
@@ -491,10 +428,34 @@ class HomeController implements IBController {
         return;
       case TimelineItemType.routine:
         final routine = _findRoutineById(itemId);
-        if (routine == null || routine.isCompletedToday) return;
-        await toggleRoutine(routine, true);
+        if (routine != null) {
+          if (routine.isCompletedToday) return;
+          await toggleRoutine(routine, true);
+          return;
+        }
+        await _completeRoutineById(itemId);
         return;
     }
+  }
+
+  Future<void> _completeRoutineById(String routineId) async {
+    if (_updatingRoutineIds.contains(routineId)) return;
+
+    _updatingRoutineIds.add(routineId);
+    final now = DateTime.now();
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final result = await _completeRoutineUsecase.call(routineId, date: dateStr);
+    _updatingRoutineIds.remove(routineId);
+
+    result.fold(
+      (failure) =>
+          _setError(failure, fallback: 'Não foi possível atualizar a rotina.'),
+      (_) {
+        _replaceRoutineInDashboard(routineId, true);
+        _refreshRoutineSummary();
+      },
+    );
   }
 
   Future<void> _markTaskDone(String taskId) async {
@@ -506,12 +467,18 @@ class HomeController implements IBController {
     );
     _updatingTaskIds.remove(taskId);
 
-    result.fold((failure) {
-      _setError(
-        failure,
-        fallback: 'Não foi possível concluir a tarefa na timeline.',
-      );
-    }, _replaceTaskInAgenda);
+    result.fold(
+      (failure) {
+        _setError(
+          failure,
+          fallback: 'Não foi possível concluir a tarefa na timeline.',
+        );
+      },
+      (task) {
+        _replaceTaskInAgenda(task);
+        _replaceTaskInDashboard(task);
+      },
+    );
   }
 
   Future<void> _markReminderDone(String reminderId) async {
@@ -523,17 +490,27 @@ class HomeController implements IBController {
     );
     _updatingReminderIds.remove(reminderId);
 
-    result.fold((failure) {
-      _setError(
-        failure,
-        fallback: 'Não foi possível concluir o lembrete na timeline.',
-      );
-    }, _replaceReminderInAgenda);
+    result.fold(
+      (failure) {
+        _setError(
+          failure,
+          fallback: 'Não foi possível concluir o lembrete na timeline.',
+        );
+      },
+      (reminder) {
+        _replaceReminderInAgenda(reminder);
+        _replaceReminderInDashboard(reminder);
+      },
+    );
   }
 
   Future<void> _refreshRoutineSummary() async {
-    final result = await _getTodaySummaryUsecase.call();
-    result.fold((_) => null, (summary) => routineSummary.value = summary);
+    await _reloadDashboardAfterMutation();
+  }
+
+  Future<void> _reloadDashboardAfterMutation() async {
+    final result = await _getHomeDashboardUsecase.call();
+    result.fold((_) => null, _applyDashboard);
   }
 
   Future<void> _fetch({required bool initialLoad}) async {
@@ -547,91 +524,14 @@ class HomeController implements IBController {
     error.value = null;
 
     try {
-      final agendaFuture = _getAgendaUsecase.call(limit: 200);
-      final listsFuture = _getShoppingListsUsecase.call(limit: 20);
-
-      final now = DateTime.now();
-      final weekday = now.weekday % 7;
-      final dateStr =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final routinesFuture = _getRoutinesByWeekdayUsecase.call(
-        weekday,
-        date: dateStr,
-      );
-      final summaryFuture = _getTodaySummaryUsecase.call();
-
-      final results = await Future.wait([
-        agendaFuture,
-        listsFuture,
-        routinesFuture,
-        summaryFuture,
-      ]);
-
-      final agendaResult = results[0] as Either<Failure, AgendaOutput>;
-      final listsResult = results[1] as Either<Failure, ShoppingListListOutput>;
-      final routinesResult = results[2] as Either<Failure, RoutineListOutput>;
-      final summaryResult =
-          results[3] as Either<Failure, RoutineTodaySummaryOutput>;
-
-      agendaResult.fold(
-        (failure) =>
-            _setError(failure, fallback: 'Não foi possível carregar agenda.'),
-        (output) => agenda.value = output,
-      );
-
-      summaryResult.fold(
-        (_) => null,
-        (summary) => routineSummary.value = summary,
-      );
-
-      routinesResult.fold(
-        (failure) =>
-            _setError(failure, fallback: 'Não foi possível carregar rotinas.'),
-        (data) {
-          routines.value = data.items;
-        },
-      );
-
-      final lists = listsResult.fold<List<ShoppingListOutput>>(
-        (failure) {
-          _setError(
-            failure,
-            fallback: 'Não foi possível carregar listas de compras.',
-          );
-          return const [];
-        },
-        (output) => output.items
-            .where((list) => !list.isArchived)
-            .toList(growable: false),
-      );
-      shoppingLists.value = lists;
-
-      final nextItemsByList = <String, List<ShoppingItemOutput>>{};
-      final itemsResults = await Future.wait(
-        lists.map((list) async {
-          final result = await _getShoppingItemsUsecase.call(
-            listId: list.id,
-            limit: 200,
-          );
-          return MapEntry(list.id, result);
-        }),
-      );
-
-      for (final entry in itemsResults) {
-        entry.value.fold(
-          (failure) {
-            _setError(
-              failure,
-              fallback: 'Não foi possível carregar itens de compras da Home.',
-            );
-            nextItemsByList[entry.key] = const [];
-          },
-          (output) {
-            nextItemsByList[entry.key] = output.items;
-          },
+      final dashboardResult = await _getHomeDashboardUsecase.call();
+      dashboardResult.fold((failure) {
+        dashboardData.value = null;
+        _setError(
+          failure,
+          fallback: 'Nao foi possivel carregar o dashboard da Home.',
         );
-      }
-      shoppingItemsByList.value = nextItemsByList;
+      }, _applyDashboard);
     } catch (_) {
       if (error.value == null || error.value!.isEmpty) {
         error.value = 'Não foi possível carregar a Home.';
@@ -642,217 +542,105 @@ class HomeController implements IBController {
     }
   }
 
-  List<TimelineItem> get _timelineItemsToday {
-    final merged = <TimelineItem>[
-      ..._agendaTimelineItemsToday,
-      ..._routineTimelineItemsToday,
-    ];
+  void _applyDashboard(HomeDashboardOutput data) {
+    dashboardData.value = data;
+    routineSummary.value = RoutineTodaySummaryOutput(
+      total: data.dayProgress.routinesTotal,
+      completed: data.dayProgress.routinesDone,
+    );
 
-    merged.sort((a, b) {
+    agenda.value = const AgendaOutput(events: [], tasks: [], reminders: []);
+    routines.value = const [];
+
+    shoppingLists.value = data.shoppingPreview
+        .map(
+          (list) => ShoppingListOutput(
+            id: list.id,
+            title: list.title,
+            status: 'OPEN',
+          ),
+        )
+        .toList(growable: false);
+    shoppingItemsByList.value = {
+      for (final list in data.shoppingPreview)
+        list.id: List.generate(
+          list.pendingItems,
+          (index) => ShoppingItemOutput(
+            id: '${list.id}:$index',
+            title: index < list.previewItems.length
+                ? list.previewItems[index]
+                : 'Item pendente',
+            checked: false,
+            sortOrder: index,
+          ),
+          growable: false,
+        ),
+    };
+  }
+
+  List<TimelineItem> get _dashboardTimelineForInsights {
+    return _mapDashboardTimelineItems(includeCompleted: true);
+  }
+
+  List<TimelineItem> get _dashboardTimelineForNextActions {
+    return _mapDashboardTimelineItems(includeCompleted: false);
+  }
+
+  List<TimelineItem> _mapDashboardTimelineItems({
+    required bool includeCompleted,
+  }) {
+    final dashboard = dashboardData.value;
+    if (dashboard == null || dashboard.timeline.isEmpty) return const [];
+
+    final items = <TimelineItem>[];
+    for (final item in dashboard.timeline) {
+      final timelineType = _timelineTypeFromRaw(item.itemType);
+      if (timelineType == null) continue;
+      final localScheduled = item.scheduledTime.toLocal();
+      if (localScheduled.millisecondsSinceEpoch <= 0) continue;
+      if (!includeCompleted &&
+          (timelineType == TimelineItemType.task ||
+              timelineType == TimelineItemType.reminder ||
+              timelineType == TimelineItemType.routine) &&
+          item.isCompleted) {
+        continue;
+      }
+
+      items.add(
+        TimelineItem(
+          id: item.id,
+          title: item.title,
+          subtitle: TextUtils.normalize(item.subtitle),
+          type: timelineType,
+          scheduledTime: localScheduled,
+          endScheduledTime: item.endScheduledTime?.toLocal(),
+          isCompleted: item.isCompleted,
+          isOverdue: item.isOverdue,
+        ),
+      );
+    }
+
+    items.sort((a, b) {
       final byTime = a.scheduledTime.compareTo(b.scheduledTime);
       if (byTime != 0) return byTime;
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
-
-    return merged;
-  }
-
-  List<TimelineItem> get _agendaTimelineItemsToday {
-    final now = DateTime.now();
-    final start = _startOfDay(now);
-    final end = start.add(const Duration(days: 1));
-    final items = <TimelineItem>[];
-
-    for (final event in agenda.value.events) {
-      final local = event.startAt?.toLocal();
-      if (local == null || !_isWithinRange(local, start, end)) continue;
-      if (!_hasDefinedTime(local)) continue;
-
-      final subtitle = TextUtils.normalize(event.location);
-      items.add(
-        TimelineItem(
-          id: event.id,
-          title: event.title,
-          subtitle: subtitle,
-          type: TimelineItemType.event,
-          scheduledTime: local,
-          endScheduledTime: _eventEndAtLocal(event, startAtLocal: local),
-          isCompleted: false,
-          isOverdue: local.isBefore(now),
-        ),
-      );
-    }
-
-    for (final task in agenda.value.tasks) {
-      final local = task.dueAt?.toLocal();
-      if (local == null || !_isWithinRange(local, start, end)) continue;
-      if (!_hasDefinedTime(local) || task.isDone) continue;
-
-      items.add(
-        TimelineItem(
-          id: task.id,
-          title: task.title,
-          subtitle: TextUtils.normalize(task.description),
-          type: TimelineItemType.task,
-          scheduledTime: local,
-          isCompleted: task.isDone,
-          isOverdue: local.isBefore(now) && !task.isDone,
-        ),
-      );
-    }
-
-    for (final reminder in agenda.value.reminders) {
-      final local = reminder.remindAt?.toLocal();
-      if (local == null || !_isWithinRange(local, start, end)) continue;
-      if (!_hasDefinedTime(local) || reminder.isDone) continue;
-
-      items.add(
-        TimelineItem(
-          id: reminder.id,
-          title: reminder.title,
-          type: TimelineItemType.reminder,
-          scheduledTime: local,
-          isCompleted: reminder.isDone,
-          isOverdue: local.isBefore(now) && !reminder.isDone,
-        ),
-      );
-    }
-
     return items;
   }
 
-  List<TimelineItem> get _routineTimelineItemsToday {
-    final now = DateTime.now();
-    final list = <TimelineItem>[];
-
-    for (final routine in routines.value) {
-      final scheduled = _routineStartAtToday(routine);
-      if (scheduled == null || routine.isCompletedToday) continue;
-      final endScheduled = _routineEndAtToday(routine, startAt: scheduled);
-
-      list.add(
-        TimelineItem(
-          id: routine.id,
-          title: routine.title,
-          subtitle: TextUtils.normalize(routine.weekdaysLabel),
-          type: TimelineItemType.routine,
-          scheduledTime: scheduled,
-          endScheduledTime: endScheduled,
-          isCompleted: routine.isCompletedToday,
-          isOverdue: scheduled.isBefore(now) && !routine.isCompletedToday,
-        ),
-      );
+  TimelineItemType? _timelineTypeFromRaw(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case 'event':
+        return TimelineItemType.event;
+      case 'task':
+        return TimelineItemType.task;
+      case 'reminder':
+        return TimelineItemType.reminder;
+      case 'routine':
+        return TimelineItemType.routine;
+      default:
+        return null;
     }
-
-    return list;
-  }
-
-  List<TimelineItem> get _agendaTimelineItemsTodayForInsights {
-    final now = DateTime.now();
-    final start = _startOfDay(now);
-    final end = start.add(const Duration(days: 1));
-    final items = <TimelineItem>[];
-
-    for (final event in agenda.value.events) {
-      final local = event.startAt?.toLocal();
-      if (local == null || !_isWithinRange(local, start, end)) continue;
-      if (!_hasDefinedTime(local)) continue;
-
-      final subtitle = TextUtils.normalize(event.location);
-      items.add(
-        TimelineItem(
-          id: event.id,
-          title: event.title,
-          subtitle: subtitle,
-          type: TimelineItemType.event,
-          scheduledTime: local,
-          endScheduledTime: _eventEndAtLocal(event, startAtLocal: local),
-          isCompleted: false,
-          isOverdue: local.isBefore(now),
-        ),
-      );
-    }
-
-    for (final task in agenda.value.tasks) {
-      final local = task.dueAt?.toLocal();
-      if (local == null || !_isWithinRange(local, start, end)) continue;
-      if (!_hasDefinedTime(local)) continue;
-
-      items.add(
-        TimelineItem(
-          id: task.id,
-          title: task.title,
-          subtitle: TextUtils.normalize(task.description),
-          type: TimelineItemType.task,
-          scheduledTime: local,
-          isCompleted: task.isDone,
-          isOverdue: local.isBefore(now) && !task.isDone,
-        ),
-      );
-    }
-
-    for (final reminder in agenda.value.reminders) {
-      final local = reminder.remindAt?.toLocal();
-      if (local == null || !_isWithinRange(local, start, end)) continue;
-      if (!_hasDefinedTime(local)) continue;
-
-      items.add(
-        TimelineItem(
-          id: reminder.id,
-          title: reminder.title,
-          type: TimelineItemType.reminder,
-          scheduledTime: local,
-          isCompleted: reminder.isDone,
-          isOverdue: local.isBefore(now) && !reminder.isDone,
-        ),
-      );
-    }
-
-    return items;
-  }
-
-  List<TimelineItem> get _routineTimelineItemsTodayForInsights {
-    final now = DateTime.now();
-    final list = <TimelineItem>[];
-
-    for (final routine in routines.value) {
-      final scheduled = _routineStartAtToday(routine);
-      if (scheduled == null) continue;
-      final endScheduled = _routineEndAtToday(routine, startAt: scheduled);
-
-      list.add(
-        TimelineItem(
-          id: routine.id,
-          title: routine.title,
-          subtitle: TextUtils.normalize(routine.weekdaysLabel),
-          type: TimelineItemType.routine,
-          scheduledTime: scheduled,
-          endScheduledTime: endScheduled,
-          isCompleted: routine.isCompletedToday,
-          isOverdue: scheduled.isBefore(now) && !routine.isCompletedToday,
-        ),
-      );
-    }
-
-    return list;
-  }
-
-  List<TaskOutput> get _todayTasksForProgress {
-    final now = DateTime.now();
-    return agenda.value.tasks
-        .where((task) {
-          final due = task.dueAt?.toLocal();
-          if (due == null) return false;
-          return _isSameDay(due, now);
-        })
-        .toList(growable: false);
-  }
-
-  int _focusPriority(DateTime? dueAt, DateTime dayStart, DateTime dayEnd) {
-    if (dueAt == null) return 2;
-    if (dueAt.isBefore(dayStart)) return 0;
-    if (dueAt.isBefore(dayEnd)) return 1;
-    return 3;
   }
 
   void _replaceTaskInAgenda(TaskOutput updatedTask) {
@@ -885,23 +673,97 @@ class HomeController implements IBController {
     );
   }
 
+  void _replaceTaskInDashboard(TaskOutput updatedTask) {
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return;
+
+    bool? previousDone;
+    final timeline = dashboard.timeline
+        .map((item) {
+          if (item.id != updatedTask.id || item.itemType != 'task') return item;
+          previousDone ??= item.isCompleted;
+          return item.copyWith(isCompleted: updatedTask.isDone);
+        })
+        .toList(growable: false);
+
+    final focus = List<TaskOutput>.from(dashboard.focusTasks);
+    final idx = focus.indexWhere((item) => item.id == updatedTask.id);
+    if (idx != -1) {
+      previousDone ??= focus[idx].isDone;
+      if (updatedTask.isDone) {
+        focus.removeAt(idx);
+      } else {
+        focus[idx] = updatedTask;
+      }
+    }
+
+    var dayProgress = dashboard.dayProgress;
+    final dueAt = updatedTask.dueAt?.toLocal();
+    final isTodayTask = dueAt != null && _isSameDay(dueAt, DateTime.now());
+    if (isTodayTask &&
+        previousDone != null &&
+        previousDone != updatedTask.isDone) {
+      final nextDone = dayProgress.tasksDone + (updatedTask.isDone ? 1 : -1);
+      dayProgress = dayProgress.copyWith(
+        tasksDone: nextDone.clamp(0, dayProgress.tasksTotal),
+      );
+    }
+
+    dashboardData.value = dashboard.copyWith(
+      timeline: timeline,
+      focusTasks: focus,
+      dayProgress: dayProgress,
+    );
+  }
+
+  void _replaceReminderInDashboard(ReminderOutput updatedReminder) {
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return;
+
+    final timeline = dashboard.timeline
+        .map((item) {
+          if (item.id != updatedReminder.id || item.itemType != 'reminder') {
+            return item;
+          }
+          return item.copyWith(isCompleted: updatedReminder.isDone);
+        })
+        .toList(growable: false);
+
+    dashboardData.value = dashboard.copyWith(timeline: timeline);
+  }
+
+  void _replaceRoutineInDashboard(String routineId, bool completed) {
+    final dashboard = dashboardData.value;
+    if (dashboard == null) return;
+
+    bool? previousDone;
+    final timeline = dashboard.timeline
+        .map((item) {
+          if (item.id != routineId || item.itemType != 'routine') return item;
+          previousDone ??= item.isCompleted;
+          return item.copyWith(isCompleted: completed);
+        })
+        .toList(growable: false);
+
+    var dayProgress = dashboard.dayProgress;
+    if (previousDone != null && previousDone != completed) {
+      final nextDone = dayProgress.routinesDone + (completed ? 1 : -1);
+      dayProgress = dayProgress.copyWith(
+        routinesDone: nextDone.clamp(0, dayProgress.routinesTotal),
+      );
+    }
+
+    dashboardData.value = dashboard.copyWith(
+      timeline: timeline,
+      dayProgress: dayProgress,
+    );
+  }
+
   RoutineOutput? _findRoutineById(String routineId) {
     for (final routine in routines.value) {
       if (routine.id == routineId) return routine;
     }
     return null;
-  }
-
-  bool _hasDefinedTime(DateTime date) {
-    return date.hour != 0 ||
-        date.minute != 0 ||
-        date.second != 0 ||
-        date.millisecond != 0 ||
-        date.microsecond != 0;
-  }
-
-  bool _isWithinRange(DateTime value, DateTime start, DateTime end) {
-    return !value.isBefore(start) && value.isBefore(end);
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -910,46 +772,6 @@ class HomeController implements IBController {
 
   DateTime _startOfDay(DateTime value) {
     return DateTime(value.year, value.month, value.day);
-  }
-
-  DateTime? _routineStartAtToday(RoutineOutput routine) {
-    final now = DateTime.now();
-    return _parseRoutineTimeForDay(routine.startTime, now);
-  }
-
-  DateTime? _routineEndAtToday(
-    RoutineOutput routine, {
-    required DateTime startAt,
-  }) {
-    final parsed = _parseRoutineTimeForDay(routine.endTime, startAt);
-    if (parsed == null) return null;
-    if (!parsed.isAfter(startAt)) return null;
-    return parsed;
-  }
-
-  DateTime? _parseRoutineTimeForDay(String raw, DateTime baseDate) {
-    final value = raw.trim();
-    if (value.isEmpty) return null;
-
-    final match = RegExp(r'(\d{1,2}):(\d{1,2})').firstMatch(value);
-    if (match == null) return null;
-
-    final hour = int.tryParse(match.group(1)!);
-    final minute = int.tryParse(match.group(2)!);
-    if (hour == null || minute == null) return null;
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-
-    return DateTime(baseDate.year, baseDate.month, baseDate.day, hour, minute);
-  }
-
-  DateTime? _eventEndAtLocal(
-    EventOutput event, {
-    required DateTime startAtLocal,
-  }) {
-    final end = event.endAt?.toLocal();
-    if (end == null) return null;
-    if (!end.isAfter(startAtLocal)) return null;
-    return end;
   }
 
   void _setError(Failure failure, {required String fallback}) {
@@ -969,6 +791,7 @@ class HomeController implements IBController {
     loading.dispose();
     refreshing.dispose();
     error.dispose();
+    dashboardData.dispose();
     agenda.dispose();
     routines.dispose();
     routineSummary.dispose();

@@ -44,6 +44,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
       animation: Listenable.merge([
         controller.loading,
         controller.refreshing,
+        controller.dashboardData,
         controller.agenda,
         controller.routines,
         controller.routineSummary,
@@ -150,9 +151,10 @@ class _HomePageState extends IBState<HomePage, HomeController> {
                         tasksTotal: controller.tasksTotal,
                         shoppingListCount: controller.openShoppingLists,
                         shoppingItemCount: controller.totalPendingShoppingItems,
-                        eventsTodayCount: controller.eventsTodayCount,
-                        remindersTodayCount: controller.remindersTodayCount,
-                        todayTimeline: controller.insightsTimelineToday,
+                        insightTitle: controller.insightTitle,
+                        insightSummary: controller.insightSummary,
+                        insightFooter: controller.insightFooter,
+                        insightIsFocus: controller.insightIsFocus,
                         onShoppingTap: () =>
                             AppNavigation.push(AppRoutes.rootShopping),
                         onInsightsTap: () =>

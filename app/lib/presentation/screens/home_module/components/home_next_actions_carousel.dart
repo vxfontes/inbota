@@ -1,0 +1,134 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import 'package:inbota/presentation/screens/home_module/models/timeline_item.dart';
+import 'package:inbota/shared/components/ib_lib/index.dart';
+import 'package:inbota/shared/theme/app_colors.dart';
+
+class HomeNextActionsCarousel extends StatefulWidget {
+  const HomeNextActionsCarousel({
+    super.key,
+    required this.pastItems,
+    required this.nextItems,
+    this.onComplete,
+  });
+
+  final List<TimelineItem> pastItems;
+  final List<TimelineItem> nextItems;
+  final ValueChanged<TimelineItem>? onComplete;
+
+  @override
+  State<HomeNextActionsCarousel> createState() =>
+      _HomeNextActionsCarouselState();
+}
+
+class _HomeNextActionsCarouselState extends State<HomeNextActionsCarousel> {
+  final Set<String> _completingIds = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    final allItems = <TimelineItem>[...widget.pastItems, ...widget.nextItems];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: [
+              IBText('A seguir', context: context).subtitulo.build(),
+              const Spacer(),
+              const IBIcon(
+                IBIcon.chevronRight,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (allItems.isEmpty)
+          const IBCard(
+            child: IBEmptyState(
+              title: 'Sem compromissos agendados',
+              subtitle:
+                  'Dia livre! Aproveite para respirar ou criar algo novo.',
+              icon: IBHugeIcon.calendar,
+            ),
+          )
+        else
+          SizedBox(
+            height: 168,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: allItems.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, index) {
+                final item = allItems[index];
+                final isPast = index < widget.pastItems.length;
+                final isCompleting = _completingIds.contains(item.id);
+
+                return AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeInOut,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: isCompleting
+                        ? const SizedBox.shrink()
+                        : IBNextActionCard(
+                            key: ValueKey(item.id),
+                            item: _toIBItem(item),
+                            isPast: isPast,
+                            onComplete: widget.onComplete == null || isPast
+                                ? null
+                                : () => _handleComplete(item),
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _handleComplete(TimelineItem item) async {
+    if (_completingIds.contains(item.id)) return;
+
+    setState(() => _completingIds.add(item.id));
+
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    widget.onComplete?.call(item);
+
+    if (!mounted) return;
+    setState(() => _completingIds.remove(item.id));
+  }
+
+  IBNextActionItem _toIBItem(TimelineItem item) {
+    return IBNextActionItem(
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      type: _mapType(item.type),
+      scheduledTime: item.scheduledTime,
+      isCompleted: item.isCompleted,
+      isOverdue: item.isOverdue,
+    );
+  }
+
+  IBNextActionType _mapType(TimelineItemType type) {
+    switch (type) {
+      case TimelineItemType.event:
+        return IBNextActionType.event;
+      case TimelineItemType.reminder:
+        return IBNextActionType.reminder;
+      case TimelineItemType.routine:
+        return IBNextActionType.routine;
+      case TimelineItemType.task:
+        return IBNextActionType.task;
+    }
+  }
+}

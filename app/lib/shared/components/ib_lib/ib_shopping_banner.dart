@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/shared/components/ib_lib/ib_icon.dart';
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/text_utils.dart';
 
 class IBShoppingBanner extends StatelessWidget {
   const IBShoppingBanner({
@@ -22,6 +23,9 @@ class IBShoppingBanner extends StatelessWidget {
     final backgroundColor = hasLists
         ? const Color(0xFFFFFBEB)
         : AppColors.surface2;
+    final summary = hasLists
+        ? '${TextUtils.countLabel(listCount, 'lista', 'listas')} - ${TextUtils.countLabel(itemCount, 'item pendente', 'itens pendentes')}'
+        : 'Sem listas ativas';
 
     return Material(
       color: AppColors.transparent,
@@ -51,12 +55,7 @@ class IBShoppingBanner extends StatelessWidget {
               const SizedBox(height: 8),
               IBText('Compras', context: context).subtitulo.build(),
               const SizedBox(height: 4),
-              IBText(
-                hasLists
-                    ? '$listCount lista(s) - $itemCount item(ns) pendente(s)'
-                    : 'Sem listas ativas',
-                context: context,
-              ).muted.maxLines(2).build(),
+              IBText(summary, context: context).muted.maxLines(2).build(),
               const SizedBox(height: 12),
               Row(
                 children: [

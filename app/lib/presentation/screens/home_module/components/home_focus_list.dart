@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/text_utils.dart';
 
 class HomeFocusList extends StatelessWidget {
   const HomeFocusList({
@@ -23,7 +24,11 @@ class HomeFocusList extends StatelessWidget {
       children: [
         IBTodoList(
           title: 'Foco e prioridades',
-          subtitle: '${tasks.length} tarefa(s) priorizada(s)',
+          subtitle: TextUtils.countLabel(
+            tasks.length,
+            'tarefa priorizada',
+            'tarefas priorizadas',
+          ),
           emptyLabel: 'Nenhuma tarefa pendente.',
           items: tasks
               .map(

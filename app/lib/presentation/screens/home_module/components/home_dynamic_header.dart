@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/text_utils.dart';
 
 class HomeDynamicHeader extends StatelessWidget {
   const HomeDynamicHeader({
     super.key,
-    required this.userName,
+    this.userName,
     required this.executiveSummary,
     required this.onSettingsTap,
     required this.onNotificationsTap,
   });
 
-  final String userName;
+  final String? userName;
   final String executiveSummary;
   final VoidCallback onSettingsTap;
   final VoidCallback onNotificationsTap;
@@ -21,11 +22,15 @@ class HomeDynamicHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final greeting = _greetingForHour(now.hour);
+    final greetingLabel = TextUtils.greetingWithOptionalName(
+      greeting.label,
+      name: userName,
+    );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        gradient: greeting.gradient,
+        // gradient: greeting.gradient,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
@@ -39,34 +44,13 @@ class HomeDynamicHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IBText(
-                      '${greeting.label}, $userName!',
-                      context: context,
-                    ).subtitulo.build(),
+                    IBText(greetingLabel, context: context).subtitulo.build(),
                     const SizedBox(height: 4),
                     IBText(
                       _formatPtDate(now),
                       context: context,
                     ).caption.build(),
                   ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'Historico notificacoes',
-                onPressed: onNotificationsTap,
-                icon: const IBIcon(
-                  IBIcon.notificationsNoneOutlined,
-                  size: 20,
-                  color: AppColors.primary700,
-                ),
-              ),
-              IconButton(
-                tooltip: 'Configuracoes',
-                onPressed: onSettingsTap,
-                icon: const IBIcon(
-                  IBIcon.tune,
-                  size: 20,
-                  color: AppColors.primary700,
                 ),
               ),
             ],

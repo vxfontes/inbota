@@ -9,13 +9,21 @@ part of 'home_shopping_preview_output.dart';
 HomeShoppingPreviewOutput _$HomeShoppingPreviewOutputFromJson(
   Map<String, dynamic> json,
 ) => HomeShoppingPreviewOutput(
-  id: json['id'] as String,
-  title: json['title'] as String,
-  totalItems: (json['total_items'] as num).toInt(),
-  pendingItems: (json['pending_items'] as num).toInt(),
-  previewItems: (json['preview_items'] as List<dynamic>)
-      .map((e) => e as String)
-      .toList(),
+  id: json['id'] == null
+      ? ''
+      : HomeShoppingPreviewOutput._stringFromJson(json['id']),
+  title: json['title'] == null
+      ? ''
+      : HomeShoppingPreviewOutput._stringFromJson(json['title']),
+  totalItems: json['total_items'] == null
+      ? 0
+      : HomeShoppingPreviewOutput._intFromJson(json['total_items']),
+  pendingItems: json['pending_items'] == null
+      ? 0
+      : HomeShoppingPreviewOutput._intFromJson(json['pending_items']),
+  previewItems: json['preview_items'] == null
+      ? []
+      : HomeShoppingPreviewOutput._previewItemsFromJson(json['preview_items']),
 );
 
 Map<String, dynamic> _$HomeShoppingPreviewOutputToJson(

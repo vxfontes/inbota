@@ -20,15 +20,32 @@ class HomeDashboardOutput {
     this.remindersTodayCount,
   });
 
-  @JsonKey(name: 'day_progress')
+  @JsonKey(name: 'day_progress', fromJson: _dayProgressFromJson)
   final HomeDayProgressOutput dayProgress;
+  @JsonKey(fromJson: _insightFromJson)
   final HomeInsightOutput? insight;
+  @JsonKey(
+    fromJson: _timelineFromJson,
+    defaultValue: <HomeTimelineItemOutput>[],
+  )
   final List<HomeTimelineItemOutput> timeline;
-  @JsonKey(name: 'shopping_preview')
+  @JsonKey(
+    name: 'shopping_preview',
+    fromJson: _shoppingPreviewFromJson,
+    defaultValue: <HomeShoppingPreviewOutput>[],
+  )
   final List<HomeShoppingPreviewOutput> shoppingPreview;
-  @JsonKey(name: 'week_density')
+  @JsonKey(
+    name: 'week_density',
+    fromJson: _weekDensityFromJson,
+    defaultValue: <String, int>{},
+  )
   final Map<String, int> weekDensity;
-  @JsonKey(name: 'focus_tasks')
+  @JsonKey(
+    name: 'focus_tasks',
+    fromJson: _focusTasksFromJson,
+    defaultValue: <TaskOutput>[],
+  )
   final List<TaskOutput> focusTasks;
   @JsonKey(name: 'events_today_count')
   final int? eventsTodayCount;
@@ -96,5 +113,77 @@ class HomeDashboardOutput {
       return value.map((key, val) => MapEntry(key.toString(), val));
     }
     return <String, dynamic>{};
+  }
+
+  static HomeDayProgressOutput _dayProgressFromJson(dynamic value) {
+    return HomeDayProgressOutput.fromDynamic(value);
+  }
+
+  static HomeInsightOutput? _insightFromJson(dynamic value) {
+    if (value == null || value is! Map) return null;
+    return HomeInsightOutput.fromDynamic(value);
+  }
+
+  static List<HomeTimelineItemOutput> _timelineFromJson(dynamic value) {
+    if (value is! List) return const [];
+
+    final timeline = <HomeTimelineItemOutput>[];
+    for (final item in value) {
+      if (item is! Map) continue;
+      try {
+        timeline.add(HomeTimelineItemOutput.fromJson(_asMap(item)));
+      } catch (_) {
+      }
+    }
+    return timeline;
+  }
+
+  static List<HomeShoppingPreviewOutput> _shoppingPreviewFromJson(
+    dynamic value,
+  ) {
+    if (value is! List) return const [];
+
+    final preview = <HomeShoppingPreviewOutput>[];
+    for (final item in value) {
+      if (item is! Map) continue;
+      try {
+        preview.add(HomeShoppingPreviewOutput.fromJson(_asMap(item)));
+      } catch (_) {
+      }
+    }
+    return preview;
+  }
+
+  static Map<String, int> _weekDensityFromJson(dynamic value) {
+    if (value is! Map) return const {};
+
+    final density = <String, int>{};
+    value.forEach((key, rawCount) {
+      final count = _asInt(rawCount);
+      if (count == null) return;
+      density[key.toString()] = count;
+    });
+    return density;
+  }
+
+  static List<TaskOutput> _focusTasksFromJson(dynamic value) {
+    if (value is! List) return const [];
+
+    final tasks = <TaskOutput>[];
+    for (final item in value) {
+      if (item is! Map) continue;
+      try {
+        tasks.add(TaskOutput.fromJson(_asMap(item)));
+      } catch (_) {
+      }
+    }
+    return tasks;
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 }

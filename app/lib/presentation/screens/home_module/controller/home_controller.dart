@@ -96,6 +96,7 @@ class HomeController implements IBController {
         dashboard.focusTasks.isNotEmpty ||
         dashboard.dayProgress.routinesTotal > 0 ||
         dashboard.dayProgress.tasksTotal > 0 ||
+        dashboard.weekDensity.values.any((value) => value > 0) ||
         (dashboard.eventsTodayCount ?? 0) > 0 ||
         (dashboard.remindersTodayCount ?? 0) > 0;
   }
@@ -287,7 +288,7 @@ class HomeController implements IBController {
   }
 
   List<TimelineItem> get pastActionsToday {
-    final dashboardTimeline = _dashboardTimelineForNextActions;
+    final dashboardTimeline = _dashboardTimelineForInsights;
     if (dashboardTimeline.isEmpty) return const [];
     final now = DateTime.now();
     return dashboardTimeline

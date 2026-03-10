@@ -30,34 +30,28 @@ class _HomeNextActionsCarouselState extends State<HomeNextActionsCarousel> {
   Widget build(BuildContext context) {
     final allItems = <TimelineItem>[...widget.pastItems, ...widget.nextItems];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              IBText('A seguir', context: context).subtitulo.build(),
-              const Spacer(),
-              const IBIcon(
-                IBIcon.chevronRight,
-                size: 18,
-                color: AppColors.textMuted,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        if (allItems.isEmpty)
-          const IBCard(
-            child: IBEmptyState(
-              title: 'Sem compromissos agendados',
-              subtitle:
-                  'Dia livre! Aproveite para respirar ou criar algo novo.',
-              icon: IBHugeIcon.calendar,
+    if (allItems.isEmpty) {
+      return const SizedBox.shrink();
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                IBText('A seguir', context: context).subtitulo.build(),
+                const Spacer(),
+                const IBIcon(
+                  IBIcon.chevronRight,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+              ],
             ),
-          )
-        else
+          ),
+          const SizedBox(height: 10),
           SizedBox(
             height: 122,
             child: ListView.separated(
@@ -91,8 +85,9 @@ class _HomeNextActionsCarouselState extends State<HomeNextActionsCarousel> {
               },
             ),
           ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
   Future<void> _handleComplete(TimelineItem item) async {

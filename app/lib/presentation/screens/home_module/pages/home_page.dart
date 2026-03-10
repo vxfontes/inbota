@@ -57,19 +57,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
         final nextActions = controller.nextActionsTimeline;
         final pastActions = controller.pastActionsToday;
         final focusTasks = controller.focusTasks;
-        final openShoppingLists = controller.openShoppingLists;
-        final eventsTodayCount = controller.eventsTodayCount;
-        final remindersTodayCount = controller.remindersTodayCount;
-        final routinesTotal = controller.routinesTotal;
-        final dayCompletelyEmpty = _isDayCompletelyEmpty(
-          nextActionsCount: nextActions.length,
-          pastActionsCount: pastActions.length,
-          focusTasksCount: focusTasks.length,
-          openShoppingLists: openShoppingLists,
-          eventsTodayCount: eventsTodayCount,
-          remindersTodayCount: remindersTodayCount,
-          routinesTotal: routinesTotal,
-        );
+        final showEmptyState = !controller.hasContent;
 
         return ColoredBox(
           color: AppColors.background,
@@ -115,9 +103,7 @@ class _HomePageState extends IBState<HomePage, HomeController> {
                           AppNavigation.push(AppRoutes.notificationHistory),
                     ),
                     const SizedBox(height: 12),
-                    HomeQuickAddBar(
-                      controller: controller,
-                    ),
+                    HomeQuickAddBar(controller: controller),
                     const SizedBox(height: 12),
                     HomeWeekStripSection(
                       controller: controller,
@@ -126,14 +112,13 @@ class _HomePageState extends IBState<HomePage, HomeController> {
                         setState(() => _selectedDate = day);
                       },
                     ),
-                    if (dayCompletelyEmpty) ...[
+                    if (showEmptyState) ...[
                       const SizedBox(height: 14),
                       HomeEmptyState(
                         onCreateTap: () =>
                             AppNavigation.push(AppRoutes.rootCreate),
                       ),
                     ] else ...[
-                      const SizedBox(height: 20),
                       HomeNextActionsCarousel(
                         pastItems: pastActions,
                         nextItems: nextActions,
@@ -175,23 +160,5 @@ class _HomePageState extends IBState<HomePage, HomeController> {
         );
       },
     );
-  }
-
-  bool _isDayCompletelyEmpty({
-    required int nextActionsCount,
-    required int pastActionsCount,
-    required int focusTasksCount,
-    required int openShoppingLists,
-    required int eventsTodayCount,
-    required int remindersTodayCount,
-    required int routinesTotal,
-  }) {
-    return nextActionsCount == 0 &&
-        pastActionsCount == 0 &&
-        focusTasksCount == 0 &&
-        openShoppingLists == 0 &&
-        eventsTodayCount == 0 &&
-        remindersTodayCount == 0 &&
-        routinesTotal == 0;
   }
 }

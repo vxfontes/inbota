@@ -653,6 +653,7 @@ class HomeController implements IBController {
       if (localScheduled.millisecondsSinceEpoch <= 0) continue;
       if (!includeCompleted &&
           (timelineType == TimelineItemType.task ||
+              timelineType == TimelineItemType.reminder ||
               timelineType == TimelineItemType.routine) &&
           item.isCompleted) {
         continue;
@@ -894,13 +895,16 @@ class HomeController implements IBController {
     }
 
     final confirmResult = await _confirmInboxItemUsecase.call(confirmInput);
-    return confirmResult.fold(
-      (failure) => Left(
-        (failure.message?.trim().isNotEmpty ?? false)
-            ? failure.message!.trim()
-            : 'Falha ao confirmar item processado.',
-      ),
-      (output) {
+    return await confirmResult.fold<Future<Either<String, CreateLineResult>>>(
+      (failure) async {
+        return Left(
+          (failure.message?.trim().isNotEmpty ?? false)
+              ? failure.message!.trim()
+              : 'Falha ao confirmar item processado.',
+        );
+      },
+      (output) async {
+        await _reloadDashboardAfterMutation();
         final (type, id) = _resolveEntityRef(output);
         return Right(
           CreateLineResult(
@@ -924,7 +928,17 @@ class HomeController implements IBController {
       );
     }
 
-    return _deleteByEntity(result.entityType, result.entityId!);
+    final deleteResult = await _deleteByEntity(
+      result.entityType,
+      result.entityId!,
+    );
+    return await deleteResult.fold<Future<Either<Failure, Unit>>>(
+      (failure) async => Left(failure),
+      (_) async {
+        await _reloadDashboardAfterMutation();
+        return const Right(unit);
+      },
+    );
   }
 
   Future<Either<Failure, Unit>> _deleteByEntity(

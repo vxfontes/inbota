@@ -1,0 +1,17 @@
+-- Pre-migration for rc/0.1.0
+-- Timezone standardization (Brazil)
+--
+-- Postgres stores TIMESTAMPTZ internally in UTC, but functions like now(), CURRENT_DATE,
+-- and date casts depend on the session TimeZone.
+--
+-- The backend can force session timezone via DSN for URL-style DSNs (the ones parsed by net/url):
+--   options = -c TimeZone=America/Sao_Paulo
+-- For lib/pq keyword/value DSNs this is not normalized automatically, so prefer URL-style DSNs
+-- with an explicit TimeZone option or rely on the infra-level hardening below.
+--
+-- Optional infra-level hardening (choose ONE, adjust names to your environment):
+--   ALTER DATABASE inbota SET TimeZone TO 'America/Sao_Paulo';
+--   -- or
+--   ALTER ROLE vxfontes SET TimeZone TO 'America/Sao_Paulo';
+--
+-- We keep this as documentation because database/role names vary per environment.

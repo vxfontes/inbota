@@ -37,8 +37,8 @@ class HomeInsightsUtils {
     if (!from.isBefore(dayEnd)) {
       return const DayInsight(
         title: 'Dia encerrando',
-        summary: 'Hoje já não há uma boa janela livre.',
-        footer: 'Planeje o primeiro bloco de amanhã.',
+        summary: 'Hoje já não há muito tempo livre.',
+        footer: 'Planeje o começo de amanhã.',
         isFocus: false,
       );
     }
@@ -50,39 +50,39 @@ class HomeInsightsUtils {
     if (!hasAgenda) {
       final minutes = best.duration.inMinutes;
       return DayInsight(
-        title: 'Janela livre do dia',
+        title: 'Tempo livre',
         summary:
         '${_time(best.start)}–${_time(best.end)} ($minutes min livres).',
-        footer: 'Que tal focar por 60 min às ${_time(best.start)}?',
+        footer: 'Que tal adiantar algo às ${_time(best.start)}?',
         isFocus: true,
       );
     }
 
     if (best.duration.inMinutes >= 120) {
       return DayInsight(
-        title: 'Ótima janela',
+        title: 'Melhor momento',
         summary:
-        '${_time(best.start)}–${_time(best.end)} para foco profundo.',
-        footer: 'Reserve 90 min nesse intervalo.',
+        '${_time(best.start)}–${_time(best.end)} para fazer algo em paz.',
+        footer: 'Aproveitar tempo com menos interrupções.',
         isFocus: true,
       );
     }
 
     if (best.duration.inMinutes >= 45) {
       return DayInsight(
-        title: 'Boa janela livre',
+        title: 'Bom tempo livre',
         summary:
-        '${_time(best.start)}–${_time(best.end)} para avançar pendências.',
-        footer: 'Um bloco rápido às ${_time(best.start)} pode render bem.',
+        '${_time(best.start)}–${_time(best.end)} está disponível.',
+        footer: 'Dá para resolver algo importante.',
         isFocus: true,
       );
     }
 
     return DayInsight(
-      title: 'Dia mais fragmentado',
+      title: 'Dia mais corrido',
       summary:
-      'Sua maior janela livre é ${_time(best.start)}–${_time(best.end)}.',
-      footer: 'Use blocos curtos entre compromissos.',
+      'Maior tempo livre hoje é ${_time(best.start)}–${_time(best.end)}.',
+      footer: 'Tente aproveitar pequenas pausas.',
       isFocus: false,
     );
   }

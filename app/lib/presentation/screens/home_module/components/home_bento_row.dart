@@ -56,7 +56,7 @@ class HomeBentoRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    flex: 6,
+                    flex: 5,
                     child: SizedBox(
                       height: _sideCardHeight,
                       child: _buildShoppingBanner(),
@@ -124,7 +124,7 @@ class HomeBentoRow extends StatelessWidget {
   }
 
   Widget _buildInsightsCard(BuildContext context) {
-    final commitments = eventsTodayCount + remindersTodayCount;
+    final commitments = eventsTodayCount + remindersTodayCount + tasksTotal + routinesTotal;
     final slots = todayTimeline
         .where(
           (item) =>

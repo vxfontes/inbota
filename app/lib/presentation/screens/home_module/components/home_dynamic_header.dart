@@ -7,19 +7,17 @@ import 'package:inbota/shared/components/dynamic_header/morning_sky_painter.dart
 import 'package:inbota/shared/components/dynamic_header/night_sky_painter.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/date_time.dart';
 import 'package:inbota/shared/utils/text_utils.dart';
 
 class HomeDynamicHeader extends StatelessWidget {
-  const HomeDynamicHeader({
-    super.key,
-    this.userName,
-  });
+  const HomeDynamicHeader({super.key, this.userName});
 
   final String? userName;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final greeting = _greetingForHour(now.hour);
     final greetingLabel = TextUtils.greetingWithOptionalName(
       greeting.label,
@@ -45,9 +43,7 @@ class HomeDynamicHeader extends StatelessWidget {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: CustomPaint(
-                painter: greeting.skyPainter,
-              ),
+              child: CustomPaint(painter: greeting.skyPainter),
             ),
           ),
           Padding(
@@ -59,7 +55,10 @@ class HomeDynamicHeader extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IBText(greetingLabel, context: context).subtitulo.color(greeting.textColor).build(),
+                    IBText(
+                      greetingLabel,
+                      context: context,
+                    ).subtitulo.color(greeting.textColor).build(),
                     const SizedBox(height: 4),
                     IBText(
                       _formatPtDate(now),
@@ -70,7 +69,10 @@ class HomeDynamicHeader extends StatelessWidget {
                 IconButton(
                   tooltip: 'Ver todos os lembretes',
                   onPressed: () => AppNavigation.push(AppRoutes.rootReminders),
-                  icon: IBIcon(IBIcon.alarmOutlined, color: greeting.accentColor),
+                  icon: IBIcon(
+                    IBIcon.alarmOutlined,
+                    color: greeting.accentColor,
+                  ),
                 ),
               ],
             ),
@@ -81,7 +83,15 @@ class HomeDynamicHeader extends StatelessWidget {
   }
 
   String _formatPtDate(DateTime date) {
-    const weekdays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+    const weekdays = [
+      'Segunda',
+      'Terça',
+      'Quarta',
+      'Quinta',
+      'Sexta',
+      'Sábado',
+      'Domingo',
+    ];
     const months = [
       'janeiro',
       'fevereiro',
@@ -111,10 +121,7 @@ class HomeDynamicHeader extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.skyMorningTop,
-            AppColors.skyMorningBottom,
-          ],
+          colors: [AppColors.skyMorningTop, AppColors.skyMorningBottom],
         ),
         skyPainter: MorningSkyPainter(),
       );
@@ -142,10 +149,7 @@ class HomeDynamicHeader extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.skyNightTop,
-            AppColors.skyNightBottom,
-          ],
+          colors: [AppColors.skyNightTop, AppColors.skyNightBottom],
         ),
         skyPainter: NightSkyPainter(),
       );

@@ -1,7 +1,12 @@
 import 'package:inbota/modules/events/data/models/event_output.dart';
+import 'package:inbota/shared/services/timezone/user_timezone_service.dart';
 import 'package:inbota/shared/utils/text_utils.dart';
 
 class DateTimeUtils {
+  static DateTime nowInUserTimezone() {
+    return UserTimezoneService.instance.now();
+  }
+
   static DateTime startOfDay(DateTime value) {
     return DateTime(value.year, value.month, value.day);
   }

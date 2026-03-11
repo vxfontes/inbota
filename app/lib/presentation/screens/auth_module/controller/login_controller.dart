@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/auth/data/models/auth_login_input.dart';
 import 'package:inbota/modules/auth/domain/usecases/login_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/timezone/user_timezone_service.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/utils/validators.dart';
 
@@ -28,13 +29,24 @@ class LoginController implements IBController {
     loading.value = true;
     error.value = null;
 
-    final result = await _loginUsecase.call(AuthLoginInput(email: email, password: password));
+    final result = await _loginUsecase.call(
+      AuthLoginInput(email: email, password: password),
+    );
     loading.value = false;
 
-    return result.fold((failure) {
-      error.value = _failureMessage(failure, fallback: 'Não foi possível entrar agora.');
-      return false;
-    }, (_) => true);
+    return result.fold(
+      (failure) {
+        error.value = _failureMessage(
+          failure,
+          fallback: 'Não foi possível entrar agora.',
+        );
+        return false;
+      },
+      (session) {
+        UserTimezoneService.instance.setTimezone(session.user.timezone);
+        return true;
+      },
+    );
   }
 
   @override
@@ -46,7 +58,9 @@ class LoginController implements IBController {
   }
 
   String _failureMessage(Failure failure, {required String fallback}) {
-    return failure.message?.trim().isNotEmpty == true ? failure.message! : fallback;
+    return failure.message?.trim().isNotEmpty == true
+        ? failure.message!
+        : fallback;
   }
 
   String? _validate({required String email, required String password}) {

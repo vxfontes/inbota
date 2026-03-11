@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:inbota/modules/auth/domain/usecases/get_me_usecase.dart';
 import 'package:inbota/modules/splash/domain/usecases/check_health_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/timezone/user_timezone_service.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/storage/auth_token_store.dart';
 
@@ -37,12 +38,17 @@ class SplashController implements IBController {
 
       final token = await _tokenStore.readToken();
       if (token == null || token.isEmpty) {
+        UserTimezoneService.instance.clear();
         return false;
       }
 
       final meResult = await _getMeUsecase.call();
-      final hasSession = meResult.fold((_) => false, (_) => true);
+      final hasSession = meResult.fold((_) => false, (user) {
+        UserTimezoneService.instance.setTimezone(user.timezone);
+        return true;
+      });
       if (!hasSession) {
+        UserTimezoneService.instance.clear();
         await _tokenStore.clearToken();
       }
       return hasSession;
@@ -58,6 +64,8 @@ class SplashController implements IBController {
   }
 
   String _failureMessage(Failure failure, {required String fallback}) {
-    return failure.message?.trim().isNotEmpty == true ? failure.message! : fallback;
+    return failure.message?.trim().isNotEmpty == true
+        ? failure.message!
+        : fallback;
   }
 }

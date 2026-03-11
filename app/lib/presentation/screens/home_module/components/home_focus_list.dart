@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/tasks/data/models/task_output.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/date_time.dart';
 import 'package:inbota/shared/utils/text_utils.dart';
 
 class HomeFocusList extends StatelessWidget {
@@ -76,7 +77,7 @@ class HomeFocusList extends StatelessWidget {
     final due = task.dueAt?.toLocal();
     if (due == null) return false;
 
-    final todayStart = _startOfDay(DateTime.now());
+    final todayStart = _startOfDay(DateTimeUtils.nowInUserTimezone());
     return due.isBefore(todayStart);
   }
 
@@ -84,7 +85,7 @@ class HomeFocusList extends StatelessWidget {
     final due = task.dueAt?.toLocal();
     if (due == null) return 'Sem data definida';
 
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final todayStart = _startOfDay(now);
     final tomorrowStart = todayStart.add(const Duration(days: 1));
 

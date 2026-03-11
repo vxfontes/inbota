@@ -7,6 +7,7 @@ import 'package:inbota/presentation/screens/home_module/controller/home_controll
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/date_time.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +17,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends IBState<HomePage, HomeController> {
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTimeUtils.nowInUserTimezone();
 
   @override
   void initState() {

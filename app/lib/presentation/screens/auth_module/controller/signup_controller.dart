@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inbota/modules/auth/data/models/auth_signup_input.dart';
 import 'package:inbota/modules/auth/domain/usecases/signup_usecase.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/timezone/user_timezone_service.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 import 'package:inbota/shared/utils/validators.dart';
 
@@ -16,7 +17,10 @@ class SignupController implements IBController {
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
 
-  Future<bool> submit({required String locale, required String timezone}) async {
+  Future<bool> submit({
+    required String locale,
+    required String timezone,
+  }) async {
     if (loading.value) return false;
     final name = nameController.text.trim();
     final email = emailController.text.trim();
@@ -36,20 +40,31 @@ class SignupController implements IBController {
     loading.value = true;
     error.value = null;
 
-    final result = await _signupUsecase.call(AuthSignupInput(
-      email: email,
-      password: password,
-      displayName: name,
-      locale: locale,
-      timezone: timezone,
-    ));
+    final result = await _signupUsecase.call(
+      AuthSignupInput(
+        email: email,
+        password: password,
+        displayName: name,
+        locale: locale,
+        timezone: timezone,
+      ),
+    );
 
     loading.value = false;
 
-    return result.fold((failure) {
-      error.value = _failureMessage(failure, fallback: 'Não foi possível criar a conta agora.');
-      return false;
-    }, (_) => true);
+    return result.fold(
+      (failure) {
+        error.value = _failureMessage(
+          failure,
+          fallback: 'Não foi possível criar a conta agora.',
+        );
+        return false;
+      },
+      (session) {
+        UserTimezoneService.instance.setTimezone(session.user.timezone);
+        return true;
+      },
+    );
   }
 
   @override
@@ -62,7 +77,9 @@ class SignupController implements IBController {
   }
 
   String _failureMessage(Failure failure, {required String fallback}) {
-    return failure.message?.trim().isNotEmpty == true ? failure.message! : fallback;
+    return failure.message?.trim().isNotEmpty == true
+        ? failure.message!
+        : fallback;
   }
 
   String? _validate({

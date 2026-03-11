@@ -429,11 +429,11 @@ func buildHomeInsight(
 		"end":            formatHM(bestGap.end),
 		"duration":       strconv.Itoa(bestGapMinutes),
 		"untimed_count":  strconv.Itoa(untimedCount),
-		"footer_dynamic": "Aproveitar tempo com menos interrupcoes.",
+		"footer_dynamic": "Aproveitar tempo com menos interrupções.",
 	}
 
 	if untimedCount > 0 {
-		vars["footer_dynamic"] = fmt.Sprintf("Aproveite e veja %d tarefa(s) sem horario.", untimedCount)
+		vars["footer_dynamic"] = fmt.Sprintf("Aproveite e veja %d tarefa(s) sem horário.", untimedCount)
 	}
 
 	if untimedCount > 0 && (!hasTimedSlots || untimedDominant) {

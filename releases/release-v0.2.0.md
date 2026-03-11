@@ -13,3 +13,4 @@ A versão 0.2.0 traz um salto significativo na estética e na precisão temporal
 ## Fixes
 - **Estabilização de Horários na Home:** Correção de inconsistências que forçavam horários em UTC na Timeline. Agora, há um fallback garantido para o fuso de Brasília (`America/Sao_Paulo`) quando as preferências do usuário não estão disponíveis.
 - **Ajustes de Acentuação e String:** Refinamento no backend para garantir a integridade de caracteres especiais e acentuação em todas as comunicações e telas.
+- **Navegação de Retorno (Pop):** Correção no `AppNavigation.pop` que impedia o retorno de dados em Bottom Sheets quando o `context` era fornecido. Isso corrigiu falhas na criação de Flags, Subflags e confirmações de exclusão no módulo de configurações.

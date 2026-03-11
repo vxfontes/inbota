@@ -36,7 +36,7 @@ class _HomeNextActionsCarouselState extends State<HomeNextActionsCarousel> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 14),
+          const SizedBox(height: 2),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(

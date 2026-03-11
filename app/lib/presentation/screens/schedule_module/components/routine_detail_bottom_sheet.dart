@@ -149,9 +149,9 @@ class _RoutineDetailBottomSheetState extends State<RoutineDetailBottomSheet> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: hasStreak ? AppColors.warning500.withValues(alpha: 0.05) : AppColors.surfaceSoft,
+        color: hasStreak ? AppColors.ai500.withValues(alpha: 0.05) : AppColors.surfaceSoft,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: hasStreak ? AppColors.warning500.withValues(alpha: 0.2) : AppColors.border),
+        border: Border.all(color: hasStreak ? AppColors.ai500.withValues(alpha: 0.2) : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,9 +161,9 @@ class _RoutineDetailBottomSheetState extends State<RoutineDetailBottomSheet> {
               IBText('Progresso', context: context).label.weight(FontWeight.w700).build(),
               const Spacer(),
               if (hasStreak) ...[
-                const IBIcon(Icons.local_fire_department_rounded, size: 16, color: AppColors.warning500),
+                const IBIcon(IBIcon.fireRounded, size: 16, color: AppColors.ai500),
                 const SizedBox(width: 4),
-                IBText(streak.streakText, context: context).label.weight(FontWeight.w700).color(AppColors.warning600).build(),
+                IBText(streak.streakText, context: context).label.weight(FontWeight.w700).color(AppColors.ai600).build(),
               ],
             ],
           ),
@@ -186,7 +186,7 @@ class _RoutineDetailBottomSheetState extends State<RoutineDetailBottomSheet> {
 
         Color color = AppColors.border.withValues(alpha: 0.3);
         if (isCompleted) {
-          color = AppColors.success600;
+          color = AppColors.primary600;
         } else if (isSkipped) {
           color = AppColors.warning500.withValues(alpha: 0.4);
         } else if (isScheduled && !isToday) {
@@ -206,8 +206,8 @@ class _RoutineDetailBottomSheetState extends State<RoutineDetailBottomSheet> {
                 border: isToday ? Border.all(color: AppColors.primary600, width: 2) : null,
               ),
               child: isCompleted 
-                ? const Icon(Icons.check, size: 16, color: Colors.white)
-                : (isSkipped ? const Icon(Icons.forward_rounded, size: 16, color: Colors.white) : null),
+                ? const IBIcon(IBIcon.checkRounded, size: 16, color: Colors.white)
+                : (isSkipped ? const IBIcon(IBIcon.forwardRounded, size: 16, color: Colors.white) : null),
             ),
             const SizedBox(height: 6),
             IBText(day.weekdayLabel, context: context).caption.color(isToday ? AppColors.text : AppColors.textMuted).weight(isToday ? FontWeight.w800 : FontWeight.w400).build(),

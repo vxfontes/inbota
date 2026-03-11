@@ -80,7 +80,7 @@ func (r *RoutineRepositoryImpl) Get(ctx context.Context, userID, id string) (dom
 		SELECT id, user_id, title, description, recurrence_type, weekdays,
 			to_char(start_time, 'HH24:MI') as start_time,
 			to_char(end_time, 'HH24:MI') as end_time,
-			week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
+			week_of_month, starts_on::text, ends_on::text, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.routines
 		WHERE id = $1 AND user_id = $2
 		LIMIT 1
@@ -134,7 +134,7 @@ func (r *RoutineRepositoryImpl) List(ctx context.Context, userID string, opts re
 		SELECT id, user_id, title, description, recurrence_type, weekdays,
 			to_char(start_time, 'HH24:MI') as start_time,
 			to_char(end_time, 'HH24:MI') as end_time,
-			week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
+			week_of_month, starts_on::text, ends_on::text, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.routines
 		WHERE user_id = $1 AND is_active = true
 		ORDER BY start_time, created_at
@@ -194,7 +194,7 @@ func (r *RoutineRepositoryImpl) ListByWeekday(ctx context.Context, userID string
 		SELECT id, user_id, title, description, recurrence_type, weekdays,
 			to_char(start_time, 'HH24:MI') as start_time,
 			to_char(end_time, 'HH24:MI') as end_time,
-			week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
+			week_of_month, starts_on::text, ends_on::text, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.routines
 		WHERE user_id = $1 AND is_active = true AND $2 = ANY(weekdays)
 		ORDER BY start_time, created_at
@@ -251,7 +251,7 @@ func (r *RoutineRepositoryImpl) ListDailyStatus(ctx context.Context, userID stri
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, user_id, title, description, recurrence_type, weekdays,
 			start_time, end_time,
-			week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at,
+			week_of_month, starts_on::text, ends_on::text, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at,
 			completed_at, is_completed, exception_action
 		FROM inbota.fnc_routine_daily_status($1, $2, $3::date)
 	`, userID, weekday, date)
@@ -500,7 +500,7 @@ func (r *RoutineCompletionRepositoryImpl) Delete(ctx context.Context, userID, ro
 
 func (r *RoutineCompletionRepositoryImpl) GetByRoutine(ctx context.Context, userID, routineID string) ([]domain.RoutineCompletion, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, routine_id, completed_on, completed_at
+		SELECT id, routine_id, completed_on::text, completed_at
 		FROM inbota.routine_completions
 		WHERE routine_id = $1 AND EXISTS (SELECT 1 FROM inbota.routines WHERE id = $1 AND user_id = $2)
 		ORDER BY completed_on DESC
@@ -574,7 +574,7 @@ func (r *RoutineRepositoryImpl) ListAllByWeekday(ctx context.Context, weekday in
 		SELECT id, user_id, title, description, recurrence_type, weekdays,
 			to_char(start_time, 'HH24:MI') as start_time,
 			to_char(end_time, 'HH24:MI') as end_time,
-			week_of_month, starts_on, ends_on, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
+			week_of_month, starts_on::text, ends_on::text, color, is_active, flag_id, subflag_id, source_inbox_item_id, created_at, updated_at
 		FROM inbota.routines
 		WHERE is_active = true AND $1 = ANY(weekdays)
 		ORDER BY start_time, created_at

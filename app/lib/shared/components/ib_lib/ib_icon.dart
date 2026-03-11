@@ -26,6 +26,7 @@ class IBIcon extends StatelessWidget {
   static const IconData addRounded = Icons.add_rounded;
   static const IconData arrowBackRounded = Icons.arrow_back_rounded;
   static const IconData arrowForwardRounded = Icons.arrow_forward_rounded;
+  static const IconData forwardRounded = Icons.forward_rounded;
   static const IconData autoAwesomeRounded = Icons.auto_awesome_rounded;
   static const IconData checkRounded = Icons.check_rounded;
   static const IconData chevronRight = Icons.chevron_right;
@@ -61,6 +62,7 @@ class IBIcon extends StatelessWidget {
   static const IconData skipNextRounded = Icons.skip_next_rounded;
   static const IconData calendar = Icons.calendar_today_outlined;
   static const IconData fire = Icons.local_fire_department_outlined;
+  static const IconData fireRounded = Icons.local_fire_department_rounded;
   static const IconData mailOutlineRounded = Icons.mail_outline_rounded;
   static const IconData keyRounded = Icons.key_rounded;
   static const IconData autoRenew = Icons.autorenew_rounded;

@@ -107,7 +107,7 @@ class HomeController implements IBController {
   }
 
   List<TaskOutput> get overdueTasks {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     return openTasks
         .where(
           (item) => item.dueAt != null && item.dueAt!.toLocal().isBefore(now),
@@ -122,7 +122,7 @@ class HomeController implements IBController {
   }
 
   List<ReminderOutput> get overdueReminders {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     return openReminders
         .where(
           (item) =>
@@ -132,7 +132,7 @@ class HomeController implements IBController {
   }
 
   List<ReminderOutput> get upcomingReminders {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final list = openReminders
         .where(
           (item) =>
@@ -151,7 +151,7 @@ class HomeController implements IBController {
   }
 
   List<EventOutput> get upcomingEvents {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final list = eventsWithDate
         .where((item) => item.startAt != null)
         .toList(growable: false);
@@ -191,7 +191,7 @@ class HomeController implements IBController {
   }
 
   int get remindersUpcomingCount {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final start = DateTime(
       now.year,
       now.month,
@@ -210,7 +210,7 @@ class HomeController implements IBController {
   }
 
   int get eventsThisWeekCount {
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final today = DateTime(now.year, now.month, now.day);
     final start = today.subtract(Duration(days: today.weekday - 1));
     final end = start.add(const Duration(days: 7));
@@ -281,7 +281,7 @@ class HomeController implements IBController {
   List<TimelineItem> get nextActionsTimeline {
     final dashboardTimeline = _dashboardTimelineForNextActions;
     if (dashboardTimeline.isEmpty) return const [];
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     return dashboardTimeline
         .where((item) => !item.scheduledTime.isBefore(now))
         .take(10)
@@ -291,7 +291,7 @@ class HomeController implements IBController {
   List<TimelineItem> get pastActionsToday {
     final dashboardTimeline = _dashboardTimelineForInsights;
     if (dashboardTimeline.isEmpty) return const [];
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     return dashboardTimeline
         .where((item) => item.scheduledTime.isBefore(now))
         .toList(growable: false);
@@ -331,7 +331,7 @@ class HomeController implements IBController {
     if (dashboard == null || dashboard.timeline.isEmpty) return 0;
 
     var done = 0;
-    final today = DateTime.now();
+    final today = DateTimeUtils.nowInUserTimezone();
     for (final item in dashboard.timeline) {
       if (item.itemType != 'reminder') continue;
       if (!DateTimeUtils.isSameDay(item.scheduledTime.toLocal(), today)) {
@@ -347,7 +347,7 @@ class HomeController implements IBController {
     if (dashboard == null || dashboard.timeline.isEmpty) return 0;
 
     var total = 0;
-    final today = DateTime.now();
+    final today = DateTimeUtils.nowInUserTimezone();
     for (final item in dashboard.timeline) {
       if (item.itemType != 'reminder') continue;
       if (!DateTimeUtils.isSameDay(item.scheduledTime.toLocal(), today)) {
@@ -445,7 +445,7 @@ class HomeController implements IBController {
     if (_updatingRoutineIds.contains(routine.id)) return;
 
     _updatingRoutineIds.add(routine.id);
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final dateStr = DateTimeUtils.dateParamYmd(now);
 
     final result = completed
@@ -499,7 +499,7 @@ class HomeController implements IBController {
     if (_updatingRoutineIds.contains(routineId)) return;
 
     _updatingRoutineIds.add(routineId);
-    final now = DateTime.now();
+    final now = DateTimeUtils.nowInUserTimezone();
     final dateStr = DateTimeUtils.dateParamYmd(now);
     final result = await _completeRoutineUsecase.call(routineId, date: dateStr);
     _updatingRoutineIds.remove(routineId);
@@ -743,7 +743,8 @@ class HomeController implements IBController {
     var dayProgress = dashboard.dayProgress;
     final dueAt = updatedTask.dueAt?.toLocal();
     final isTodayTask =
-        dueAt != null && DateTimeUtils.isSameDay(dueAt, DateTime.now());
+        dueAt != null &&
+        DateTimeUtils.isSameDay(dueAt, DateTimeUtils.nowInUserTimezone());
     if (isTodayTask &&
         previousDone != null &&
         previousDone != updatedTask.isDone) {

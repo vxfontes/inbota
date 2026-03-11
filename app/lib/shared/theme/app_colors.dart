@@ -40,4 +40,29 @@ class AppColors {
   static const afternoonEnd = Color(0xFFFFFBEB);
   static const nightStart = Color(0xFFEEF2FF);
   static const nightEnd = Color(0xFFF8FAFC);
+
+  // Sky scene colors - Morning
+  static const skyMorningTop = Color(0xFF3B82F6);
+  static const skyMorningBottom = Color(0xFF93C5FD);
+  static const sunYellow = Color(0xFFFBBF24);
+  static const sunOrange = Color(0xFFF97316);
+  static const cloudWhite = Color(0xFFFFFFFF);
+  static const cloudGray = Color(0xFFE5E7EB);
+  static const cloudGrayLight = Color(0xFFF3F4F6);
+
+// Sky scene colors - Afternoon/Sunset
+  static const skyAfternoonTop = Color(0xFF7C3AED);
+  static const skyAfternoonMid = Color(0xFFF97316);
+  static const skyAfternoonBottom = Color(0xFFFBBF24);
+  static const sunsetOrange = Color(0xFFEA580C);
+  static const sunsetPink = Color(0xFFEC4899);
+  static const sunsetPurple = Color(0xFF8B5CF6);
+
+// Sky scene colors - Night
+  static const skyNightTop = Color(0xFF1E1B4B);
+  static const skyNightBottom = Color(0xFF312E81);
+  static const starWhite = Color(0xFFFFFFFF);
+  static const starYellow = Color(0xFFFDE047);
+  static const moonYellow = Color(0xFFFEF3C7);
+  static const nightCloud = Color(0xFF4338CA);
 }

@@ -20,7 +20,7 @@ class AppNavigation {
 
   static void pop<T>([T? result, BuildContext? context]) {
     if (context != null) {
-      if (canPop(context: context)) return Navigator.of(context).pop();
+      if (canPop(context: context)) return Navigator.of(context).pop(result);
     }
 
     if (canPop()) Modular.to.pop(result);

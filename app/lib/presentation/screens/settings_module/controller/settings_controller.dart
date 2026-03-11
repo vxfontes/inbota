@@ -3,6 +3,7 @@ import 'package:inbota/modules/auth/domain/usecases/logout_usecase.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
 import 'package:inbota/shared/errors/failures.dart';
+import 'package:inbota/shared/services/timezone/user_timezone_service.dart';
 import 'package:inbota/shared/state/ib_state.dart';
 
 class SettingsController implements IBController {
@@ -33,6 +34,7 @@ class SettingsController implements IBController {
   Future<void> logout() async {
     final success = await fetchLogout();
     if (!success) return;
+    UserTimezoneService.instance.clear();
     AppNavigation.clearAndPush(AppRoutes.auth);
   }
 

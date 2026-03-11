@@ -510,9 +510,20 @@ type CreateRoutineExceptionRequest struct {
 	Reason        *string `json:"reason,omitempty"`
 }
 
+type RoutineActivityDay struct {
+	Date         string `json:"date"`
+	IsCompleted  bool   `json:"isCompleted"`
+	IsScheduled  bool   `json:"isScheduled"`
+	IsToday      bool   `json:"isToday"`
+	IsSkipped    bool   `json:"isSkipped"`
+	WeekdayLabel string `json:"weekdayLabel"`
+}
+
 type RoutineStreakResponse struct {
-	CurrentStreak    int `json:"currentStreak"`
-	TotalCompletions int `json:"totalCompletions"`
+	CurrentStreak    int                  `json:"currentStreak"`
+	TotalCompletions int                  `json:"totalCompletions"`
+	StreakText       string               `json:"streakText"`
+	Activity         []RoutineActivityDay `json:"activity"`
 }
 
 type RoutineTodaySummaryResponse struct {

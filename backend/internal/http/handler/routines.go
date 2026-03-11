@@ -151,6 +151,24 @@ func (h *RoutinesHandler) ListByWeekday(c *gin.Context) {
 		flagsByID = flags
 	}
 
+	subflagsByID := make(map[string]domain.Subflag)
+	if h.Subflags != nil {
+		subflagIDs := make([]string, 0)
+		for _, routine := range routines {
+			if routine.SubflagID != nil {
+				subflagIDs = append(subflagIDs, *routine.SubflagID)
+			}
+		}
+		if len(subflagIDs) > 0 {
+			subflags, err := h.Subflags.GetByIDs(c.Request.Context(), userID, uniqueStrings(subflagIDs))
+			if err != nil {
+				writeUsecaseError(c, err)
+				return
+			}
+			subflagsByID = subflags
+		}
+	}
+
 	items := make([]dto.RoutineResponse, 0, len(routines))
 	for _, routine := range routines {
 		var flag *domain.Flag
@@ -159,7 +177,13 @@ func (h *RoutinesHandler) ListByWeekday(c *gin.Context) {
 				flag = &f
 			}
 		}
-		items = append(items, toRoutineResponse(routine, flag, nil))
+		var subflag *domain.Subflag
+		if routine.SubflagID != nil {
+			if sf, ok := subflagsByID[*routine.SubflagID]; ok {
+				subflag = &sf
+			}
+		}
+		items = append(items, toRoutineResponse(routine, flag, subflag))
 	}
 
 	c.JSON(http.StatusOK, dto.ListRoutinesResponse{Items: items})
@@ -503,15 +527,29 @@ func (h *RoutinesHandler) GetStreak(c *gin.Context) {
 	}
 	id := c.Param("id")
 
-	currentStreak, totalCompletions, err := h.Usecase.GetStreak(c.Request.Context(), userID, id)
+	currentStreak, totalCompletions, streakText, activity, err := h.Usecase.GetStreak(c.Request.Context(), userID, id)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return
 	}
 
+	activityDTO := make([]dto.RoutineActivityDay, 0, len(activity))
+	for _, a := range activity {
+		activityDTO = append(activityDTO, dto.RoutineActivityDay{
+			Date:         a.Date,
+			IsCompleted:  a.IsCompleted,
+			IsScheduled:  a.IsScheduled,
+			IsToday:      a.IsToday,
+			IsSkipped:    a.IsSkipped,
+			WeekdayLabel: a.WeekdayLabel,
+		})
+	}
+
 	c.JSON(http.StatusOK, dto.RoutineStreakResponse{
 		CurrentStreak:    currentStreak,
 		TotalCompletions: totalCompletions,
+		StreakText:       streakText,
+		Activity:         activityDTO,
 	})
 }
 

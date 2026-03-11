@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:inbota/shared/components/ib_lib/ib_text.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
+import 'package:inbota/shared/utils/date_time.dart';
 
 class IBWeekStrip extends StatefulWidget {
   const IBWeekStrip({
@@ -69,6 +70,7 @@ class _IBWeekStripState extends State<IBWeekStrip> {
   @override
   Widget build(BuildContext context) {
     final days = _daysOfWeek(widget.selectedDate);
+    final todayInUserTimezone = _startOfDay(DateTimeUtils.nowInUserTimezone());
 
     return SizedBox(
       height: 88,
@@ -79,7 +81,7 @@ class _IBWeekStripState extends State<IBWeekStrip> {
         itemBuilder: (context, index) {
           final day = days[index];
           final isSelected = _isSameDay(day, widget.selectedDate);
-          final isPast = _startOfDay(day).isBefore(_startOfDay(DateTime.now()));
+          final isPast = _startOfDay(day).isBefore(todayInUserTimezone);
           final density = _densityFor(day);
 
           return Opacity(
@@ -157,7 +159,7 @@ class _IBWeekStripState extends State<IBWeekStrip> {
       final days = _daysOfWeek(widget.selectedDate);
       if (days.isEmpty) return;
 
-      final target = _startOfDay(DateTime.now());
+      final target = _startOfDay(DateTimeUtils.nowInUserTimezone());
       var targetIndex = _indexOfDay(days, target);
       if (targetIndex == -1) {
         targetIndex = _indexOfDay(days, _startOfDay(widget.selectedDate));

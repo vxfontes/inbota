@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:inbota/modules/home/data/models/home_greeting_style.dart';
 import 'package:inbota/presentation/routes/app_navigation.dart';
 import 'package:inbota/presentation/routes/app_routes.dart';
-
+import 'package:inbota/shared/components/dynamic_header/afternoon_sky_painter.dart';
+import 'package:inbota/shared/components/dynamic_header/morning_sky_painter.dart';
+import 'package:inbota/shared/components/dynamic_header/night_sky_painter.dart';
 import 'package:inbota/shared/components/ib_lib/index.dart';
 import 'package:inbota/shared/theme/app_colors.dart';
 import 'package:inbota/shared/utils/text_utils.dart';
@@ -24,7 +27,7 @@ class HomeDynamicHeader extends StatelessWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      height: 80,
       decoration: BoxDecoration(
         gradient: greeting.gradient,
         borderRadius: BorderRadius.circular(20),
@@ -37,25 +40,40 @@ class HomeDynamicHeader extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              IBText(greetingLabel, context: context).subtitulo.build(),
-              const SizedBox(height: 4),
-              IBText(
-                _formatPtDate(now),
-                context: context,
-              ).caption.color(AppColors.textMuted).build(),
-            ],
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: CustomPaint(
+                painter: greeting.skyPainter,
+              ),
+            ),
           ),
-          IconButton(
-            tooltip: 'Ver todos os lembretes',
-            onPressed: () => AppNavigation.push(AppRoutes.rootReminders),
-            icon: IBIcon(IBIcon.alarmOutlined, color: greeting.accentColor),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    IBText(greetingLabel, context: context).subtitulo.color(greeting.textColor).build(),
+                    const SizedBox(height: 4),
+                    IBText(
+                      _formatPtDate(now),
+                      context: context,
+                    ).caption.color(greeting.textColor).build(),
+                  ],
+                ),
+                IconButton(
+                  tooltip: 'Ver todos os lembretes',
+                  onPressed: () => AppNavigation.push(AppRoutes.rootReminders),
+                  icon: IBIcon(IBIcon.alarmOutlined, color: greeting.accentColor),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -84,51 +102,53 @@ class HomeDynamicHeader extends StatelessWidget {
     return '$weekday, ${date.day} de $month';
   }
 
-  _GreetingStyle _greetingForHour(int hour) {
-    if (hour < 12) {
-      return const _GreetingStyle(
+  GreetingStyle _greetingForHour(int hour) {
+    if (hour >= 5 && hour < 12) {
+      return GreetingStyle(
         label: 'Bom dia',
-        accentColor: AppColors.primary600,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.morningStart, AppColors.morningEnd],
-        ),
-      );
-    }
-
-    if (hour < 18) {
-      return const _GreetingStyle(
-        label: 'Boa tarde',
         accentColor: AppColors.warning500,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.afternoonStart, AppColors.afternoonEnd],
+        textColor: AppColors.text,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.skyMorningTop,
+            AppColors.skyMorningBottom,
+          ],
         ),
+        skyPainter: MorningSkyPainter(),
+      );
+    } else if (hour >= 12 && hour < 18) {
+      return GreetingStyle(
+        label: 'Boa tarde',
+        accentColor: AppColors.surface,
+        textColor: AppColors.surface,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.skyAfternoonTop,
+            AppColors.skyAfternoonMid,
+            AppColors.skyAfternoonBottom,
+          ],
+        ),
+        skyPainter: AfternoonSkyPainter(),
+      );
+    } else {
+      return GreetingStyle(
+        label: 'Boa noite',
+        accentColor: AppColors.starWhite,
+        textColor: AppColors.surface,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.skyNightTop,
+            AppColors.skyNightBottom,
+          ],
+        ),
+        skyPainter: NightSkyPainter(),
       );
     }
-
-    return const _GreetingStyle(
-      label: 'Boa noite',
-      accentColor: AppColors.ai600,
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.nightStart, AppColors.nightEnd],
-      ),
-    );
   }
-}
-
-class _GreetingStyle {
-  const _GreetingStyle({
-    required this.label,
-    required this.gradient,
-    required this.accentColor,
-  });
-
-  final String label;
-  final LinearGradient gradient;
-  final Color accentColor;
 }

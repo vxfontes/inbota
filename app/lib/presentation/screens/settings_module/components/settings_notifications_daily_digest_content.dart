@@ -47,13 +47,13 @@ class SettingsNotificationsDailyDigestContent extends StatelessWidget {
                       hasValue: true,
                       onTap: onPickHour,
                     ),
-                    const SizedBox(height: 16),
-                    IBButton(
-                      label: 'Enviar e-mail de teste agora',
-                      variant: IBButtonVariant.secondary,
-                      onPressed: onSendTest,
-                      loading: sendingTest,
-                    ),
+                    // const SizedBox(height: 16),
+                    // IBButton(
+                    //   label: 'Enviar e-mail de teste agora',
+                    //   variant: IBButtonVariant.secondary,
+                    //   onPressed: onSendTest,
+                    //   loading: sendingTest,
+                    // ),
                   ],
                 )
               : Container(

@@ -85,13 +85,13 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		return domain.Routine{}, err
 	}
 
-	startsOn := uc.nowInUserTimezone(ctx, userID).Format("2006-01-02")
+	now := uc.nowInUserTimezone(ctx, userID)
+	startsOn := now.Format("2006-01-02")
 	if input.StartsOn != nil {
 		startsOn = *input.StartsOn
 	} else {
 		// Default rule: a routine starts on the next occurrence of any selected weekday,
 		// counting from the creation day (in the user's timezone).
-		now := uc.nowInUserTimezone(ctx, userID)
 		next := nextOccurrenceDate(now, input.Weekdays)
 		startsOn = next.Format("2006-01-02")
 	}

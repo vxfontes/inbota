@@ -62,34 +62,6 @@ type ConfirmResult struct {
 	Routine       *domain.Routine
 }
 
-func (uc *InboxUsecase) nowInUserTimezone(ctx context.Context, userID string) time.Time {
-	now := time.Now()
-	if uc.Now != nil {
-		now = uc.Now()
-	}
-
-	fallbackLoc, err := time.LoadLocation("America/Sao_Paulo")
-	if err != nil {
-		fallbackLoc = now.Location()
-	}
-
-	if uc.Users == nil || userID == "" {
-		return now.In(fallbackLoc)
-	}
-	user, err := uc.Users.Get(ctx, userID)
-	if err != nil {
-		return now.In(fallbackLoc)
-	}
-	if strings.TrimSpace(user.Timezone) == "" {
-		return now.In(fallbackLoc)
-	}
-	loc, err := time.LoadLocation(user.Timezone)
-	if err != nil {
-		return now.In(fallbackLoc)
-	}
-	return now.In(loc)
-}
-
 func (uc *InboxUsecase) CreateInboxItem(ctx context.Context, userID string, source *string, rawText string, rawMediaURL *string) (domain.InboxItem, error) {
 	rawText = normalizeString(rawText)
 	if userID == "" || rawText == "" {
@@ -698,32 +670,27 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				if !ok {
 					return ErrInvalidPayload
 				}
+				if uc.RoutinesUsecase == nil {
+					return ErrDependencyMissing
+				}
 
+				// Use the RoutineUsecase to keep creation rules unified.
+				routineUC := *uc.RoutinesUsecase
+				routineUC.Routines = tx.Routines
 
-				now := uc.nowInUserTimezone(ctx, userID)
-                startsOn := computeStartsOn(now, routinePayload.Weekdays, routinePayload.StartsOn)
-
-				routine := domain.Routine{
-					UserID:            userID,
+				created, err := routineUC.Create(ctx, userID, RoutineInput{
 					Title:             title,
 					RecurrenceType:    routinePayload.RecurrenceType,
 					Weekdays:          routinePayload.Weekdays,
 					StartTime:         routinePayload.StartTime,
 					EndTime:           routinePayload.EndTime,
 					WeekOfMonth:       routinePayload.WeekOfMonth,
-					StartsOn:          startsOn,
+					StartsOn:          routinePayload.StartsOn,
 					EndsOn:            routinePayload.EndsOn,
-					IsActive:          true,
 					FlagID:            flagID,
 					SubflagID:         subflagID,
 					SourceInboxItemID: &item.ID,
-				}
-				if uc.RoutinesUsecase != nil {
-					if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
-						return err
-					}
-				}
-				created, err := tx.Routines.Create(ctx, routine)
+				})
 				if err != nil {
 					return err
 				}

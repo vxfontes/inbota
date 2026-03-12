@@ -22,18 +22,19 @@ type RoutineUsecase struct {
 }
 
 type RoutineInput struct {
-	Title          string
-	Description    *string
-	RecurrenceType string
-	Weekdays       []int
-	StartTime      string
-	EndTime        string
-	WeekOfMonth    *int
-	StartsOn       *string
-	EndsOn         *string
-	Color          *string
-	FlagID         *string
-	SubflagID      *string
+	Title             string
+	Description       *string
+	RecurrenceType    string
+	Weekdays          []int
+	StartTime         string
+	EndTime           string
+	WeekOfMonth       *int
+	StartsOn          *string
+	EndsOn            *string
+	Color             *string
+	FlagID            *string
+	SubflagID         *string
+	SourceInboxItemID *string
 }
 
 type RoutineUpdateInput struct {
@@ -86,15 +87,7 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 	}
 
 	now := uc.nowInUserTimezone(ctx, userID)
-	startsOn := now.Format("2006-01-02")
-	if input.StartsOn != nil {
-		startsOn = *input.StartsOn
-	} else {
-		// Default rule: a routine starts on the next occurrence of any selected weekday,
-		// counting from the creation day (in the user's timezone).
-		next := nextOccurrenceDate(now, input.Weekdays)
-		startsOn = next.Format("2006-01-02")
-	}
+	startsOn := computeStartsOn(now, input.Weekdays, input.StartsOn)
 
 	routine := domain.Routine{
 		UserID:         userID,
@@ -109,8 +102,9 @@ func (uc *RoutineUsecase) Create(ctx context.Context, userID string, input Routi
 		EndsOn:         input.EndsOn,
 		Color:          input.Color,
 		IsActive:       true,
-		FlagID:         resolvedFlagID,
-		SubflagID:      resolvedSubflagID,
+		FlagID:            resolvedFlagID,
+		SubflagID:         resolvedSubflagID,
+		SourceInboxItemID: input.SourceInboxItemID,
 	}
 
 	if err := uc.Validate(ctx, routine); err != nil {
@@ -371,7 +365,6 @@ func shouldShowRoutineForDate(r domain.Routine, targetDate time.Time) bool {
 	}
 	startsOn, err := time.Parse("2006-01-02", startsOnStr)
 	if err == nil {
-		// Compare using date-only semantics (ignore time-of-day).
 		startsOnDate := time.Date(startsOn.Year(), startsOn.Month(), startsOn.Day(), 0, 0, 0, 0, time.UTC)
 		targetDateOnly := time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), 0, 0, 0, 0, time.UTC)
 		if targetDateOnly.Before(startsOnDate) {
@@ -420,6 +413,15 @@ func mondayOf(t time.Time) time.Time {
 	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
 }
 
+func routineHasWeekday(weekdays []int, weekday int) bool {
+	for _, w := range weekdays {
+		if w == weekday {
+			return true
+		}
+	}
+	return false
+}
+
 func nextOccurrenceDate(from time.Time, weekdays []int) time.Time {
 	// Normalize to date-only in the same location.
 	start := time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, from.Location())
@@ -427,16 +429,49 @@ func nextOccurrenceDate(from time.Time, weekdays []int) time.Time {
 	// Look ahead up to 2 weeks to find the earliest matching weekday.
 	for i := 0; i < 14; i++ {
 		candidate := start.AddDate(0, 0, i)
-		w := int(candidate.Weekday())
-		for _, allowed := range weekdays {
-			if allowed == w {
-				return candidate
-			}
+		if routineHasWeekday(weekdays, int(candidate.Weekday())) {
+			return candidate
 		}
 	}
 
 	// Fallback: if something is off with weekdays, just start today.
 	return start
+}
+
+func computeStartsOn(now time.Time, weekdays []int, inputStartsOn *string) string {
+	// Date-only baseline in user's timezone.
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	next := nextOccurrenceDate(today, weekdays)
+
+	// If client didn't send startsOn, default to the next occurrence.
+	if inputStartsOn == nil || strings.TrimSpace(*inputStartsOn) == "" {
+		return next.Format("2006-01-02")
+	}
+
+	startsOnStr := strings.TrimSpace(*inputStartsOn)
+	if len(startsOnStr) > 10 {
+		startsOnStr = startsOnStr[:10]
+	}
+	parsed, err := time.Parse("2006-01-02", startsOnStr)
+	if err != nil {
+		// If the client sends garbage, fall back to safe default.
+		return next.Format("2006-01-02")
+	}
+
+	// If the client sends a startsOn that is not one of the selected weekdays
+	// (e.g., routine is "Tuesday" but startsOn is "Wednesday"), sanitize it to the next occurrence.
+	if !routineHasWeekday(weekdays, int(parsed.Weekday())) {
+		return next.Format("2006-01-02")
+	}
+
+	// Also ensure we never start in the past relative to today.
+	parsedDateOnly := time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, time.UTC)
+	todayUTC := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+	if parsedDateOnly.Before(todayUTC) {
+		return next.Format("2006-01-02")
+	}
+
+	return startsOnStr
 }
 
 func (uc *RoutineUsecase) Toggle(ctx context.Context, userID, id string, isActive bool) error {

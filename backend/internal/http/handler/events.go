@@ -165,7 +165,7 @@ func (h *EventsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	event, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.StartAt, req.EndAt, req.AllDay, req.Location, req.FlagID, req.SubflagID)
+	event, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.StartAt, req.EndAt, req.AllDay, req.Location, req.FlagID, req.SubflagID, nil)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return

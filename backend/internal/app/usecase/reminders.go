@@ -24,7 +24,7 @@ type ReminderUpdateInput struct {
 	SubflagID *string
 }
 
-func (uc *ReminderUsecase) Create(ctx context.Context, userID, title string, status *string, remindAt *time.Time, flagID *string, subflagID *string) (domain.Reminder, error) {
+func (uc *ReminderUsecase) Create(ctx context.Context, userID, title string, status *string, remindAt *time.Time, flagID *string, subflagID *string, sourceInboxItemID *string) (domain.Reminder, error) {
 	title = normalizeString(title)
 	if userID == "" || title == "" {
 		return domain.Reminder{}, ErrMissingRequiredFields
@@ -36,11 +36,12 @@ func (uc *ReminderUsecase) Create(ctx context.Context, userID, title string, sta
 	}
 
 	reminder := domain.Reminder{
-		UserID:    userID,
-		Title:     title,
-		RemindAt:  remindAt,
-		FlagID:    resolvedFlagID,
-		SubflagID: resolvedSubflagID,
+		UserID:            userID,
+		Title:             title,
+		RemindAt:          remindAt,
+		FlagID:            resolvedFlagID,
+		SubflagID:         resolvedSubflagID,
+		SourceInboxItemID: normalizeOptionalString(sourceInboxItemID),
 	}
 
 	if status != nil {

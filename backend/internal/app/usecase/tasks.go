@@ -25,7 +25,7 @@ type TaskUpdateInput struct {
 	SubflagID   *string
 }
 
-func (uc *TaskUsecase) Create(ctx context.Context, userID, title string, description *string, status *string, dueAt *time.Time, flagID *string, subflagID *string) (domain.Task, error) {
+func (uc *TaskUsecase) Create(ctx context.Context, userID, title string, description *string, status *string, dueAt *time.Time, flagID *string, subflagID *string, sourceInboxItemID *string) (domain.Task, error) {
 	title = normalizeString(title)
 	if userID == "" || title == "" {
 		return domain.Task{}, ErrMissingRequiredFields
@@ -37,11 +37,12 @@ func (uc *TaskUsecase) Create(ctx context.Context, userID, title string, descrip
 	}
 
 	task := domain.Task{
-		UserID:      userID,
-		Title:       title,
-		Description: description,
-		FlagID:      resolvedFlagID,
-		SubflagID:   resolvedSubflagID,
+		UserID:            userID,
+		Title:             title,
+		Description:       description,
+		FlagID:            resolvedFlagID,
+		SubflagID:         resolvedSubflagID,
+		SourceInboxItemID: normalizeOptionalString(sourceInboxItemID),
 	}
 
 	if status != nil {

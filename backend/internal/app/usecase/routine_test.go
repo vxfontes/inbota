@@ -10,7 +10,6 @@ import (
 func TestShouldShowRoutineForDate_RespectsStartsOnForWeekly(t *testing.T) {
 	r := domain.Routine{RecurrenceType: "weekly", StartsOn: "2026-03-17"}
 
-	// A date before StartsOn must not show.
 	before := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
 	if shouldShowRoutineForDate(r, before) {
 		t.Fatalf("expected weekly routine to be hidden before StartsOn")
@@ -41,11 +40,12 @@ func TestShouldShowRoutineForDate_BiweeklyAnchorsToStartsOnWeek(t *testing.T) {
 	}
 }
 
-func TestNextOccurrenceDate_PicksNextWeekday(t *testing.T) {
-	from := time.Date(2026, 3, 11, 19, 0, 0, 0, time.UTC) // Wed
-	next := nextOccurrenceDate(from, []int{int(time.Tuesday)})
+func TestComputeStartsOn_SanitizesWhenStartsOnIsNotSelectedWeekday(t *testing.T) {
+	now := time.Date(2026, 3, 11, 19, 0, 0, 0, time.UTC) // Wed
+	input := "2026-03-11"                                   // also Wed
 
-	if next.Format("2006-01-02") != "2026-03-17" {
-		t.Fatalf("expected next Tuesday to be 2026-03-17, got %s", next.Format("2006-01-02"))
+	startsOn := computeStartsOn(now, []int{int(time.Tuesday)}, &input)
+	if startsOn != "2026-03-17" {
+		t.Fatalf("expected startsOn to sanitize to next Tuesday 2026-03-17, got %s", startsOn)
 	}
 }

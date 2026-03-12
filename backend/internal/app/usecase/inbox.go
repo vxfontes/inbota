@@ -14,18 +14,25 @@ import (
 )
 
 type InboxUsecase struct {
-	Users           repository.UserRepository
-	Inbox           repository.InboxRepository
-	Suggestions     repository.AiSuggestionRepository
-	Flags           repository.FlagRepository
-	Subflags        repository.SubflagRepository
-	ContextRules    repository.ContextRuleRepository
-	Tasks           repository.TaskRepository
-	Reminders       repository.ReminderRepository
-	Events          repository.EventRepository
-	ShoppingLists   repository.ShoppingListRepository
-	ShoppingItems   repository.ShoppingItemRepository
+	Users         repository.UserRepository
+	Inbox         repository.InboxRepository
+	Suggestions   repository.AiSuggestionRepository
+	Flags         repository.FlagRepository
+	Subflags      repository.SubflagRepository
+	ContextRules  repository.ContextRuleRepository
+	Tasks         repository.TaskRepository
+	Reminders     repository.ReminderRepository
+	Events        repository.EventRepository
+	ShoppingLists repository.ShoppingListRepository
+	ShoppingItems repository.ShoppingItemRepository
+
+	// Usecases (preferred): used to unify business rules. When running inside a tx,
+	// we inject the tx-bound repositories into a copied usecase instance.
+	TasksUsecase    *TaskUsecase
+	RemindersUsecase *ReminderUsecase
+	EventsUsecase   *EventUsecase
 	RoutinesUsecase *RoutineUsecase
+
 	PromptBuilder   *service.PromptBuilder
 	AIClient        service.AIClient
 	SchemaValidator *service.AiSchemaValidator
@@ -60,34 +67,6 @@ type ConfirmResult struct {
 	ShoppingList  *domain.ShoppingList
 	ShoppingItems []domain.ShoppingItem
 	Routine       *domain.Routine
-}
-
-func (uc *InboxUsecase) nowInUserTimezone(ctx context.Context, userID string) time.Time {
-	now := time.Now()
-	if uc.Now != nil {
-		now = uc.Now()
-	}
-
-	fallbackLoc, err := time.LoadLocation("America/Sao_Paulo")
-	if err != nil {
-		fallbackLoc = now.Location()
-	}
-
-	if uc.Users == nil || userID == "" {
-		return now.In(fallbackLoc)
-	}
-	user, err := uc.Users.Get(ctx, userID)
-	if err != nil {
-		return now.In(fallbackLoc)
-	}
-	if strings.TrimSpace(user.Timezone) == "" {
-		return now.In(fallbackLoc)
-	}
-	loc, err := time.LoadLocation(user.Timezone)
-	if err != nil {
-		return now.In(fallbackLoc)
-	}
-	return now.In(loc)
 }
 
 func (uc *InboxUsecase) CreateInboxItem(ctx context.Context, userID string, source *string, rawText string, rawMediaURL *string) (domain.InboxItem, error) {
@@ -585,25 +564,26 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				if tx.Tasks == nil {
 					return ErrDependencyMissing
 				}
+				if uc.TasksUsecase == nil {
+					return ErrDependencyMissing
+				}
 				taskPayload, ok := validated.Payload.(service.TaskPayload)
 				if !ok {
 					return ErrInvalidPayload
 				}
-				task := domain.Task{
-					UserID:            userID,
-					Title:             title,
-					DueAt:             taskPayload.DueAt,
-					FlagID:            flagID,
-					SubflagID:         subflagID,
-					SourceInboxItemID: &item.ID,
-				}
-				created, err := tx.Tasks.Create(ctx, task)
+
+				taskUC := *uc.TasksUsecase
+				taskUC.Tasks = tx.Tasks
+				created, err := taskUC.Create(ctx, userID, title, nil, nil, taskPayload.DueAt, flagID, subflagID, &item.ID)
 				if err != nil {
 					return err
 				}
 				result.Task = &created
 			case domain.AiSuggestionTypeReminder:
 				if tx.Reminders == nil {
+					return ErrDependencyMissing
+				}
+				if uc.RemindersUsecase == nil {
 					return ErrDependencyMissing
 				}
 				reminderPayload, ok := validated.Payload.(service.ReminderPayload)
@@ -613,21 +593,18 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 
 				fixWeekdayMismatch(&reminderPayload.At, nil, item.RawText, now)
 
-				reminder := domain.Reminder{
-					UserID:            userID,
-					Title:             title,
-					RemindAt:          &reminderPayload.At,
-					FlagID:            flagID,
-					SubflagID:         subflagID,
-					SourceInboxItemID: &item.ID,
-				}
-				created, err := tx.Reminders.Create(ctx, reminder)
+				remUC := *uc.RemindersUsecase
+				remUC.Reminders = tx.Reminders
+				created, err := remUC.Create(ctx, userID, title, nil, &reminderPayload.At, flagID, subflagID, &item.ID)
 				if err != nil {
 					return err
 				}
 				result.Reminder = &created
 			case domain.AiSuggestionTypeEvent:
 				if tx.Events == nil {
+					return ErrDependencyMissing
+				}
+				if uc.EventsUsecase == nil {
 					return ErrDependencyMissing
 				}
 				eventPayload, ok := validated.Payload.(service.EventPayload)
@@ -639,17 +616,9 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				// model returned a different weekday (e.g. sábado), fix it deterministically.
 				fixWeekdayMismatch(&eventPayload.Start, eventPayload.End, item.RawText, now)
 
-				event := domain.Event{
-					UserID:            userID,
-					Title:             title,
-					StartAt:           &eventPayload.Start,
-					EndAt:             eventPayload.End,
-					AllDay:            eventPayload.AllDay,
-					FlagID:            flagID,
-					SubflagID:         subflagID,
-					SourceInboxItemID: &item.ID,
-				}
-				created, err := tx.Events.Create(ctx, event)
+				eventUC := *uc.EventsUsecase
+				eventUC.Events = tx.Events
+				created, err := eventUC.Create(ctx, userID, title, &eventPayload.Start, eventPayload.End, &eventPayload.AllDay, nil, flagID, subflagID, &item.ID)
 				if err != nil {
 					return err
 				}
@@ -698,32 +667,27 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				if !ok {
 					return ErrInvalidPayload
 				}
+				if uc.RoutinesUsecase == nil {
+					return ErrDependencyMissing
+				}
 
+				// Use the RoutineUsecase to keep creation rules unified.
+				routineUC := *uc.RoutinesUsecase
+				routineUC.Routines = tx.Routines
 
-				now := uc.nowInUserTimezone(ctx, userID)
-                startsOn := computeStartsOn(now, routinePayload.Weekdays, routinePayload.StartsOn)
-
-				routine := domain.Routine{
-					UserID:            userID,
+				created, err := routineUC.Create(ctx, userID, RoutineInput{
 					Title:             title,
 					RecurrenceType:    routinePayload.RecurrenceType,
 					Weekdays:          routinePayload.Weekdays,
 					StartTime:         routinePayload.StartTime,
 					EndTime:           routinePayload.EndTime,
 					WeekOfMonth:       routinePayload.WeekOfMonth,
-					StartsOn:          startsOn,
+					StartsOn:          routinePayload.StartsOn,
 					EndsOn:            routinePayload.EndsOn,
-					IsActive:          true,
 					FlagID:            flagID,
 					SubflagID:         subflagID,
 					SourceInboxItemID: &item.ID,
-				}
-				if uc.RoutinesUsecase != nil {
-					if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
-						return err
-					}
-				}
-				created, err := tx.Routines.Create(ctx, routine)
+				})
 				if err != nil {
 					return err
 				}
@@ -744,66 +708,40 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	} else {
 		switch typ {
 		case domain.AiSuggestionTypeTask:
-			if uc.Tasks == nil {
+			if uc.TasksUsecase == nil {
 				return ConfirmResult{}, ErrDependencyMissing
 			}
 			taskPayload, ok := validated.Payload.(service.TaskPayload)
 			if !ok {
 				return ConfirmResult{}, ErrInvalidPayload
 			}
-			task := domain.Task{
-				UserID:            userID,
-				Title:             title,
-				DueAt:             taskPayload.DueAt,
-				FlagID:            flagID,
-				SubflagID:         subflagID,
-				SourceInboxItemID: &item.ID,
-			}
-			created, err := uc.Tasks.Create(ctx, task)
+			created, err := uc.TasksUsecase.Create(ctx, userID, title, nil, nil, taskPayload.DueAt, flagID, subflagID, &item.ID)
 			if err != nil {
 				return ConfirmResult{}, err
 			}
 			result.Task = &created
 		case domain.AiSuggestionTypeReminder:
-			if uc.Reminders == nil {
+			if uc.RemindersUsecase == nil {
 				return ConfirmResult{}, ErrDependencyMissing
 			}
 			reminderPayload, ok := validated.Payload.(service.ReminderPayload)
 			if !ok {
 				return ConfirmResult{}, ErrInvalidPayload
 			}
-			reminder := domain.Reminder{
-				UserID:            userID,
-				Title:             title,
-				RemindAt:          &reminderPayload.At,
-				FlagID:            flagID,
-				SubflagID:         subflagID,
-				SourceInboxItemID: &item.ID,
-			}
-			created, err := uc.Reminders.Create(ctx, reminder)
+			created, err := uc.RemindersUsecase.Create(ctx, userID, title, nil, &reminderPayload.At, flagID, subflagID, &item.ID)
 			if err != nil {
 				return ConfirmResult{}, err
 			}
 			result.Reminder = &created
 		case domain.AiSuggestionTypeEvent:
-			if uc.Events == nil {
+			if uc.EventsUsecase == nil {
 				return ConfirmResult{}, ErrDependencyMissing
 			}
 			eventPayload, ok := validated.Payload.(service.EventPayload)
 			if !ok {
 				return ConfirmResult{}, ErrInvalidPayload
 			}
-			event := domain.Event{
-				UserID:            userID,
-				Title:             title,
-				StartAt:           &eventPayload.Start,
-				EndAt:             eventPayload.End,
-				AllDay:            eventPayload.AllDay,
-				FlagID:            flagID,
-				SubflagID:         subflagID,
-				SourceInboxItemID: &item.ID,
-			}
-			created, err := uc.Events.Create(ctx, event)
+			created, err := uc.EventsUsecase.Create(ctx, userID, title, &eventPayload.Start, eventPayload.End, &eventPayload.AllDay, nil, flagID, subflagID, &item.ID)
 			if err != nil {
 				return ConfirmResult{}, err
 			}
@@ -852,37 +790,23 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 			if !ok {
 				return ConfirmResult{}, ErrInvalidPayload
 			}
-			startsOn := time.Now().Format("2006-01-02")
-			if routinePayload.StartsOn != nil {
-				startsOn = *routinePayload.StartsOn
-			}
-			routine := domain.Routine{
-				UserID:            userID,
+			created, err := uc.RoutinesUsecase.Create(ctx, userID, RoutineInput{
 				Title:             title,
 				RecurrenceType:    routinePayload.RecurrenceType,
 				Weekdays:          routinePayload.Weekdays,
 				StartTime:         routinePayload.StartTime,
 				EndTime:           routinePayload.EndTime,
 				WeekOfMonth:       routinePayload.WeekOfMonth,
-				StartsOn:          startsOn,
+				StartsOn:          routinePayload.StartsOn,
 				EndsOn:            routinePayload.EndsOn,
-				IsActive:          true,
 				FlagID:            flagID,
 				SubflagID:         subflagID,
 				SourceInboxItemID: &item.ID,
+			})
+			if err != nil {
+				return ConfirmResult{}, err
 			}
-			if uc.RoutinesUsecase != nil {
-				if err := uc.RoutinesUsecase.Validate(ctx, routine); err != nil {
-					return ConfirmResult{}, err
-				}
-				created, err := uc.RoutinesUsecase.Routines.Create(ctx, routine)
-				if err != nil {
-					return ConfirmResult{}, err
-				}
-				result.Routine = &created
-			} else {
-				return ConfirmResult{}, ErrDependencyMissing
-			}
+			result.Routine = &created
 		default:
 			return ConfirmResult{}, ErrInvalidType
 		}

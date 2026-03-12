@@ -26,7 +26,7 @@ type EventUpdateInput struct {
 	SubflagID *string
 }
 
-func (uc *EventUsecase) Create(ctx context.Context, userID, title string, startAt, endAt *time.Time, allDay *bool, location *string, flagID *string, subflagID *string) (domain.Event, error) {
+func (uc *EventUsecase) Create(ctx context.Context, userID, title string, startAt, endAt *time.Time, allDay *bool, location *string, flagID *string, subflagID *string, sourceInboxItemID *string) (domain.Event, error) {
 	title = normalizeString(title)
 	if userID == "" || title == "" {
 		return domain.Event{}, ErrMissingRequiredFields
@@ -41,14 +41,15 @@ func (uc *EventUsecase) Create(ctx context.Context, userID, title string, startA
 	}
 
 	event := domain.Event{
-		UserID:    userID,
-		Title:     title,
-		StartAt:   startAt,
-		EndAt:     endAt,
-		AllDay:    false,
-		Location:  normalizeOptionalString(location),
-		FlagID:    resolvedFlagID,
-		SubflagID: resolvedSubflagID,
+		UserID:            userID,
+		Title:             title,
+		StartAt:           startAt,
+		EndAt:             endAt,
+		AllDay:            false,
+		Location:          normalizeOptionalString(location),
+		FlagID:            resolvedFlagID,
+		SubflagID:         resolvedSubflagID,
+		SourceInboxItemID: normalizeOptionalString(sourceInboxItemID),
 	}
 	if allDay != nil {
 		event.AllDay = *allDay

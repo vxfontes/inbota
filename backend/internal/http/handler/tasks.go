@@ -165,7 +165,7 @@ func (h *TasksHandler) Create(c *gin.Context) {
 		return
 	}
 
-	task, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Description, req.Status, req.DueAt, req.FlagID, req.SubflagID)
+	task, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Description, req.Status, req.DueAt, req.FlagID, req.SubflagID, nil)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return

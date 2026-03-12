@@ -165,7 +165,7 @@ func (h *RemindersHandler) Create(c *gin.Context) {
 		return
 	}
 
-	reminder, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Status, req.RemindAt, req.FlagID, req.SubflagID)
+	reminder, err := h.Usecase.Create(c.Request.Context(), userID, req.Title, req.Status, req.RemindAt, req.FlagID, req.SubflagID, nil)
 	if err != nil {
 		writeUsecaseError(c, err)
 		return

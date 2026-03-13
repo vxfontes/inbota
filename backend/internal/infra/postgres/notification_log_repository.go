@@ -70,7 +70,7 @@ func (r *NotificationLogRepository) ListByUserID(ctx context.Context, userID str
 		FROM inbota.notification_log
 		WHERE user_id = $1
 		  AND status IN ('sent', 'delivered', 'read')
-		ORDER BY created_at DESC, id DESC
+		ORDER BY sent_at DESC NULLS LAST, created_at DESC, id DESC
 		LIMIT $2 OFFSET $3
 	`, userID, limit, offset)
 	if err != nil {

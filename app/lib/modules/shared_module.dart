@@ -26,6 +26,7 @@ import 'package:organiq/shared/services/speech/speech_transcription_service.dart
 import 'package:organiq/shared/storage/app_preferences.dart';
 import 'package:organiq/shared/storage/auth_token_store.dart';
 import 'package:organiq/shared/storage/token_storage.dart';
+import 'package:organiq/shared/theme/theme_controller.dart';
 import 'package:organiq/shared/tutorial/tutorial_controller.dart';
 import 'package:organiq/shared/tutorial/tutorial_registry.dart';
 import 'package:organiq/shared/tutorial/tutorial_service.dart';
@@ -66,6 +67,9 @@ class SharedModule extends Module {
     i.addLazySingleton<ISpeechTranscriptionService>(
       SpeechTranscriptionService.new,
     );
+
+    // Theme
+    i.addLazySingleton<ThemeController>(ThemeController.new);
 
     // Cache e conectividade — singletons globais compartilhados por todos os
     // módulos. Registrar aqui garante uma única instância de SharedPreferences

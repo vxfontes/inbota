@@ -94,4 +94,105 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData dark() {
+    const colorScheme = ColorScheme(
+      brightness: Brightness.dark,
+      primary: AppColors.primary500,
+      onPrimary: AppColors.darkBackground,
+      secondary: AppColors.ai500,
+      onSecondary: AppColors.darkBackground,
+      error: AppColors.danger600,
+      onError: AppColors.darkText,
+      surface: AppColors.darkSurface,
+      onSurface: AppColors.darkText,
+      surfaceContainerHighest: AppColors.darkText,
+    );
+
+    final baseText = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+    ).textTheme.apply(
+      bodyColor: AppColors.darkText,
+      displayColor: AppColors.darkText,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: 'Manrope',
+      brightness: Brightness.dark,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      textTheme: baseText.copyWith(
+        titleLarge: baseText.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        titleMedium: baseText.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        bodyMedium: baseText.bodyMedium?.copyWith(
+          color: AppColors.darkTextMuted,
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: AppColors.darkText,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      cardTheme: const CardThemeData(
+        color: AppColors.darkSurface,
+        surfaceTintColor: AppColors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          side: BorderSide(color: AppColors.darkBorder),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.darkBorder,
+        thickness: 1,
+        space: 1,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.darkSurface2,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: AppColors.primary500,
+            width: 1.5,
+          ),
+        ),
+        hintStyle: const TextStyle(color: AppColors.darkTextMuted),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.darkSurface2,
+        selectedColor: AppColors.primary500,
+        labelStyle: const TextStyle(color: AppColors.darkText),
+        secondaryLabelStyle: const TextStyle(color: AppColors.darkBackground),
+        side: const BorderSide(color: AppColors.darkBorder),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary500,
+        foregroundColor: AppColors.darkBackground,
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: AppColors.darkSurface2,
+        contentTextStyle: TextStyle(color: AppColors.darkText),
+      ),
+    );
+  }
 }

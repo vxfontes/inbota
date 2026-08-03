@@ -3,6 +3,6 @@ import 'package:organiq/shared/services/http/app_path.dart';
 
 class AppService {
   static String getBackEndBaseUrl() {
-    return 'http://localhost:8080${AppPath.apiPrefix}';
+    return 'https://inbota-api.onrender.com${AppPath.apiPrefix}';
   }
 }

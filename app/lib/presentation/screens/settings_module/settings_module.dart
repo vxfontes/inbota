@@ -6,6 +6,7 @@ import 'package:organiq/presentation/screens/settings_module/controller/settings
 import 'package:organiq/presentation/screens/settings_module/controller/settings_controller.dart';
 import 'package:organiq/presentation/screens/settings_module/controller/settings_notifications_controller.dart';
 import 'package:organiq/presentation/screens/settings_module/pages/settings_account_page.dart';
+import 'package:organiq/presentation/screens/settings_module/pages/settings_appearance_page.dart';
 import 'package:organiq/presentation/screens/settings_module/pages/settings_components_page.dart';
 import 'package:organiq/presentation/screens/settings_module/pages/settings_contexts_page.dart';
 import 'package:organiq/presentation/screens/settings_module/pages/settings_notifications_page.dart';
@@ -35,6 +36,10 @@ class SettingsModule extends Module {
     r.child(
       AppRoutes.notifications,
       child: (_) => const SettingsNotificationsPage(),
+    );
+    r.child(
+      AppRoutes.appearance,
+      child: (_) => const SettingsAppearancePage(),
     );
   }
 }

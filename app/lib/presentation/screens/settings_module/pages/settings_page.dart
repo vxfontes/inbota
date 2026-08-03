@@ -103,12 +103,13 @@ class _SettingsPageState extends OQState<SettingsPage, SettingsController> {
                     onTap: () =>
                         AppNavigation.push(AppRoutes.settingsNotifications),
                   ),
-                  // OQMenuItem(
-                  //   title: 'Preferências',
-                  //   subtitle: 'Idioma e aparência',
-                  //   icon: OQIcon.tune,
-                  //   onTap: () {},
-                  // ),
+                  OQMenuItem(
+                    title: 'Aparência',
+                    subtitle: 'Tema claro, escuro ou sistema',
+                    icon: OQIcon.tune,
+                    onTap: () =>
+                        AppNavigation.push(AppRoutes.settingsAppearance),
+                  ),
                   OQMenuItem(
                     title: 'Contextos',
                     subtitle: 'Gerenciar flags e subflags',

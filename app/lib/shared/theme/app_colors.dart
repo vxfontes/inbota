@@ -36,6 +36,18 @@ class AppColors {
   static const transparent = Colors.transparent;
   static const dark = Color(0xFF111827);
 
+  // Dark mode semantic colors
+  static const darkBackground = Color(0xFF0F172A);
+  static const darkSurface = Color(0xFF1E293B);
+  static const darkSurface2 = Color(0xFF334155);
+  static const darkSurfaceSoft = Color(0xFF1E293B);
+  static const darkBorder = Color(0xFF334155);
+  static const darkBorderStrong = Color(0xFF475569);
+  static const darkText = Color(0xFFF8FAFC);
+  static const darkTextMuted = Color(0xFF94A3B8);
+  static const darkSurfaceWarning = Color(0xFF292524);
+  static const darkSurfaceAi = Color(0xFF1E1B4B);
+
   // Greeting gradients
   static const morningStart = Color(0xFFE6FAF8);
   static const morningEnd = Color(0xFFF8FFFE);

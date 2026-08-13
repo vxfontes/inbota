@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -83,6 +84,12 @@ func writeUsecaseError(c *gin.Context, err error) {
 	case errors.Is(err, postgres.ErrNotFound):
 		writeError(c, http.StatusNotFound, "not_found")
 	default:
+		slog.Error("usecase_error_unhandled",
+			slog.String("request_id", middleware.GetRequestID(c)),
+			slog.String("method", c.Request.Method),
+			slog.String("path", c.Request.URL.Path),
+			slog.String("error", err.Error()),
+		)
 		writeError(c, http.StatusInternalServerError, "internal_error")
 	}
 }

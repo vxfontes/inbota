@@ -23,6 +23,7 @@ type TxRunner interface {
 type AuthTxRepositories struct {
 	Users             UserRepository
 	NotificationPrefs NotificationPreferencesRepository
+	Flags             FlagRepository
 }
 
 // AuthTxRunner executes the signup flow atomically.

@@ -130,6 +130,10 @@ func (f *fakeTaskRepo) ListUpcoming(ctx context.Context, start, end time.Time) (
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (f *fakeTaskRepo) UpdateNotificationCopy(ctx context.Context, userID, id, title, body string) error {
+	return fmt.Errorf("not implemented")
+}
+
 type fakeShoppingListRepo struct {
 	items []domain.ShoppingList
 }

@@ -6,3 +6,6 @@
 .DS_Store
 
 /backend/config/firebase-admin.json
+
+## tooling local (workspace Maestri, settings por maquina)
+.maestri/

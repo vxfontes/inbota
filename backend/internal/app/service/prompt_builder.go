@@ -70,6 +70,9 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 			}
 			writeLine(&sb, line)
 		}
+	} else {
+		writeLine(&sb, "Available contexts: none. There is no flag available for this user yet.")
+		writeLine(&sb, "context.flagId MUST be null and context.subflagId MUST be null. Do not invent one.")
 	}
 
 	if len(input.Rules) > 0 {
@@ -95,7 +98,7 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	}
 
 	writeLine(&sb, "Output JSON schema:")
-	writeLine(&sb, `{"type":"task|reminder|event|shopping|note|routine","title":"string","confidence":0.0,"context":{"flagId":"string","subflagId":"string|null"},"needs_review":true,"payload":{...}}`)
+	writeLine(&sb, `{"type":"task|reminder|event|shopping|note|routine","title":"string","confidence":0.0,"context":{"flagId":"string|null","subflagId":"string|null"},"needs_review":true,"payload":{...}}`)
 	writeLine(&sb, "Payload by type:")
 	writeLine(&sb, "- task: {\"dueAt\": \"RFC3339|null\"}")
 	writeLine(&sb, "- reminder: {\"at\": \"RFC3339\"}")
@@ -115,7 +118,7 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	writeLine(&sb, "- Preserve explicit dates and times exactly as stated. Do not shift hours or dates; only format to RFC3339 with the correct timezone offset.")
 	writeLine(&sb, "- If a reminder time is not explicit, choose 09:00 in the user's local timezone and set needs_review=true.")
 	writeLine(&sb, "- Choose context from Available contexts and Context rules. Use Hinted context when relevant.")
-	writeLine(&sb, "- Do not invent flagId or subflagId. If no subflag applies, use null and set needs_review=true if uncertain.")
+	writeLine(&sb, "- Do not invent flagId or subflagId. If no flag applies or no context is available, set context.flagId=null. If no subflag applies, use null. Set needs_review=true if uncertain.")
 	writeLine(&sb, "- If type=event then end must be >= start.")
 	writeLine(&sb, "- If type=shopping then items must be non-empty.")
 	writeLine(&sb, "- If type=reminder then payload.at must exist.")

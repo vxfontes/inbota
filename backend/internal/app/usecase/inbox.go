@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -246,7 +247,7 @@ func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id strin
 
 	user, err := uc.Users.Get(ctx, userID)
 	if err != nil {
-		return InboxItemResult{}, err
+		return uc.failInboxPersistence(ctx, item, err)
 	}
 
 	now := time.Now()
@@ -272,19 +273,39 @@ func (uc *InboxUsecase) ReprocessInboxItem(ctx context.Context, userID, id strin
 
 	flags, err := listAllFlags(ctx, uc.Flags, userID)
 	if err != nil {
-		return InboxItemResult{}, err
+		return uc.failInboxPersistence(ctx, item, err)
 	}
 	subflagsByFlag := make(map[string][]domain.Subflag, len(flags))
 	for _, flag := range flags {
 		subflags, err := listAllSubflags(ctx, uc.Subflags, userID, flag.ID)
 		if err != nil {
-			return InboxItemResult{}, err
+			return uc.failInboxPersistence(ctx, item, err)
 		}
 		subflagsByFlag[flag.ID] = subflags
 	}
 	rules, err := listAllContextRules(ctx, uc.ContextRules, userID)
 	if err != nil {
-		return InboxItemResult{}, err
+		return uc.failInboxPersistence(ctx, item, err)
+	}
+
+	// In-memory index of this user's valid flags/subflags, built from the exact same data
+	// just loaded to construct the prompt (flags, subflagsByFlag) — used below by
+	// resolveSuggestionFlagContext to validate the AI's flagId/subflagId before persisting a
+	// suggestion, without any extra DB round-trip. See resolveSuggestionFlagContext's doc
+	// comment for why this replaced a live repository lookup.
+	//
+	// Keys are lowercased so lookups match Postgres' case-insensitive uuid comparison (the old
+	// uc.Flags.Get/uc.Subflags.Get path resolved regardless of hex case; a Go map lookup on the
+	// raw string wouldn't). Map values stay the canonical, as-stored DB ID (flag.ID / sub.ID) —
+	// never the lowercased key — so anything resolved here and later persisted or logged uses
+	// the same casing as the rest of the app, not whatever case the model happened to emit.
+	flagIndex := make(map[string]string, len(flags))
+	subflagIndex := make(map[string]subflagIndexEntry, len(flags))
+	for _, flag := range flags {
+		flagIndex[strings.ToLower(flag.ID)] = flag.ID
+		for _, sub := range subflagsByFlag[flag.ID] {
+			subflagIndex[strings.ToLower(sub.ID)] = subflagIndexEntry{SubflagID: sub.ID, FlagID: flag.ID}
+		}
 	}
 
 	contexts := make([]service.ContextItem, 0)
@@ -436,7 +457,6 @@ validatedOutputReady:
 			if tx.Suggestions == nil || tx.Inbox == nil {
 				return ErrDependencyMissing
 			}
-			var err error
 
 			for _, vout := range validatedMany {
 				s := domain.AiSuggestion{
@@ -449,13 +469,19 @@ validatedOutputReady:
 					PayloadJSON: vout.Output.Payload,
 				}
 				if vout.Output.Context != nil {
-					s.FlagID = normalizeOptionalString(vout.Output.Context.FlagID)
-					s.SubflagID = normalizeOptionalString(vout.Output.Context.SubflagID)
+					s.FlagID, s.SubflagID = uc.resolveSuggestionFlagContext(userID, item.ID, flagIndex, subflagIndex, vout.Output.Context.FlagID, vout.Output.Context.SubflagID)
 				}
-				suggestion, err = tx.Suggestions.Create(ctx, s)
+				// Note: assign to the closure-captured `suggestion`/`item` only on success.
+				// Repository methods here return the zero value alongside a non-nil error, so
+				// reassigning the captured variable unconditionally (e.g. `item, err = ...`)
+				// would clobber it with a zeroed-out struct (empty ID) right before the error
+				// path below hands it to failInboxPersistence — leaving the item impossible to
+				// recover and stuck in PROCESSING forever.
+				created, err := tx.Suggestions.Create(ctx, s)
 				if err != nil {
 					return err
 				}
+				suggestion = created
 				createdSuggestions = append(createdSuggestions, suggestion)
 
 				if autoConfirm {
@@ -475,17 +501,23 @@ validatedOutputReady:
 				item.Status = domain.InboxStatusSuggested
 			}
 			item.LastError = nil
-			item, err = tx.Inbox.Update(ctx, item)
+			updated, err := tx.Inbox.Update(ctx, item)
 			if err != nil {
 				return err
 			}
+			item = updated
 			return nil
 		}); err != nil {
-			return InboxItemResult{}, err
+			// Everything inside WithTx is about persisting the AI's (already-validated)
+			// output, not about the AI itself — any failure here is ours, not the model's.
+			// `item` above is guaranteed to still hold a valid ID at this point (see the
+			// no-clobber note inside the closure), so this can actually flip it out of
+			// PROCESSING instead of targeting an empty ID.
+			return uc.failInboxPersistence(ctx, item, err)
 		}
 	} else {
 		if uc.Suggestions == nil {
-			return InboxItemResult{}, ErrDependencyMissing
+			return uc.failInboxPersistence(ctx, item, ErrDependencyMissing)
 		}
 
 		for _, vout := range validatedMany {
@@ -499,20 +531,22 @@ validatedOutputReady:
 				PayloadJSON: vout.Output.Payload,
 			}
 			if vout.Output.Context != nil {
-				s.FlagID = normalizeOptionalString(vout.Output.Context.FlagID)
-				s.SubflagID = normalizeOptionalString(vout.Output.Context.SubflagID)
+				s.FlagID, s.SubflagID = uc.resolveSuggestionFlagContext(userID, item.ID, flagIndex, subflagIndex, vout.Output.Context.FlagID, vout.Output.Context.SubflagID)
 			}
-			suggestion, err = uc.Suggestions.Create(ctx, s)
+			// Same no-clobber rule as the tx branch above: only assign to the outer
+			// `suggestion`/`item` once we know the call succeeded.
+			created, err := uc.Suggestions.Create(ctx, s)
 			if err != nil {
-				return InboxItemResult{}, err
+				return uc.failInboxPersistence(ctx, item, err)
 			}
+			suggestion = created
 			createdSuggestions = append(createdSuggestions, suggestion)
 			if autoConfirm {
 				// No-tx mode: best effort creation without a wrapping transaction.
 				// Prefer running with TxRunner in production.
 				confirmed, err := uc.applyValidatedSuggestionNoTx(ctx, userID, item, vout)
 				if err != nil {
-					return InboxItemResult{}, err
+					return uc.failInboxPersistence(ctx, item, err)
 				}
 				confirmedResults = append(confirmedResults, confirmed)
 			}
@@ -526,10 +560,11 @@ validatedOutputReady:
 			item.Status = domain.InboxStatusSuggested
 		}
 		item.LastError = nil
-		item, err = uc.Inbox.Update(ctx, item)
+		updated, err := uc.Inbox.Update(ctx, item)
 		if err != nil {
-			return InboxItemResult{}, err
+			return uc.failInboxPersistence(ctx, item, err)
 		}
+		item = updated
 	}
 
 	// If no suggestions were persisted (shouldn't happen), return nil suggestion.
@@ -936,6 +971,102 @@ func (uc *InboxUsecase) DismissInboxItem(ctx context.Context, userID, id string)
 	return uc.Inbox.Update(ctx, item)
 }
 
+// subflagIndexEntry is the value side of subflagIndex: the canonical, as-stored-in-Postgres
+// IDs for a subflag and the flag it belongs to, keyed (in subflagIndex) by the subflag's ID
+// lowercased. Kept as a small struct rather than two parallel maps so the pair can't drift
+// out of sync.
+type subflagIndexEntry struct {
+	SubflagID string
+	FlagID    string
+}
+
+// resolveSuggestionFlagContext validates a flag/subflag pair coming straight from the AI
+// output before it is persisted on an ai_suggestions row. The model is asked for a flagId
+// even when the user has zero flags (the schema requires a string), so it may hallucinate a
+// value that is not a valid UUID or doesn't belong to this user.
+//
+// Unlike ConfirmInboxItem (~line 616), which resolves via RoutineUsecase.ResolveFlagAndSubflag
+// against the DB and treats an unresolvable flag as a hard error, this is a best-effort path:
+// an unresolvable flagId/subflagId is dropped (nil) instead of blocking the insert or blowing
+// up on an invalid UUID / FK violation. It validates against flagIndex/subflagIndex, built by
+// the caller from the exact same flags/subflags already loaded into memory to build the AI
+// prompt (see ReprocessInboxItem) — no repository call happens here. This is deliberate:
+//   - It's the same data the model was actually offered, so "valid" means the same thing for
+//     both the prompt and the persisted suggestion.
+//   - It avoids taking a second connection from the pool while one is already checked out for
+//     the enclosing transaction (previously done via uc.Flags.Get/uc.Subflags.Get inside
+//     WithTx — with SetMaxOpenConns(10), a handful of concurrent reprocesses could exhaust the
+//     pool and deadlock waiting on each other).
+//   - It can't confuse a transient DB error (timeout, pool exhaustion) with "invalid flag":
+//     there's no DB call left to fail transiently.
+//
+// Lookups are done on strings.ToLower(rawID) against flagIndex/subflagIndex, whose keys are
+// themselves lowercased by the caller: Postgres' uuid type parses/compares hex case-
+// insensitively, so a model that emits the right ID in uppercase must still resolve, exactly
+// like the old uc.Flags.Get/uc.Subflags.Get path did. Whenever a flag/subflag DOES resolve,
+// the value returned is the canonical DB ID (flagIndex's/subflagIndex's value, i.e. flag.ID /
+// sub.ID as stored), never the model's raw string and never the lowercased lookup key — so
+// what gets persisted (and what a caller might log on success) always has the same casing as
+// the rest of the app. The raw, as-received value is only ever used for the discard warning
+// below, precisely because it was NOT found and there's no canonical form to substitute.
+//
+// Flag and subflag are validated independently. A valid flag with an invalid/unrelated
+// subflag keeps the flag and drops only the subflag — the model is far more likely to get a
+// subflag wrong than a flag, and losing both because of an invalid subflag was needlessly
+// punitive (this mirrors ResolveFlagAndSubflag's field-level checks, but stops short of its
+// "any invalid field invalidates the whole pair" behavior, which is correct for ConfirmInboxItem
+// but too strict for a best-effort suggestion). A subflag whose parent isn't the given flag is
+// treated as invalid; if only the subflag is given (and valid), its parent flag is used.
+//
+// Any discard is logged at Warn (with userID/inboxItemID/the raw rejected value) rather than
+// silently swallowed, so a model hallucinating flags 100% of the time is distinguishable from
+// the expected "model got it right, user just doesn't have that flag" case.
+func (uc *InboxUsecase) resolveSuggestionFlagContext(userID, inboxItemID string, flagIndex map[string]string, subflagIndex map[string]subflagIndexEntry, rawFlagID, rawSubflagID *string) (*string, *string) {
+	rawFlag := normalizeOptionalString(rawFlagID)
+	rawSubflag := normalizeOptionalString(rawSubflagID)
+
+	var flagID *string
+	if rawFlag != nil {
+		if canonical, ok := flagIndex[strings.ToLower(*rawFlag)]; ok {
+			resolved := canonical
+			flagID = &resolved
+		} else {
+			slog.Warn("inbox_suggestion_flag_id_discarded",
+				slog.String("user_id", userID),
+				slog.String("inbox_item_id", inboxItemID),
+				slog.String("raw_flag_id", *rawFlag),
+			)
+		}
+	}
+
+	var subflagID *string
+	if rawSubflag != nil {
+		entry, ok := subflagIndex[strings.ToLower(*rawSubflag)]
+		valid := ok && (flagID == nil || entry.FlagID == *flagID)
+		if !valid {
+			slog.Warn("inbox_suggestion_subflag_id_discarded",
+				slog.String("user_id", userID),
+				slog.String("inbox_item_id", inboxItemID),
+				slog.String("raw_subflag_id", *rawSubflag),
+			)
+		} else {
+			resolvedSubflagID := entry.SubflagID
+			subflagID = &resolvedSubflagID
+			if flagID == nil {
+				resolvedFlagID := entry.FlagID
+				flagID = &resolvedFlagID
+			}
+		}
+	}
+
+	return flagID, subflagID
+}
+
+// failInboxProcessing handles AI-side failures during reprocessing: the model didn't
+// answer, or its output couldn't be salvaged even with fallbacks. This is treated as an
+// expected, recoverable outcome — we park the item in NEEDS_REVIEW with the cause recorded
+// in LastError and return a nil error, so the HTTP layer replies 200 with the degraded item
+// instead of a 500. Do not use this for persistence/DB failures; see failInboxPersistence.
 func (uc *InboxUsecase) failInboxProcessing(ctx context.Context, item domain.InboxItem, cause error) (InboxItemResult, error) {
 	errText := cause.Error()
 	if len(errText) > 500 {
@@ -948,6 +1079,38 @@ func (uc *InboxUsecase) failInboxProcessing(ctx context.Context, item domain.Inb
 		return InboxItemResult{}, err
 	}
 	return InboxItemResult{Item: updated}, nil
+}
+
+// failInboxPersistence handles failures that happen on OUR side after the AI has already
+// produced a usable output: reading the user's flags/subflags/rules, or writing the
+// suggestion/confirmed entities back to Postgres. Unlike failInboxProcessing, this is not an
+// expected outcome — it's a backend error the caller should be told about — so it preserves
+// and returns the original cause (the HTTP layer will surface a 5xx). The critical part is
+// that it still flips the item out of PROCESSING and records LastError first: the earlier
+// "item.Status = PROCESSING" update (right after Get) was committed in its own transaction,
+// so nothing rolls that back for us. Without this, any error past that point leaves the item
+// stuck in PROCESSING forever even though the HTTP response correctly reports failure.
+func (uc *InboxUsecase) failInboxPersistence(ctx context.Context, item domain.InboxItem, cause error) (InboxItemResult, error) {
+	errText := cause.Error()
+	if len(errText) > 500 {
+		errText = errText[:500]
+	}
+	item.Status = domain.InboxStatusNeedsReview
+	item.LastError = &errText
+	if _, updateErr := uc.Inbox.Update(ctx, item); updateErr != nil {
+		// Best effort: recovering the item also failed (e.g. DB is genuinely down). There's
+		// nothing else we can do here except make it loud instead of silent — this is exactly
+		// the failure mode that used to leave items stuck in PROCESSING unnoticed. Surface the
+		// original cause that triggered the failure to the caller.
+		slog.Warn("inbox_item_recovery_update_failed",
+			slog.String("user_id", item.UserID),
+			slog.String("inbox_item_id", item.ID),
+			slog.String("cause", cause.Error()),
+			slog.String("update_error", updateErr.Error()),
+		)
+		return InboxItemResult{}, cause
+	}
+	return InboxItemResult{}, cause
 }
 
 func normalizeValidatedOutput(vout *service.ValidatedOutput, rawText string) {

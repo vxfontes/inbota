@@ -19,8 +19,15 @@ type AuthUsecase struct {
 	Users             repository.UserRepository
 	Auth              *service.AuthService
 	NotificationPrefs repository.NotificationPreferencesRepository
+	Flags             repository.FlagRepository
 	TxRunner          repository.AuthTxRunner
 }
+
+// defaultFlagNames are seeded for every new account so the app never starts
+// completely empty. Kept short and generic on purpose (pt-BR): the goal is a
+// starting point, not pre-configuring the user's life. Users can rename or
+// delete any of these afterwards; deleting a flag is a normal app action.
+var defaultFlagNames = []string{"Pessoal", "Trabalho", "Casa"}
 
 func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName, locale, timezone string) (domain.User, string, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
@@ -55,7 +62,7 @@ func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName,
 
 	var created domain.User
 
-	doSignup := func(ctx context.Context, users repository.UserRepository, prefs repository.NotificationPreferencesRepository) error {
+	doSignup := func(ctx context.Context, users repository.UserRepository, prefs repository.NotificationPreferencesRepository, flags repository.FlagRepository) error {
 		var err error
 		created, err = users.Create(ctx, userInput)
 		if err != nil {
@@ -81,17 +88,21 @@ func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName,
 			RoutineLeadMins:   []int{15},
 			QuietHoursEnabled: false,
 		}
-		return prefs.Upsert(ctx, defaultPrefs)
+		if err := prefs.Upsert(ctx, defaultPrefs); err != nil {
+			return err
+		}
+
+		return seedDefaultFlags(ctx, flags, created.ID)
 	}
 
 	if uc.TxRunner != nil {
 		if err := uc.TxRunner.WithAuthTx(ctx, func(tx repository.AuthTxRepositories) error {
-			return doSignup(ctx, tx.Users, tx.NotificationPrefs)
+			return doSignup(ctx, tx.Users, tx.NotificationPrefs, tx.Flags)
 		}); err != nil {
 			return domain.User{}, "", err
 		}
 	} else {
-		if err := doSignup(ctx, uc.Users, uc.NotificationPrefs); err != nil {
+		if err := doSignup(ctx, uc.Users, uc.NotificationPrefs, uc.Flags); err != nil {
 			return domain.User{}, "", err
 		}
 	}
@@ -101,6 +112,22 @@ func (uc *AuthUsecase) Signup(ctx context.Context, email, password, displayName,
 		return domain.User{}, "", err
 	}
 	return created, token, nil
+}
+
+// seedDefaultFlags creates the starter set of flags for a brand-new user.
+// It must only ever be called from Signup (never from Login), otherwise
+// existing accounts would accumulate duplicate flags on every login.
+func seedDefaultFlags(ctx context.Context, flags repository.FlagRepository, userID string) error {
+	for i, name := range defaultFlagNames {
+		if _, err := flags.Create(ctx, domain.Flag{
+			UserID:    userID,
+			Name:      name,
+			SortOrder: i,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (domain.User, string, error) {

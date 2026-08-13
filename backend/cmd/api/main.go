@@ -83,16 +83,17 @@ func main() {
 		emailDigestRepo := postgres.NewEmailDigestRepository(db)
 
 		txRunner := postgres.NewTxRunner(db)
+		flagRepo := postgres.NewFlagRepository(db)
 
 		authUC := &usecase.AuthUsecase{
 			Users:             userRepo,
 			Auth:              authSvc,
 			NotificationPrefs: notificationPrefsRepo,
+			Flags:             flagRepo,
 			TxRunner:          txRunner,
 		}
 		authHandler = handler.NewAuthHandler(authUC)
 
-		flagRepo := postgres.NewFlagRepository(db)
 		subflagRepo := postgres.NewSubflagRepository(db)
 		ruleRepo := postgres.NewContextRuleRepository(db)
 		inboxRepo := postgres.NewInboxRepository(db)

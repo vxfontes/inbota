@@ -49,6 +49,7 @@ func (r *TxRunner) WithAuthTx(ctx context.Context, fn func(tx repository.AuthTxR
 	repos := repository.AuthTxRepositories{
 		Users:             NewUserRepositoryTx(tx),
 		NotificationPrefs: NewNotificationPreferencesRepositoryTx(tx),
+		Flags:             NewFlagRepositoryTx(tx),
 	}
 
 	if err := fn(repos); err != nil {

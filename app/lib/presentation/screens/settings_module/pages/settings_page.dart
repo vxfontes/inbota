@@ -3,8 +3,10 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:organiq/presentation/routes/app_navigation.dart';
 import 'package:organiq/presentation/routes/app_routes.dart';
+import 'package:organiq/presentation/screens/settings_module/components/settings_delete_account_bottom_sheet.dart';
 import 'package:organiq/presentation/screens/settings_module/controller/settings_controller.dart';
 import 'package:organiq/shared/components/oq_lib/index.dart';
+import 'package:organiq/shared/theme/app_colors.dart';
 import 'package:organiq/shared/state/oq_state.dart';
 import 'package:organiq/shared/tutorial/tutorial_controller.dart';
 import 'package:organiq/shared/tutorial/tutorial_launcher.dart';
@@ -58,6 +60,19 @@ class _SettingsPageState extends OQState<SettingsPage, SettingsController> {
         service: tutorialService,
       );
     });
+  }
+
+  Future<void> _onDeleteAccountPressed() async {
+    final deleted = await OQBottomSheet.show<bool>(
+      context: context,
+      isFitWithContent: true,
+      child: SettingsDeleteAccountBottomSheet(
+        onConfirm: controller.deleteAccount,
+      ),
+    );
+
+    if (deleted != true) return;
+    await controller.finishAccountDeletion();
   }
 
   Future<void> _loadVersionLabel() async {
@@ -172,6 +187,18 @@ class _SettingsPageState extends OQState<SettingsPage, SettingsController> {
                     variant: OQButtonVariant.secondary,
                   );
                 },
+              ),
+              const SizedBox(height: 24),
+              OQMenuCard(
+                items: [
+                  OQMenuItem(
+                    title: 'Excluir conta',
+                    subtitle: 'Apaga permanentemente sua conta e seus dados',
+                    icon: OQIcon.deleteOutlineRounded,
+                    onTap: _onDeleteAccountPressed,
+                    iconColor: AppColors.danger600,
+                  ),
+                ],
               ),
             ],
           ),

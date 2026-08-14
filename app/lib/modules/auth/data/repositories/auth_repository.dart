@@ -14,6 +14,12 @@ import 'package:organiq/shared/services/http/app_path.dart';
 import 'package:organiq/shared/services/http/http_client.dart';
 import 'package:organiq/shared/storage/auth_token_store.dart';
 
+const String _wrongPasswordMessage = 'Senha incorreta. Tente de novo.';
+const String _tooManyAttemptsMessage =
+    'Muitas tentativas. Aguarde um minuto e tente de novo.';
+const String _deleteAccountFailureMessage =
+    'Não foi possível excluir sua conta agora. Tente novamente.';
+
 class AuthRepository implements IAuthRepository {
   final IHttpClient _httpClient;
   final AuthTokenStore _tokenStore;
@@ -124,6 +130,48 @@ class AuthRepository implements IAuthRepository {
           err,
           fallbackMessage: 'Erro ao carregar perfil. Tente novamente.',
           failureFactory: (msg) => GetFailure(message: msg),
+        ),
+      );
+    }
+  }
+
+  // The whole DELETE /v1/me contract lives here — verb, path, body key and
+  // status mapping. A backend change touches this method and nothing else.
+  @override
+  Future<Either<Failure, void>> deleteAccount(String password) async {
+    try {
+      final response = await _httpClient.delete(
+        AppPath.me,
+        data: {'password': password},
+      );
+
+      if (response.isSuccess) return const Right(null);
+
+      // Every branch below is keyed on the status and answers with a constant.
+      // The body is deliberately never read here: ApiErrorMapper falls back to
+      // the raw code for anything it does not know, so an unmapped error would
+      // print a machine string inside the password field.
+
+      // 403 is the only failure the user can fix without leaving the sheet, and
+      // on this route it means exactly one thing — the password is wrong.
+      if (response.statusCode == 403) {
+        return Left(InvalidParameterFailure(message: _wrongPasswordMessage));
+      }
+
+      // The route is rate limited at 5/min per IP. A reviewer trying a wrong
+      // password a few times behind a shared NAT reaches this, so it is a
+      // normal state of the flow and not an edge case.
+      if (response.statusCode == 429) {
+        return Left(DeleteFailure(message: _tooManyAttemptsMessage));
+      }
+
+      return Left(DeleteFailure(message: _deleteAccountFailureMessage));
+    } catch (err) {
+      return Left(
+        ExceptionMapper.toFailure(
+          err,
+          fallbackMessage: 'Erro ao excluir a conta. Tente novamente.',
+          failureFactory: (msg) => DeleteFailure(message: msg),
         ),
       );
     }

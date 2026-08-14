@@ -30,6 +30,10 @@ func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (domain.Us
 	return domain.User{}, fmt.Errorf("not implemented")
 }
 
+func (f *fakeUserRepo) Delete(ctx context.Context, id string) error {
+	return fmt.Errorf("not implemented")
+}
+
 type fakePrefsRepo struct {
 	prefs []domain.NotificationPreferences
 }

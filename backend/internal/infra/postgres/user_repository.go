@@ -60,6 +60,29 @@ func (r *UserRepository) Get(ctx context.Context, id string) (domain.User, error
 	return user, nil
 }
 
+// Delete removes the user row, and with it everything the user owns: every
+// table referencing organiq.users(id) declares ON DELETE CASCADE, so this
+// single statement is the entire account deletion. Postgres applies a
+// statement and its cascades atomically, so no explicit transaction is needed.
+func (r *UserRepository) Delete(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM organiq.users
+		WHERE id = $1
+	`, id)
+	if err != nil {
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, email, display_name, password, locale, timezone

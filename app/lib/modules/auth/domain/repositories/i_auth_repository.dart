@@ -10,4 +10,5 @@ abstract class IAuthRepository {
   Future<Either<Failure, AuthSessionOutput>> signup(AuthSignupInput input);
   Future<Either<Failure, AuthUserModel>> me();
   Future<Either<Failure, void>> logout();
+  Future<Either<Failure, void>> deleteAccount(String password);
 }

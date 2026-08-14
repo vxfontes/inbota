@@ -659,9 +659,19 @@ class PushNotificationService {
     AppNavigation.navigate(path, args: params);
   }
 
-  Future<void> unregisterDevice() async {
-    if (_deviceId != null && _repository != null) {
+  /// Defaults keep the logout path unchanged. Account deletion opts out of the
+  /// remote call (the backend already dropped the row) and purges the stored
+  /// device id so a new account on this phone does not inherit it.
+  Future<void> unregisterDevice({
+    bool remote = true,
+    bool purgeStoredDeviceId = false,
+  }) async {
+    if (remote && _deviceId != null && _repository != null) {
       await _repository!.unregisterDeviceToken(_deviceId!);
+    }
+
+    if (purgeStoredDeviceId) {
+      await _secureStorage.delete(key: _deviceIdStorageKey);
     }
 
     await _onMessageSubscription?.cancel();

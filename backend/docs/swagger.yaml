@@ -185,10 +185,22 @@ definitions:
     properties:
       createAiEnabled:
         type: boolean
+      latestSuggestedVersion:
+        type: string
+      minMandatoryVersion:
+        type: string
+      mustUpdate:
+        type: boolean
       settingsNotificationsAdminEmails:
         items:
           type: string
         type: array
+      shouldUpdate:
+        type: boolean
+      storeAndroidUrl:
+        type: string
+      storeIosUrl:
+        type: string
       suggestionAiEnabled:
         type: boolean
     type: object
@@ -510,6 +522,13 @@ definitions:
         type: string
       title:
         type: string
+    type: object
+  dto.DeleteAccountRequest:
+    properties:
+      password:
+        type: string
+    required:
+    - password
     type: object
   dto.ErrorResponse:
     properties:
@@ -2417,6 +2436,50 @@ paths:
       tags:
       - Inbox
   /v1/me:
+    delete:
+      consumes:
+      - application/json
+      description: Exclusao permanente e irreversivel. Remove a conta e todo o conteudo
+        associado (inbox, tarefas, lembretes, eventos, listas, rotinas, flags, sugestoes,
+        dispositivos e preferencias). Exige a senha atual como confirmacao.
+      parameters:
+      - description: Confirmacao com a senha atual
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: 'incorrect_password: senha de confirmacao incorreta (a sessao
+            continua valida)'
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir a conta do usuario logado
+      tags:
+      - Me
     get:
       produces:
       - application/json

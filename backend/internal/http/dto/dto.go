@@ -758,6 +758,12 @@ type AppScreenLogResponse struct {
 	CreatedAt         time.Time       `json:"createdAt"`
 }
 
+// DeleteAccountRequest confirms an account deletion. The JWT proves who is
+// asking; the current password proves they meant it.
+type DeleteAccountRequest struct {
+	Password string `json:"password" binding:"required"`
+}
+
 type CreateAppErrorLogRequest struct {
 	SessionID     *string         `json:"sessionId,omitempty"`
 	ScreenName    *string         `json:"screenName,omitempty"`

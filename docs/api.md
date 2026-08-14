@@ -11,6 +11,7 @@ Guia detalhado da API HTTP do Organiq. Este documento complementa o Swagger.
   - `POST /v1/auth/signup`
   - `POST /v1/auth/login`
 - `GET /v1/me` retorna o perfil do usuario do token.
+- `DELETE /v1/me` exclui permanentemente a conta do token (exige a senha atual no body).
 
 **Request Id**
 - Header de resposta: `X-Request-Id` (configuravel)
@@ -31,9 +32,10 @@ Guia detalhado da API HTTP do Organiq. Este documento complementa o Swagger.
   - `invalid_payload`
   - `invalid_time_range`
   - `invalid_email`
-  - `invalid_password`
+  - `invalid_password` (400 — senha nao atende a politica, no signup)
+  - `incorrect_password` (403 — senha de confirmacao incorreta numa rota ja autenticada; a sessao continua valida, o cliente NAO deve deslogar)
   - `invalid_display_name`
-  - `invalid_credentials`
+  - `invalid_credentials` (401 — sessao invalida ou conta inexistente; o cliente deve descartar o token)
   - `invalid_limit`
   - `invalid_cursor`
   - `not_found`
@@ -248,6 +250,18 @@ Guia detalhado da API HTTP do Organiq. Este documento complementa o Swagger.
 - `GET /v1/me`
   - Header: `Authorization: Bearer <token>`
   - Response: `AuthResponse` (sem token)
+- `DELETE /v1/me`
+  - Header: `Authorization: Bearer <token>`
+  - Body: `password` (senha atual, obrigatoria — confirmacao)
+  - Response: `204 No Content` (sem body)
+  - Exclusao **permanente e irreversivel**. Remove a conta e, por `ON DELETE CASCADE`, todo o conteudo associado: inbox, tarefas, lembretes, eventos, listas de compras, rotinas, flags, subflags, regras de contexto, sugestoes, conversas, dispositivos, preferencias de notificacao e logs do app. Nao ha lixeira nem periodo de retencao.
+  - Como o `daily_summary_token` vive em `notification_preferences`, o link publico `GET /v1/daily-summary` daquela conta para de funcionar imediatamente.
+  - Rate limit: 5 requisicoes por minuto por IP.
+  - Erros:
+    - `400 invalid_payload` — body ausente ou sem `password`
+    - `403 incorrect_password` — senha errada. **A sessao continua valida**; o cliente deve exibir o erro e manter o usuario logado.
+    - `401 invalid_credentials` — token valido apontando para conta que ja nao existe. O cliente deve descartar o token e voltar ao login.
+  - O JWT emitido antes da exclusao continua criptograficamente valido ate expirar (TTL de 30 dias): nao existe revogacao no servidor. O cliente e responsavel por descartar o token localmente apos o `204`.
 
 **Flags**
 - `GET /v1/flags`
@@ -333,6 +347,17 @@ Guia detalhado da API HTTP do Organiq. Este documento complementa o Swagger.
     "timezone":"America/Sao_Paulo"
   }
 }
+```
+
+`DELETE /v1/me` — request
+```json
+{"password":"senha-atual-do-usuario"}
+```
+Sucesso: `204 No Content`, sem body.
+
+Senha errada (`403`):
+```json
+{"error":"incorrect_password","requestId":"<id>"}
 ```
 
 `GET /v1/flags`

@@ -1537,6 +1537,70 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Exclusao permanente e irreversivel. Remove a conta e todo o conteudo associado (inbox, tarefas, lembretes, eventos, listas, rotinas, flags, sugestoes, dispositivos e preferencias). Exige a senha atual como confirmacao.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Me"
+                ],
+                "summary": "Excluir a conta do usuario logado",
+                "parameters": [
+                    {
+                        "description": "Confirmacao com a senha atual",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.DeleteAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "incorrect_password: senha de confirmacao incorreta (a sessao continua valida)",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/v1/notification-preferences": {
@@ -3957,11 +4021,29 @@
                 "createAiEnabled": {
                     "type": "boolean"
                 },
+                "latestSuggestedVersion": {
+                    "type": "string"
+                },
+                "minMandatoryVersion": {
+                    "type": "string"
+                },
+                "mustUpdate": {
+                    "type": "boolean"
+                },
                 "settingsNotificationsAdminEmails": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "shouldUpdate": {
+                    "type": "boolean"
+                },
+                "storeAndroidUrl": {
+                    "type": "string"
+                },
+                "storeIosUrl": {
+                    "type": "string"
                 },
                 "suggestionAiEnabled": {
                     "type": "boolean"
@@ -4453,6 +4535,17 @@
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DeleteAccountRequest": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
                     "type": "string"
                 }
             }

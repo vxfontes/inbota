@@ -36,9 +36,14 @@ cp .env.example .env            # setar DATABASE_URL, JWT_SECRET, AI_*
 go run ./cmd/api                # API local
 go run ./cmd/seed               # seed dados
 go run ./cmd/backfill_notifications
-docker compose up --build       # API + Postgres com hot reload (air)
-swag init -g cmd/api/main.go --parseInternal -o ./docs   # regen Swagger
+docker compose up --build       # SÓ a api, com hot reload (air) — não sobe banco
+# regen Swagger — use a versão pinada, NÃO o `swag` global
+go run github.com/swaggo/swag/cmd/swag@v1.8.12 init -g cmd/api/main.go --parseInternal -o ./docs
 ```
+
+> **Não existe banco local pronto.** O serviço `db` do `docker-compose.yml` está comentado (junto com `depends_on` e o bloco `volumes`), então `docker compose up --build` sobe só a `api` e ela usa o `DATABASE_URL` do `.env`. E o `db/` **não bootstrapa um Postgres do zero**: as versões `0.0.1`–`0.2.0` escrevem em `inbota.*`, a `0.3.0` em diante escreve em `organiq.*`, e não existe script de rename entre as duas — um replay em ordem quebra na `0.3.0` com `schema "organiq" does not exist`. O rename foi feito fora do versionamento. Levante ambiente local com isso em mente.
+
+> O `swag` instalado globalmente costuma ser 1.16.x, mas o `go.mod` pina `github.com/swaggo/swag v1.8.12`. O CLI 1.16 gera um `docs/docs.go` com os campos `LeftDelim`/`RightDelim`, que não existem no struct `swag.Spec` da 1.8.12 — o resultado é `unknown field LeftDelim` e `go build ./...` quebrando. O `go run ...@v1.8.12` acima casa CLI e lib sem instalar nada global. Rode `go build ./...` e `go vet ./...` depois de gerar.
 
 Endpoints: `GET /healthz`, `GET /readyz`, `GET /swagger-ui/index.html`, `GET /v1/agenda`.
 

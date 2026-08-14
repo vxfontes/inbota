@@ -130,6 +130,57 @@ func seedDefaultFlags(ctx context.Context, flags repository.FlagRepository, user
 	return nil
 }
 
+// DeleteAccount permanently removes the authenticated user's account and
+// everything they own, as required by App Store Guideline 5.1.1(v).
+//
+// It is deliberately a single repository call: every table referencing
+// organiq.users(id) declares ON DELETE CASCADE, and Postgres applies a
+// statement together with its cascades atomically. So there is no
+// transaction here on purpose -- no closure means no way to accidentally
+// reach for a second pooled connection while holding one.
+//
+// device_tokens is covered by that same cascade. The notification scheduler
+// keeps no per-user state in memory (it caches only templates and config) and
+// re-reads active tokens from the database for every notification, so a
+// deleted account can never be pushed to.
+//
+// The JWT proves who is asking; the password proves they meant it. bcrypt
+// runs before the DELETE and outside any transaction, because it burns
+// ~100ms of CPU and must never hold a pooled connection while doing so.
+func (uc *AuthUsecase) DeleteAccount(ctx context.Context, userID, password string) error {
+	if uc.Users == nil || uc.Auth == nil {
+		return ErrDependencyMissing
+	}
+	if strings.TrimSpace(userID) == "" || password == "" {
+		return ErrMissingRequiredFields
+	}
+
+	user, err := uc.Users.Get(ctx, userID)
+	if err != nil {
+		// A valid JWT pointing at a row that no longer exists means the account
+		// is already gone. That is an authentication problem, not a server
+		// error, and the client is right to drop the token over it.
+		if errors.Is(err, postgres.ErrUserNotFound) {
+			return ErrInvalidCredentials
+		}
+		return err
+	}
+
+	if err := uc.Auth.ComparePassword(user.Password, password); err != nil {
+		// Not ErrInvalidCredentials: the session is valid, only the
+		// re-confirmation failed. Clients must not log the user out for a typo.
+		return ErrIncorrectPassword
+	}
+
+	if err := uc.Users.Delete(ctx, userID); err != nil {
+		if errors.Is(err, postgres.ErrUserNotFound) {
+			return ErrInvalidCredentials
+		}
+		return err
+	}
+	return nil
+}
+
 func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (domain.User, string, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" || password == "" {

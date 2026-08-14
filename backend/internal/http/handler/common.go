@@ -75,6 +75,13 @@ func writeUsecaseError(c *gin.Context, err error) {
 		writeError(c, http.StatusConflict, "email_already_exists")
 	case errors.Is(err, usecase.ErrInvalidCredentials):
 		writeError(c, http.StatusUnauthorized, "invalid_credentials")
+	// 403, not 401: the caller IS authenticated and only a password
+	// re-confirmation failed. A 401 makes clients drop the session, which would
+	// log a live account out over a typo. Distinct code from
+	// ErrInvalidPassword's "invalid_password" (400, signup policy) so a client
+	// switching on the code alone cannot confuse the two.
+	case errors.Is(err, usecase.ErrIncorrectPassword):
+		writeError(c, http.StatusForbidden, "incorrect_password")
 	case errors.Is(err, usecase.ErrDependencyMissing):
 		writeError(c, http.StatusInternalServerError, "dependency_missing")
 	case errors.Is(err, service.ErrAISchemaInvalid):

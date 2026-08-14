@@ -58,6 +58,9 @@ func NewRouter(cfg config.Config, log *slog.Logger, authHandler *handler.AuthHan
 	if apiHandlers != nil {
 		if apiHandlers.Me != nil {
 			authGroup.GET("/me", apiHandlers.Me.Me)
+			// Rate limited: a wrong password here answers 403, which makes this
+			// a password oracle just like login (already capped at 10/min).
+			authGroup.DELETE("/me", middleware.RateLimitByIP(5, time.Minute), apiHandlers.Me.DeleteMe)
 		}
 		if apiHandlers.Flags != nil {
 			authGroup.GET("/flags", apiHandlers.Flags.List)

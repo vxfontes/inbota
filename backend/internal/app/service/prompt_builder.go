@@ -98,13 +98,17 @@ func (b *PromptBuilder) Build(input PromptInput) string {
 	}
 
 	writeLine(&sb, "Output JSON schema:")
-	writeLine(&sb, `{"type":"task|reminder|event|shopping|note|routine","title":"string","confidence":0.0,"context":{"flagId":"string|null","subflagId":"string|null"},"needs_review":true,"payload":{...}}`)
+	// "note" is deliberately absent from the union: nothing downstream can turn a
+	// note into an entity, so every note the model emitted came back to the user as
+	// a 400 invalid_type. Offering it here only invited more of them. A note that
+	// slips through anyway is coerced into a task before persistence -- see
+	// normalizeValidatedOutput in the inbox usecase.
+	writeLine(&sb, `{"type":"task|reminder|event|shopping|routine","title":"string","confidence":0.0,"context":{"flagId":"string|null","subflagId":"string|null"},"needs_review":true,"payload":{...}}`)
 	writeLine(&sb, "Payload by type:")
 	writeLine(&sb, "- task: {\"dueAt\": \"RFC3339|null\"}")
 	writeLine(&sb, "- reminder: {\"at\": \"RFC3339\"}")
 	writeLine(&sb, "- event: {\"start\": \"RFC3339\", \"end\": \"RFC3339\", \"allDay\": true}")
 	writeLine(&sb, "- shopping: {\"items\": [{\"title\": \"string\", \"quantity\": \"string|null\"}]}")
-	writeLine(&sb, "- note: {\"content\": \"string\"}")
 	writeLine(&sb, "- routine: {\"weekdays\": [0-6], \"startTime\": \"HH:MM\", \"endTime\": \"HH:MM|null\", \"recurrenceType\": \"weekly|biweekly|triweekly|monthly_week|monthly_day\", \"weekOfMonth\": 1-5|null, \"dayOfMonth\": 1-31|null, \"startsOn\": \"YYYY-MM-DD|null\", \"endsOn\": \"YYYY-MM-DD|null\"}")
 	writeLine(&sb, "Rules:")
 	writeLine(&sb, "- You may return a single item object OR an array of item objects at the root level.")

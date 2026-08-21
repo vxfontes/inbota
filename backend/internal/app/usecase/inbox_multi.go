@@ -8,6 +8,24 @@ import (
 	"organiq/backend/internal/app/service"
 )
 
+// applyValidatedSuggestionTx turns one validated AI output into a real entity,
+// inside the caller's transaction.
+//
+// Each case runs the entity usecase on a COPY whose repository is swapped for the
+// transactional one. That copy must also have NotificationCopy zeroed: Create
+// spawns a goroutine that calls <Entity>.UpdateNotificationCopy on a background
+// context, and on the copy that repository is the *sql.Tx. The goroutine would
+// then write through the transaction concurrently with it -- and, because
+// GenerateCopy is a real AI round-trip, usually after Commit as well. That is what
+// produced the 500 "driver: bad connection" on multi-clause input: 70% with two
+// entities in one transaction, 100% with three or more. The guard inside Create
+// (`if uc.NotificationCopy != nil`) makes the goroutine simply not exist here.
+// The copy is regenerated after the transaction commits, over the pool, by
+// InboxUsecase.scheduleNotificationCopy.
+//
+// Shopping has no case below because it is written repo-level (tx.ShoppingLists /
+// tx.ShoppingItems) with no usecase and no goroutine -- which is why it was the
+// only type that never failed.
 func (uc *InboxUsecase) applyValidatedSuggestionTx(ctx context.Context, tx repository.TxRepositories, userID string, item domain.InboxItem, vout service.ValidatedOutput) (ConfirmResult, error) {
 	typ, ok := parseSuggestionType(vout.Output.Type)
 	if !ok || typ == domain.AiSuggestionTypeNote {
@@ -25,6 +43,7 @@ func (uc *InboxUsecase) applyValidatedSuggestionTx(ctx context.Context, tx repos
 		}
 		taskUC := *uc.TasksUsecase
 		taskUC.Tasks = tx.Tasks
+		taskUC.NotificationCopy = nil
 		var fID, sfID *string
 		if vout.Output.Context != nil {
 			fID = normalizeOptionalString(vout.Output.Context.FlagID)
@@ -46,6 +65,7 @@ func (uc *InboxUsecase) applyValidatedSuggestionTx(ctx context.Context, tx repos
 		}
 		remUC := *uc.RemindersUsecase
 		remUC.Reminders = tx.Reminders
+		remUC.NotificationCopy = nil
 		var fID, sfID *string
 		if vout.Output.Context != nil {
 			fID = normalizeOptionalString(vout.Output.Context.FlagID)
@@ -67,6 +87,7 @@ func (uc *InboxUsecase) applyValidatedSuggestionTx(ctx context.Context, tx repos
 		}
 		eventUC := *uc.EventsUsecase
 		eventUC.Events = tx.Events
+		eventUC.NotificationCopy = nil
 		var fID, sfID *string
 		if vout.Output.Context != nil {
 			fID = normalizeOptionalString(vout.Output.Context.FlagID)
@@ -88,6 +109,7 @@ func (uc *InboxUsecase) applyValidatedSuggestionTx(ctx context.Context, tx repos
 		}
 		routineUC := *uc.RoutinesUsecase
 		routineUC.Routines = tx.Routines
+		routineUC.NotificationCopy = nil
 		var fID, sfID *string
 		if vout.Output.Context != nil {
 			fID = normalizeOptionalString(vout.Output.Context.FlagID)

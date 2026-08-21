@@ -72,6 +72,10 @@ type ConfirmResult struct {
 	Routine       *domain.Routine
 }
 
+// taskPayloadNoDueDate is the payload a coerced note becomes: a task with no due
+// date. Kept as a literal because it has to satisfy the strict task schema.
+const taskPayloadNoDueDate = `{"dueAt":null}`
+
 func (uc *InboxUsecase) CreateInboxItem(ctx context.Context, userID string, source *string, rawText string, rawMediaURL *string) (domain.InboxItem, error) {
 	rawText = normalizeString(rawText)
 	if userID == "" || rawText == "" {
@@ -515,6 +519,10 @@ validatedOutputReady:
 			// PROCESSING instead of targeting an empty ID.
 			return uc.failInboxPersistence(ctx, item, err)
 		}
+
+		// Committed. Only now is it safe to generate the notification copy for what
+		// we just created -- over the pool, never through the transaction.
+		uc.scheduleNotificationCopy(userID, confirmedResults)
 	} else {
 		if uc.Suggestions == nil {
 			return uc.failInboxPersistence(ctx, item, ErrDependencyMissing)
@@ -594,8 +602,17 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	}
 
 	typ, ok := parseSuggestionType(input.Type)
-	if !ok || typ == domain.AiSuggestionTypeNote {
+	if !ok {
 		return ConfirmResult{}, ErrInvalidType
+	}
+	// Suggestions persisted as "note" before note left the prompt are still sitting
+	// in real inboxes, and the app confirms with the type it was given. Nothing
+	// below can apply a note, so this used to hand the user a 400 invalid_type on a
+	// suggestion the app itself had offered. Confirm it as a task instead: the note
+	// body is already the item's rawText, which is what the title comes from.
+	coercedNote := typ == domain.AiSuggestionTypeNote
+	if coercedNote {
+		typ = domain.AiSuggestionTypeTask
 	}
 
 	item, err := uc.Inbox.Get(ctx, userID, id)
@@ -617,6 +634,11 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 	}
 
 	payload := input.Payload
+	if coercedNote {
+		// The incoming payload is {"content": ...}; the task schema rejects unknown
+		// fields, so it has to be replaced along with the type.
+		payload = json.RawMessage(taskPayloadNoDueDate)
+	}
 	if len(payload) == 0 {
 		return ConfirmResult{}, ErrMissingRequiredFields
 	}
@@ -704,8 +726,13 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 					return ErrInvalidPayload
 				}
 
+				// Same rule as applyValidatedSuggestionTx: the copy that carries the
+				// transactional repository must not carry NotificationCopy, or the
+				// goroutine inside Create writes through the *sql.Tx. Regenerated over
+				// the pool after this transaction commits.
 				taskUC := *uc.TasksUsecase
 				taskUC.Tasks = tx.Tasks
+				taskUC.NotificationCopy = nil
 				created, err := taskUC.Create(ctx, userID, title, nil, nil, taskPayload.DueAt, flagID, subflagID, &item.ID)
 				if err != nil {
 					return err
@@ -727,6 +754,7 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 
 				remUC := *uc.RemindersUsecase
 				remUC.Reminders = tx.Reminders
+				remUC.NotificationCopy = nil
 				created, err := remUC.Create(ctx, userID, title, nil, &reminderPayload.At, flagID, subflagID, &item.ID)
 				if err != nil {
 					return err
@@ -750,6 +778,7 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 
 				eventUC := *uc.EventsUsecase
 				eventUC.Events = tx.Events
+				eventUC.NotificationCopy = nil
 				created, err := eventUC.Create(ctx, userID, title, &eventPayload.Start, eventPayload.End, &eventPayload.AllDay, nil, flagID, subflagID, &item.ID)
 				if err != nil {
 					return err
@@ -806,6 +835,7 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 				// Use the RoutineUsecase to keep creation rules unified.
 				routineUC := *uc.RoutinesUsecase
 				routineUC.Routines = tx.Routines
+				routineUC.NotificationCopy = nil
 
 				created, err := routineUC.Create(ctx, userID, RoutineInput{
 					Title:             title,
@@ -838,6 +868,9 @@ func (uc *InboxUsecase) ConfirmInboxItem(ctx context.Context, userID, id string,
 		}); err != nil {
 			return ConfirmResult{}, err
 		}
+
+		// Committed -- see the note above the tx branch of ProcessInboxItem.
+		uc.scheduleNotificationCopy(userID, []ConfirmResult{result})
 	} else {
 		switch typ {
 		case domain.AiSuggestionTypeTask:
@@ -1113,9 +1146,93 @@ func (uc *InboxUsecase) failInboxPersistence(ctx context.Context, item domain.In
 	return InboxItemResult{}, cause
 }
 
+// scheduleNotificationCopy regenerates the AI-written notification text for the
+// entities created inside a transaction.
+//
+// It MUST only be called after that transaction has committed. The usecases it
+// reaches here are the originals held by InboxUsecase, still backed by the
+// connection pool -- not the copies whose repository was swapped for the *sql.Tx.
+// That is the whole point: this is the same path a plain POST /v1/tasks takes,
+// which is the path that never produced a bad connection.
+func (uc *InboxUsecase) scheduleNotificationCopy(userID string, results []ConfirmResult) {
+	for _, res := range results {
+		switch {
+		case res.Task != nil:
+			if uc.TasksUsecase == nil || uc.TasksUsecase.NotificationCopy == nil || uc.TasksUsecase.Tasks == nil {
+				continue
+			}
+			go generateNotificationCopy(uc.TasksUsecase.NotificationCopy, uc.TasksUsecase.Tasks.UpdateNotificationCopy,
+				"Task", userID, res.Task.ID, res.Task.Title, derefString(res.Task.Description))
+
+		case res.Reminder != nil:
+			if uc.RemindersUsecase == nil || uc.RemindersUsecase.NotificationCopy == nil || uc.RemindersUsecase.Reminders == nil {
+				continue
+			}
+			// ReminderUsecase.Create passes an empty description here; keep it identical.
+			go generateNotificationCopy(uc.RemindersUsecase.NotificationCopy, uc.RemindersUsecase.Reminders.UpdateNotificationCopy,
+				"Reminder", userID, res.Reminder.ID, res.Reminder.Title, "")
+
+		case res.Event != nil:
+			if uc.EventsUsecase == nil || uc.EventsUsecase.NotificationCopy == nil || uc.EventsUsecase.Events == nil {
+				continue
+			}
+			// EventUsecase.Create passes an empty description here; keep it identical.
+			go generateNotificationCopy(uc.EventsUsecase.NotificationCopy, uc.EventsUsecase.Events.UpdateNotificationCopy,
+				"Event", userID, res.Event.ID, res.Event.Title, "")
+
+		case res.Routine != nil:
+			if uc.RoutinesUsecase == nil || uc.RoutinesUsecase.NotificationCopy == nil || uc.RoutinesUsecase.Routines == nil {
+				continue
+			}
+			go generateNotificationCopy(uc.RoutinesUsecase.NotificationCopy, uc.RoutinesUsecase.Routines.UpdateNotificationCopy,
+				"Routine", userID, res.Routine.ID, res.Routine.Title, derefString(res.Routine.Description))
+		}
+	}
+}
+
+// generateNotificationCopy mirrors what <Entity>Usecase.Create does on the plain
+// HTTP path: one AI round-trip on a background context, then a best-effort write.
+// A failure here costs the entity its custom notification text and nothing else,
+// so the error is swallowed exactly as it is there.
+func generateNotificationCopy(
+	svc *service.NotificationCopyService,
+	update func(ctx context.Context, userID, id, title, body string) error,
+	kind, userID, id, title, desc string,
+) {
+	ctxBg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	nTitle, nBody, err := svc.GenerateCopy(ctxBg, kind, title, desc)
+	if err != nil || nTitle == "" {
+		return
+	}
+	_ = update(ctxBg, userID, id, nTitle, nBody)
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func normalizeValidatedOutput(vout *service.ValidatedOutput, rawText string) {
 	if vout == nil {
 		return
+	}
+	// "note" is gone from the prompt, but a model does not follow a prompt with
+	// 100% fidelity, and the schema validator still accepts the type. Every note
+	// that reaches the apply path is an ErrInvalidType -> 400 in the user's face,
+	// so coerce it here, per item, at the last point before persistence.
+	//
+	// Per item on purpose: ValidateMany is all-or-nothing, so rejecting note at the
+	// validator instead would throw away the WHOLE array whenever one element is a
+	// note, and the hard fallback would collapse a multi-clause entry into a single
+	// task titled with the entire raw text. That trades a visible error for a
+	// silent regression in the feature this product is built around.
+	if strings.EqualFold(strings.TrimSpace(vout.Output.Type), string(domain.AiSuggestionTypeNote)) {
+		vout.Output.Type = string(domain.AiSuggestionTypeTask)
+		vout.Output.Payload = json.RawMessage(taskPayloadNoDueDate)
+		vout.Payload = service.TaskPayload{}
 	}
 	vout.Output.Title = normalizeString(vout.Output.Title)
 	if strings.EqualFold(strings.TrimSpace(vout.Output.Type), string(domain.AiSuggestionTypeShopping)) {

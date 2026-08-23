@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	texttemplate "text/template"
 	"time"
 )
 
@@ -39,7 +38,7 @@ type DigestService struct {
 	subflagRepo      repository.SubflagRepository
 	mailer           mailer.Mailer
 	htmlTemplate     *htmltemplate.Template
-	textTemplate     *texttemplate.Template
+	textTemplate     *htmltemplate.Template
 	now              func() time.Time
 	log              *slog.Logger
 }
